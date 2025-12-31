@@ -1,0 +1,27 @@
+volumes:
+  backend_db:
+
+services:
+  frontend:
+    restart: always
+    build: ./frontend
+    container_name: front
+    image: front
+    ports:
+      - "8080:8080"
+    # env_file:
+    #   - .env
+
+  backend:
+    restart: always
+    build: ./backend
+    container_name: back
+    image: back
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: file:/app/backend/prisma/dev.db
+    volumes:
+      - backend_db:/app/backend/prisma
+    # env_file:
+    #   - .env

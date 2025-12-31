@@ -1,0 +1,12 @@
+Installation de la lib hash/compare :
+npm i bcryptjs
+
+style d ecriture :
+Gras	font-bold / font-extrabold
+Police terminal	font-mono
+Police cyber	font-cyber
+Espacement lettres	tracking-widest
+Style agressif	uppercase
+
+installe react router (fleche precedent/suivant) :
+RUN npm install react-router-dom

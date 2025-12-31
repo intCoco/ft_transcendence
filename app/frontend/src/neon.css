@@ -1,0 +1,69 @@
+.neon-glitch {
+  font-family: "Orbitron", Arial, Helvetica, sans-serif;
+  color: #00ffff;
+  position: relative;
+  display: inline-block;
+
+  text-shadow:
+    0 0 10px #a006ff,
+    0 0 20px #a200ff,
+    0 0 40px #590f8d,
+    0 0 80px #a200ff;
+  filter: blur(0.5px);
+}
+
+.neon-glitch::before,
+.neon-glitch::after {
+  content: attr(data-text);
+  content: attr(data-text, string);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  animation: glitch 1.5s infinite;
+}
+
+.neon-glitch {
+  --glitch-text: "";
+}
+
+.neon-glitch::before {
+  color: #ff0066;
+  animation-duration: 1.2s;
+}
+
+.neon-glitch::after {
+  color: #00aaff;
+  animation-duration: 1.7s;
+}
+
+@keyframes glitch {
+  0% { transform: translate(0); opacity: 1; }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(2px, -2px); opacity: 0.7; }
+  60% { transform: translate(-3px, 1px); }
+  80% { transform: translate(3px, -1px); opacity: 0.8; }
+  100% { transform: translate(0); opacity: 1; }
+}
+
+.neon-border {
+  border: 2px solid #00ffff;
+  box-shadow:
+    0 0 5px #ae00ff,
+    0 0 10px #c300ff,
+    0 0 20px #b700ff,
+    0 0 40px #c300ff;
+  transition: 0.2s ease;
+}
+
+.neon-border:focus,
+.neon-border:hover {
+  box-shadow:
+    0 0 10px #a006ff,
+    0 0 20px #003cff,
+    0 0 30px #0f378d,
+    0 0 60px #0011ff;
+  outline: none;
+}

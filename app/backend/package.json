@@ -1,0 +1,20 @@
+{
+  "name": "transcendence-backend",
+  "version": "1.0.0",
+  "description": "Backend Fastify for transcendence",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@fastify/cors": "^8.5.0",
+    "@fastify/static": "^6.10.2",
+    "@fastify/websocket": "^6.0.1",
+    "@prisma/client": "^6.19.1",
+    "bcrypt": "^6.0.0",
+    "fastify": "4.29.1",
+    "ls": "^0.2.1",
+    "prisma": "^6.19.1"
+  }
+}
