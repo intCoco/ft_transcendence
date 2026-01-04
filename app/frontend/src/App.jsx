@@ -702,34 +702,37 @@ export default function App() {
   ======================================================================================*/}
 
         <Route path="/play" element={
-          <div className="relative w-full h-full flex flex-col items-center
-            justify-center gap-10">
+          <div className="relative w-screen h-screen">
 
             <h1
-              className="neon-glitch text-5xl"
-              data-text="ℂℍ𝕆𝕆𝕊𝔼 𝔾𝔸𝕄𝔼"
+              className="absolute top-[60px] left-1/2 -translate-x-1/2 neon-glitch text-5xl"
+              data-text="⊱ ℂℍ𝕆𝕆𝕊𝔼 𝔾𝔸𝕄𝔼 ⊰"
             >
-              ℂℍ𝕆𝕆𝕊𝔼 𝔾𝔸𝕄𝔼
+              ⊱ ℂℍ𝕆𝕆𝕊𝔼 𝔾𝔸𝕄𝔼 ⊰
             </h1>
 
-            <button
-              className="neon-glitch text-4xl bg-transparent border-0"
-              data-text="ℙ𝕆ℕ𝔾"
-              onClick={() => navigate("/game/pong")}
-            >
-              ℙ𝕆ℕ𝔾
-            </button>
+            <div className="absolute left-1/2 top-[260px] -translate-x-1/2">
+              <button
+                className="neon-glitch text-4xl"
+                onClick={() => navigate("/game/pong")}
+                data-text="◐ ℙ𝕆ℕ𝔾 ◑"
+              >
+                ◐ ℙ𝕆ℕ𝔾 ◑
+              </button>
+            </div>
+
+            <div className="absolute left-1/2 top-[400px] -translate-x-1/2">
+              <button
+                className="neon-glitch text-4xl"
+                onClick={() => navigate("/game/bonus")}
+                data-text="◐ 𝔹𝕆ℕ𝕌𝕊 ◑"
+              >
+                ◐ 𝔹𝕆ℕ𝕌𝕊 ◑
+              </button>
+            </div>
 
             <button
-              className="neon-glitch text-4xl bg-transparent border-0"
-              data-text="𝔹𝕆ℕ𝕌𝕊"
-              onClick={() => navigate("/game/bonus")}
-            >
-              𝔹𝕆ℕ𝕌𝕊
-            </button>
-
-            <button
-              className="absolute top-3 left-4 px-1 py-1 neon-border bg-gray-900/60 text-cyan-300"
+              className="absolute left-4 px-1 py-1 neon-border bg-gray-900/60 text-cyan-300"
               onClick={() => navigate(-1)}
             >
               𝔹𝔸ℂ𝕂
