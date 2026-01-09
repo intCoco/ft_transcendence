@@ -317,7 +317,10 @@ export default function App() {
       },
     })
       .then(res => res.json())
-      .then(setFriends);
+      .then(data => {
+        setFriends(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setFriends([]));
   }, [showChat, userTab]);
   //
   //
@@ -482,6 +485,7 @@ export default function App() {
             {/* ONGLETS */}
             <div className="flex gap-2 mb-4">
               <button
+                type="button"
                 onClick={() => setUserTab("users")}
                 className={`flex-1 py-1 neon-border ${
                   userTab === "users"
@@ -508,7 +512,7 @@ export default function App() {
 
             {/* LISTE */}
             <ul className="space-y-2">
-              {(userTab === "users" ? users : friends).map(u => (
+              {(userTab === "users" ? users : friends || []).map(u => (
                 <li key={u.id}>
                   <button
                     onClick={(e) => openUserMenu(e, u)}
