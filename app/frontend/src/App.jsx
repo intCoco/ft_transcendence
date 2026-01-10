@@ -1,21 +1,33 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+/*  useState : manage the local state (auth, UI, données)
+    useEffect : side effects (fetch, websocket, timers)
+    useRef : persistent references (WebSocket, canvas)  */
+import React, { useEffect, useRef, useState } from "react";
+/*  Routes / Route : routing
+    useNavigate : programmatic navigation */
 import { Routes, Route, useNavigate, Link } from "react-router-dom";
 
+/*  useLocation : know the current URL */
+import { useLocation } from "react-router-dom";
+
+/* Centralized keys for localStorage */
 const LOGIN_KEY = "auth_login";
 const AUTH_KEY = "auth_token";
 const USER_ID_KEY = "auth_user_id";
 
 /* ================================================================================= */
 /* ================================================================================= */
-/* =================================== AUTH ======================================== */
+/* ================================= HANDLE AUTH =================================== */
 /* ================================================================================= */
 /* ================================================================================= */
 
 function useAuth() {
   
+  /* user is connected ? */
   const [isAuthed, setIsAuthed] = useState(false);
+  /* login display */
   const [login, setLogin] = useState("");
   
+  /* Initialisation */
   useEffect(() => {
     const token = localStorage.getItem(AUTH_KEY);
     const storedLogin = localStorage.getItem(LOGIN_KEY);
@@ -25,6 +37,7 @@ function useAuth() {
     }
   }, []);
 
+  /* save token + login + userid */
   const signIn = (loginValue, token, userId) => {
     localStorage.setItem(AUTH_KEY, token);
     localStorage.setItem(LOGIN_KEY, loginValue);
@@ -33,6 +46,7 @@ function useAuth() {
     setLogin(loginValue);
   };
   
+  /* clean localstorage + reset state */
   const signOut = () => {
     localStorage.removeItem(AUTH_KEY);
     localStorage.removeItem(LOGIN_KEY);
@@ -52,44 +66,56 @@ function useAuth() {
 
 export default function App() {
 
+  /* UI states / interaction :
+        context menu management, side chat, tabs, notifications*/
   const [selectedUser, setSelectedUser] = useState(null);
   const [contextPos, setContextPos] = useState({ x: 0, y: 0 });
+  const [showChat, setShowChat] = useState(false);
+  const [userTab, setUserTab] = useState("users");
+  const notify = (message) => {setNotification(message);};
   
+  /* maintains the same WS connection between renders */
   const wsRef = useRef(null);
 
-  const [friendRequests, setFriendRequests] = useState([]);
-
+  /* Authentication state and helpers */
   const { isAuthed, login, signIn, signOut } = useAuth();
-  
+
+  /* List of all users */
+  const [users, setUsers] = useState([]);
+
+  /* Controlled inputs for authentication forms */
+  const [loginInput, setLoginInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+
+  /*  Authenticated user ID (persisted in localStorage)
+      Used for user-specific data (background, avatar, social actions) */
+  const [authUserId, setAuthUserId] = useState(localStorage.getItem(USER_ID_KEY));
+
+  /*  isOnAuthPage: Determines if the user is logged in
+      showConnectedUI: Prevents the logged-in UI (chat, web services)
+          from appearing on the login page. */
   const navigate = useNavigate();
+  const location = useLocation();
+  const isOnAuthPage = location.pathname === "/";
+  const showConnectedUI = isAuthed && !isOnAuthPage;
+  
+  /* Incoming friend requests (received via WebSocket) */
+  const [friendRequests, setFriendRequests] = useState([]);
+  /* Confirmed friends list */
+  const [friends, setFriends] = useState([]);
+  
 
+  /* Display a message/Disappear automatically */
   const [notification, setNotification] = useState(null);
-  const notify = (message) => {
-    setNotification(message);
-  };
-
+  /* Automatically hide notification after a short delay */
   useEffect(() => {
     if (!notification) return;
-
     const t = setTimeout(() => setNotification(null), 2500);
     return () => clearTimeout(t);
   }, [notification]);
 
-  const [users, setUsers] = useState([]);
-  const [showChat, setShowChat] = useState(false);
-  
-  const [privacy, setPrivacy] = useState("privacy");
-  const [terms, setTerms] = useState("terms");
 
-  const [userTab, setUserTab] = useState("users"); // "users" | "friends"
-  const [friends, setFriends] = useState([]);
-  
-  const [loginInput, setLoginInput] = useState("");
-  const [passwordInput, setPasswordInput] = useState("");
-  const [emailInput, setEmailInput] = useState("");
-  const [authUserId, setAuthUserId] = useState(
-    localStorage.getItem(USER_ID_KEY));
-  
 /* ================================================================================= */
 /* ================================================================================= */
 /* ============================ HANDLE BACKGROUND ================================== */
@@ -97,16 +123,12 @@ export default function App() {
 /* ================================================================================= */
 
   const [avatar, setAvatar] = useState(null);
-
   const [authMode, setAuthMode] = useState(null);
-
   const DEFAULT_BG = "/images/abstract.png";
-
   const [bgSrc, setBgSrc] = useState(DEFAULT_BG);
 
   const changeBackground = (src) => {
     if (!authUserId) return;
-
     setBgSrc(src);
     localStorage.setItem(`bg_${authUserId}`, src);
   };
@@ -116,10 +138,8 @@ export default function App() {
       setBgSrc(DEFAULT_BG);
       return;
     }
-
     const savedBg = localStorage.getItem(`bg_${authUserId}`);
     setBgSrc(savedBg || DEFAULT_BG);
-
   }, [authUserId]);
 
   const BACKGROUNDS = [
@@ -533,7 +553,7 @@ export default function App() {
         alt=""
       />
 
-        {isAuthed && (
+        {showConnectedUI && (
           <div className="fixed top-4 right-4 z-[9999]">
             <button
               className="neon-glitch text-2xl px-2 py-0 bg-transparent rounded neon-border"
