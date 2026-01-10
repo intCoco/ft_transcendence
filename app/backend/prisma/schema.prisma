@@ -10,7 +10,13 @@ generator client {
 
 datasource db {
 	provider = "sqlite"
-	url = env("DATABASE_URL")
+	url 	 = env("DATABASE_URL")
+}
+
+enum FriendshipStatus {
+	PENDING
+	ACCEPTED
+	BLOCKED
 }
 
 model User {
@@ -33,4 +39,25 @@ model User {
 
 	// --- Meta ---
 	createdAt 		DateTime @default(now())
+
+	// --- Friendships ---
+	sentRequests     Friendship[] @relation("SentFriendships")
+	receivedRequests Friendship[] @relation("ReceivedFriendships")
+}
+
+model Friendship {
+	id          Int @id @default(autoincrement())
+
+	requesterId Int
+	receiverId  Int
+
+	requester User @relation("SentFriendships", fields: [requesterId], references: [id])
+	receiver  User @relation("ReceivedFriendships", fields: [receiverId], references: [id])
+
+	status     FriendshipStatus @default(PENDING)
+
+	createdAt  DateTime @default(now())
+	updatedAt  DateTime @updatedAt
+
+	@@unique([requesterId, receiverId])
 }

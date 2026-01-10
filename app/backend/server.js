@@ -180,7 +180,183 @@ async function start() {
       online: onlineIds.has(u.id),
     }));
   });
+  /* ===========================
+   FRIENDSHIPS
+   =========================== */
 
+  fastify.post("/friends/request/:userId", async (req, reply) => {
+    const me = getUserIdFromAuth(req, reply);
+    if (!me) return;
+
+    const targetId = Number(req.params.userId);
+    if (me === targetId) return reply.code(400).send();
+
+    // empêche doublon
+    const existing = await prisma.friendship.findFirst({
+      where: {
+        OR: [
+          { requesterId: me, receiverId: targetId },
+          { requesterId: targetId, receiverId: me }
+        ]
+      }
+    });
+
+    if (existing) return reply.code(400).send();
+
+    await prisma.friendship.create({
+      data: {
+        requesterId: me,
+        receiverId: targetId
+      }
+    });
+
+    // WS notify receiver
+    for (const [socket, uid] of onlineSockets.entries()) {
+      if (uid === targetId && socket.readyState === 1) {
+        socket.send(JSON.stringify({
+          type: "FRIEND_REQUEST",
+          from: { id: me }
+        }));
+      }
+    }
+
+    return { ok: true };
+  });
+
+  fastify.post("/friends/accept/:userId", async (req, reply) => {
+    const me = getUserIdFromAuth(req, reply);
+    if (!me) return;
+
+    const fromId = Number(req.params.userId);
+
+    await prisma.friendship.update({
+      where: {
+        requesterId_receiverId: {
+          requesterId: fromId,
+          receiverId: me
+        }
+      },
+      data: { status: "ACCEPTED" }
+    });
+
+    const meUser = await prisma.user.findUnique({
+      where: { id: me },
+      select: { id: true, nickname: true }
+    });
+
+    socket.send(JSON.stringify({
+      type: "FRIEND_REQUEST",
+      from: meUser
+    }));
+
+    const fromUser = await prisma.user.findUnique({
+      where: { id: fromId },
+      select: { id: true, nickname: true }
+    });
+
+    for (const [socket, uid] of onlineSockets.entries()) {
+      if (uid === fromId && socket.readyState === 1) {
+        socket.send(JSON.stringify({
+          type: "FRIEND_ACCEPTED",
+          user: meUser
+        }));
+      }
+      if (uid === me && socket.readyState === 1) {
+        socket.send(JSON.stringify({
+          type: "FRIEND_ACCEPTED",
+          user: fromUser
+        }));
+      }
+    }
+
+    return { ok: true };
+  });
+
+
+  fastify.post("/friends/refuse/:userId", async (req, reply) => {
+    const me = getUserIdFromAuth(req, reply);
+    if (!me) return;
+
+    const fromId = Number(req.params.userId);
+
+    await prisma.friendship.delete({
+      where: {
+        requesterId_receiverId: {
+          requesterId: fromId,
+          receiverId: me
+        }
+      }
+    });
+
+    for (const [socket, uid] of onlineSockets.entries()) {
+      if (uid === fromId && socket.readyState === 1) {
+        socket.send(JSON.stringify({
+          type: "FRIEND_REFUSED",
+          userId: me
+        }));
+      }
+    }
+
+    return { ok: true };
+  });
+
+
+  fastify.get("/friends", async (req, reply) => {
+    const me = getUserIdFromAuth(req, reply);
+    if (!me) return;
+
+    const friendships = await prisma.friendship.findMany({
+      where: {
+        status: "ACCEPTED",
+        OR: [
+          { requesterId: me },
+          { receiverId: me }
+        ]
+      },
+      include: {
+        requester: { select: { id: true, nickname: true } },
+        receiver: { select: { id: true, nickname: true } }
+      }
+    });
+
+    const friends = friendships.map(f =>
+      f.requesterId === me ? f.receiver : f.requester
+    );
+
+    return friends;
+  });
+
+  fastify.delete("/friends/:userId", async (req, reply) => {
+    const me = getUserIdFromAuth(req, reply);
+    if (!me) return;
+
+    const otherId = Number(req.params.userId);
+
+    await prisma.friendship.deleteMany({
+      where: {
+        status: "ACCEPTED",
+        OR: [
+          { requesterId: me, receiverId: otherId },
+          { requesterId: otherId, receiverId: me }
+        ]
+      }
+    });
+
+    return { ok: true };
+  });
+
+  fastify.get("/friends/requests", async (req, reply) => {
+    const me = getUserIdFromAuth(req, reply);
+    if (!me) return;
+
+    const reqs = await prisma.friendship.findMany({
+      where: { status: "PENDING", receiverId: me },
+      include: { requester: { select: { id: true, nickname: true } } },
+      orderBy: { createdAt: "desc" }
+    });
+
+    return reqs.map(r => r.requester);
+  });
   /* ===========================
       START
      =========================== */
@@ -188,5 +364,20 @@ async function start() {
   await fastify.listen({ port: 3000, host: "0.0.0.0" });
   console.log("Backend running on https://localhost:3000");
 }
+
+function getUserIdFromAuth(req, reply) {
+  const auth = req.headers.authorization;
+  if (!auth?.startsWith("Bearer DEV_TOKEN_")) {
+    reply.code(401).send();
+    return null;
+  }
+  const userId = Number(auth.replace("Bearer DEV_TOKEN_", ""));
+  if (Number.isNaN(userId)) {
+    reply.code(401).send();
+    return null;
+  }
+  return userId;
+}
+
 
 start();

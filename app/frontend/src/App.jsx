@@ -104,7 +104,6 @@ export default function App() {
   const [friendRequests, setFriendRequests] = useState([]);
   /* Confirmed friends list */
   const [friends, setFriends] = useState([]);
-  
 
   /* Display a message/Disappear automatically */
   const [notification, setNotification] = useState(null);
@@ -114,7 +113,6 @@ export default function App() {
     const t = setTimeout(() => setNotification(null), 2500);
     return () => clearTimeout(t);
   }, [notification]);
-
 
 /* ================================================================================= */
 /* ================================================================================= */
@@ -134,13 +132,20 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (!authUserId) {
+    if (!isAuthed) {
       setBgSrc(DEFAULT_BG);
       return;
     }
-    const savedBg = localStorage.getItem(`bg_${authUserId}`);
+    const uid = localStorage.getItem(USER_ID_KEY);
+    if (!uid) {
+      setBgSrc(DEFAULT_BG);
+      return;
+    }
+    setAuthUserId(uid);
+
+    const savedBg = localStorage.getItem(`bg_${uid}`);
     setBgSrc(savedBg || DEFAULT_BG);
-  }, [authUserId]);
+  }, [isAuthed]);
 
   const BACKGROUNDS = [
   "/images/enter.jpg",
@@ -389,8 +394,27 @@ export default function App() {
   //
   //
   //
+  useEffect(() => {
+    if (!showChat || userTab !== "requests") return;
 
-    const openUserMenu = (e, user) => {
+    fetch("https://localhost:3000/friends/requests", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+      },
+    })
+      .then(res => res.json())
+      .then(data => {
+        setFriendRequests(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setFriendRequests([]));
+  }, [showChat, userTab]);
+  //
+  //
+  //
+  const isFriend = (id) => friends.some(f => f.id === id);
+  const isPending = (id) => friendRequests.some(r => r.id === id);
+
+  const openUserMenu = (e, user) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setContextPos({ x: rect.right + 8, y: rect.top });
     setSelectedUser(user);
@@ -415,6 +439,8 @@ export default function App() {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
       },
     });
+
+    notify("Friend request sent");
     closeUserMenu();
   };
 
@@ -425,7 +451,25 @@ export default function App() {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
       },
     });
+
+    // enlève la notif localement
+    setFriendRequests(prev =>
+      prev.filter(req => req.id !== userId)
+    );
+
+    // refresh friends
+    fetch("https://localhost:3000/friends", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+      },
+    })
+      .then(res => res.json())
+      .then(data => {
+        setFriends(Array.isArray(data) ? data : []);
+      });
   };
+
+
 
   const handleRefuseFriend = async (userId) => {
     await fetch(`https://localhost:3000/friends/refuse/${userId}`, {
@@ -436,15 +480,15 @@ export default function App() {
     });
   };
 
-  const handleAddFriend = async () => {
-    await fetch(`https://localhost:3000/friends/${selectedUser.id}`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-      },
-    });
-    closeUserMenu();
-  };
+  // const handleAddFriend = async () => {
+  //   await fetch(`https://localhost:3000/friends/${selectedUser.id}`, {
+  //     method: "POST",
+  //     headers: {
+  //       Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+  //     },
+  //   });
+  //   closeUserMenu();
+  // };
 
   const handleRemoveFriend = async () => {
     await fetch(`https://localhost:3000/friends/${selectedUser.id}`, {
@@ -453,7 +497,30 @@ export default function App() {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
       },
     });
+
+    fetch("https://localhost:3000/friends", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+      },
+    })
+      .then(res => res.json())
+      .then(data => {
+        setFriends(Array.isArray(data) ? data : []);
+      });
+
     closeUserMenu();
+  };
+
+  const refreshFriends = () => {
+    fetch("https://localhost:3000/friends", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+      },
+    })
+      .then(res => res.json())
+      .then(data => {
+        setFriends(Array.isArray(data) ? data : []);
+      });
   };
 
   const handleBlock = async () => {
@@ -465,6 +532,12 @@ export default function App() {
     });
     closeUserMenu();
   };
+
+  useEffect(() => {
+    if (showChat && userTab === "friends") {
+      refreshFriends();
+    }
+  }, [showChat, userTab]);
 
 /* ================================================================================= */
 /* ================================================================================= */
@@ -712,13 +785,14 @@ export default function App() {
               Invite to play ♨
             </button>
 
-            {userTab === "users" && (
+            {userTab === "users" && !isFriend(selectedUser.id)
+              && !isPending(selectedUser.id) && (
               <button
                 onClick={handleSendFriendRequest}
                 className="block w-full px-2 py-1
                           hover:bg-green-500/20 text-left text-green-400"
               >
-                Send a friend +
+                Send friend +
               </button>
             )}
 
