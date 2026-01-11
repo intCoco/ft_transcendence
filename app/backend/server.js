@@ -13,6 +13,18 @@ const prisma = new PrismaClient();
 // socket -> userId
 const onlineSockets = new Map();
 
+function sendToUser(userId, payload) {
+  for (const [socket, uid] of onlineSockets.entries()) {
+    if (uid === userId && socket.readyState === 1) {
+      socket.send(JSON.stringify(payload));
+    }
+  }
+}
+
+function sendToUsers(userIds, payload) {
+  userIds.forEach(id => sendToUser(id, payload));
+}
+
 function broadcastUsers() {
   const onlineUserIds = [...new Set(onlineSockets.values())];
 
@@ -72,7 +84,6 @@ async function start() {
     if (!result.success) {
       return reply.status(400).send({ error: result.reason });
     }
-
     return { ok: true };
   });
 
@@ -115,7 +126,7 @@ async function start() {
      =========================== */
 
   fastify.get("/ws", { websocket: true }, (connection, req) => {
-    const token = req.headers["sec-websocket-protocol"];
+    const token = new URL(req.url, "http://localhost").searchParams.get("token");
 
     if (!token || !token.startsWith("DEV_TOKEN_")) {
       connection.socket.close();
@@ -195,14 +206,14 @@ async function start() {
   fastify.post("/friends/request/:userId", async (req, reply) => {
     const me = getUserIdFromAuth(req, reply);
     if (!me) return;
-    
+
     const targetId = Number(req.params.userId);
     if (me === targetId) return reply.code(400).send();
-    
+
     if (await isBlocked(me, targetId)) {
       return reply.code(403).send({ error: "BLOCKED" });
     }
-    // empêche doublon
+
     const existing = await prisma.friendship.findFirst({
       where: {
         OR: [
@@ -218,28 +229,25 @@ async function start() {
       data: {
         requesterId: me,
         receiverId: targetId
+        // status = PENDING auto, merci Prisma
       }
     });
 
-    // WS notify receiver
-    for (const [socket, uid] of onlineSockets.entries()) {
-      if (uid === targetId && socket.readyState === 1) {
+    const meUser = await prisma.user.findUnique({
+      where: { id: me },
+      select: { id: true, nickname: true }
+    });
 
-        if (await isBlocked(me, targetId)) return;
-
-        socket.send(JSON.stringify({
-          type: "FRIEND_REQUEST",
-          from: { id: me }
-        }));
-      }
-    }
+    sendToUser(targetId, {
+      type: "FRIEND_REQUEST",
+      from: meUser
+    });
 
     return { ok: true };
   });
 
   fastify.post("/friends/accept/:userId", async (req, reply) => {
 
-    
     const me = getUserIdFromAuth(req, reply);
     if (!me) return;
     
@@ -259,38 +267,26 @@ async function start() {
       data: { status: "ACCEPTED" }
     });
 
+    
     const meUser = await prisma.user.findUnique({
       where: { id: me },
       select: { id: true, nickname: true }
     });
 
-    socket.send(JSON.stringify({
-      type: "FRIEND_REQUEST",
-      from: meUser
-    }));
-
     const fromUser = await prisma.user.findUnique({
       where: { id: fromId },
       select: { id: true, nickname: true }
     });
+    
+    sendToUser(fromId, {
+      type: "FRIEND_ADDED",
+      user: meUser
+    });
 
-    for (const [socket, uid] of onlineSockets.entries()) {
-      if (uid === fromId && socket.readyState === 1) {
-
-        if (await isBlocked(me, fromId)) return;
-
-        socket.send(JSON.stringify({
-          type: "FRIEND_ACCEPTED",
-          user: meUser
-        }));
-      }
-      if (uid === me && socket.readyState === 1) {
-        socket.send(JSON.stringify({
-          type: "FRIEND_ACCEPTED",
-          user: fromUser
-        }));
-      }
-    }
+    sendToUser(me, {
+      type: "FRIEND_ADDED",
+      user: fromUser
+    });
 
     return { ok: true };
   });
@@ -370,6 +366,16 @@ async function start() {
       }
     });
 
+    sendToUser(me, {
+      type: "FRIEND_REMOVED",
+      userId: otherId
+    });
+
+    sendToUser(otherId, {
+      type: "FRIEND_REMOVED",
+      userId: me
+    });
+
     return { ok: true };
   });
 
@@ -419,6 +425,16 @@ async function start() {
         blockerId: me,
         blockedId: targetId
       }
+    });
+
+    sendToUser(me, {
+      type: "FRIEND_REMOVED",
+      userId: targetId
+    });
+
+    sendToUser(targetId, {
+      type: "FRIEND_REMOVED",
+      userId: me
     });
 
     return { ok: true };

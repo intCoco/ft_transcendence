@@ -304,9 +304,11 @@ export default function App() {
       });
   }, [isAuthed]);
 
-  //
-  //
-  //
+/* ================================================================================= */
+/* ================================================================================= */
+/* ================================ HANDLE LOGOUT ================================== */
+/* ================================================================================= */
+/* ================================================================================= */
 
   const handleLogout = async () => {
     wsRef.current?.close();
@@ -321,10 +323,10 @@ export default function App() {
     signOut();
     navigate("/");
   };
-  //
-  //
-  //
 
+  //
+  //
+  //
   useEffect(() => {
     if (!showChat || userTab !== "friends") return;
 
@@ -356,41 +358,59 @@ export default function App() {
       .then(setUsers)
       .catch(() => {});
 
-    const ws = new WebSocket("wss://localhost:3000/ws", token);
+    const ws = new WebSocket(
+      `wss://localhost:3000/ws?token=${token}`
+    );
     wsRef.current = ws;
 
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
-      if (msg.type === "USERS_STATUS") {
-        setUsers((prev) =>
-          prev.map((u) => ({
-            ...u,
-            online: msg.onlineUsers.includes(u.id),
-          }))
-        );
-      }
-      if (msg.type === "FRIEND_REQUEST") {
-        setFriendRequests((prev) => {
-          if (prev.some((u) => u.id === msg.from.id)) return prev;
-          return [...prev, msg.from];
-        });
-      }
 
-      if (msg.type === "FRIEND_ACCEPTED") {
-        setFriends((prev) => {
-          if (prev.some((f) => f.id === msg.user.id)) return prev;
-          return [...prev, msg.user];
-        });
+      switch (msg.type) {
 
-        setFriendRequests((prev) =>
-          prev.filter((u) => u.id !== msg.user.id)
-        );
-      }
+        case "USERS_STATUS":
+          setUsers(prev =>
+            prev.map(u => ({
+              ...u,
+              online: msg.onlineUsers.includes(u.id),
+            }))
+          );
+          break;
 
-      if (msg.type === "FRIEND_REFUSED") {
-        setFriendRequests((prev) =>
-          prev.filter((u) => u.id !== msg.userId)
-        );
+        case "FRIEND_REQUEST":
+          setFriendRequests(prev => {
+            if (prev.some(u => u.id === msg.from.id)) return prev;
+            return [...prev, msg.from];
+          });
+          break;
+
+        case "FRIEND_ADDED":
+          setFriends(prev => {
+            if (prev.some(f => f.id === msg.user.id)) return prev;
+            return [...prev, msg.user];
+          });
+          setFriendRequests(prev =>
+            prev.filter(u => u.id !== msg.user.id)
+          );
+          break;
+
+        case "FRIEND_REFUSED":
+          setFriendRequests(prev =>
+            prev.filter(u => u.id !== msg.userId)
+          );
+          break;
+
+        case "FRIEND_REMOVED":
+          setFriends(prev =>
+            prev.filter(f => f.id !== msg.userId)
+          );
+          setActiveChatUser(prev =>
+            prev?.id === msg.userId ? null : prev
+          );
+          break;
+
+        default:
+          break;
       }
     };
 
@@ -401,7 +421,8 @@ export default function App() {
     return () => {
       ws.close();
     };
-  }, [isAuthed]);
+  }, [isAuthed, authUserId]);
+
   //
   //
   //
@@ -415,9 +436,19 @@ export default function App() {
     })
       .then(res => res.json())
       .then(data => {
-        setFriendRequests(Array.isArray(data) ? data : []);
-      })
-      .catch(() => setFriendRequests([]));
+        setFriendRequests(prev => {
+          const fetched = Array.isArray(data) ? data : [];
+          const merged = [...prev];
+
+          fetched.forEach(u => {
+            if (!merged.some(p => p.id === u.id)) {
+              merged.push(u);
+            }
+          });
+
+          return merged;
+        });
+      });
   }, [showChat, userTab]);
   //
   //
@@ -487,16 +518,16 @@ export default function App() {
       prev.filter(req => req.id !== userId)
     );
 
-    // refresh friends
-    fetch("https://localhost:3000/friends", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-      },
-    })
-      .then(res => res.json())
-      .then(data => {
-        setFriends(Array.isArray(data) ? data : []);
-      });
+    // // refresh friends
+    // fetch("https://localhost:3000/friends", {
+    //   headers: {
+    //     Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+    //   },
+    // })
+    //   .then(res => res.json())
+    //   .then(data => {
+    //     setFriends(Array.isArray(data) ? data : []);
+    //   });
   };
 
 
@@ -518,30 +549,30 @@ export default function App() {
       },
     });
 
-    fetch("https://localhost:3000/friends", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-      },
-    })
-      .then(res => res.json())
-      .then(data => {
-        setFriends(Array.isArray(data) ? data : []);
-      });
+    // fetch("https://localhost:3000/friends", {
+    //   headers: {
+    //     Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+    //   },
+    // })
+      // .then(res => res.json())
+      // .then(data => {
+      //   setFriends(Array.isArray(data) ? data : []);
+      // });
 
     closeUserMenu();
   };
 
-  const refreshFriends = () => {
-    fetch("https://localhost:3000/friends", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-      },
-    })
-      .then(res => res.json())
-      .then(data => {
-        setFriends(Array.isArray(data) ? data : []);
-      });
-  };
+  // const refreshFriends = () => {
+  //   fetch("https://localhost:3000/friends", {
+  //     headers: {
+  //       Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+  //     },
+  //   })
+  //     .then(res => res.json())
+  //     .then(data => {
+  //       setFriends(Array.isArray(data) ? data : []);
+  //     });
+  // };
 
   const handleBlock = async () => {
     await fetch(`https://localhost:3000/user/${selectedUser.id}/block`, {
@@ -553,11 +584,11 @@ export default function App() {
     closeUserMenu();
   };
 
-  useEffect(() => {
-    if (showChat && userTab === "friends") {
-      refreshFriends();
-    }
-  }, [showChat, userTab]);
+  // useEffect(() => {
+  //   if (showChat && userTab === "friends") {
+  //     refreshFriends();
+  //   }
+  // }, [showChat, userTab]);
 
 /* ================================================================================= */
 /* ================================================================================= */
@@ -798,13 +829,18 @@ export default function App() {
                     </div>
                   ))}
                 </div>
-
+                
                 <form
+                  //"form" to take advantage of native submit functionality
                   className="p-3 border-t border-cyan-500/30 flex gap-2"
+                  //e = l’événement de soumission du formulaire
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (!chatInput.trim()) return;
 
+                    /*prev = last version of state 
+                      You copy all existing conversations,
+                      Otherwise you'll overwrite everything */
                     setMessages(prev => ({
                       ...prev,
                       [activeChatUser.id]: [
