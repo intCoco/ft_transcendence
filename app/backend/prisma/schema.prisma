@@ -43,6 +43,17 @@ model User {
 	// --- Friendships ---
 	sentRequests     Friendship[] @relation("SentFriendships")
 	receivedRequests Friendship[] @relation("ReceivedFriendships")
+
+	// ... UserSettings
+  	settings     UserSettings?
+}
+
+model UserSettings {
+  id         Int    @id @default(autoincrement())
+  userId     Int    @unique
+  background String @default("/images/abstract.png")
+
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Friendship {

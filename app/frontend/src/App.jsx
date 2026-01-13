@@ -51,6 +51,7 @@ function useAuth() {
     localStorage.removeItem(AUTH_KEY);
     localStorage.removeItem(LOGIN_KEY);
     localStorage.removeItem(USER_ID_KEY);
+
     setIsAuthed(false);
     setLogin("");
   };
@@ -136,26 +137,50 @@ export default function App() {
   const DEFAULT_BG = "/images/abstract.png";
   const [bgSrc, setBgSrc] = useState(DEFAULT_BG);
 
-  const changeBackground = (src) => {
-    if (!authUserId) return;
-    setBgSrc(src);
-    localStorage.setItem(`bg_${authUserId}`, src);
+  const fetchUserSettings = async () => {
+    const token = localStorage.getItem(AUTH_KEY);
+    if (!token) return;
+
+    const res = await fetch("https://localhost:3000/user/me/settings", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) {
+      setBgSrc(DEFAULT_BG);
+      return;
+    }
+
+    const data = await res.json();
+    setBgSrc(data.background || DEFAULT_BG);
+  };
+
+  const updateBackground = async (bg) => {
+    const token = localStorage.getItem(AUTH_KEY);
+    if (!token) return;
+
+    const res = await fetch("https://localhost:3000/user/me/settings", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ background: bg }),
+    });
+
+    if (!res.ok) return;
+
+    const data = await res.json();
+    setBgSrc(data.background);
   };
 
   useEffect(() => {
-    if (!isAuthed) {
+    if (isAuthed) {
+      fetchUserSettings();
+    } else {
       setBgSrc(DEFAULT_BG);
-      return;
     }
-    const uid = localStorage.getItem(USER_ID_KEY);
-    if (!uid) {
-      setBgSrc(DEFAULT_BG);
-      return;
-    }
-    setAuthUserId(uid);
-
-    const savedBg = localStorage.getItem(`bg_${uid}`);
-    setBgSrc(savedBg || DEFAULT_BG);
   }, [isAuthed]);
 
   const BACKGROUNDS = [
@@ -1235,7 +1260,7 @@ export default function App() {
               {BACKGROUNDS.map((bg) => (
                 <button
                   key={bg}
-                  onClick={() => changeBackground(bg)}
+                  onClick={() => updateBackground(bg)}
                   className={`relative w-[110px] h-[60px] rounded-lg overflow-hidden neon-border
                     ${bgSrc === bg ? "ring-2 ring-cyan-400" : ""}`}
                 >

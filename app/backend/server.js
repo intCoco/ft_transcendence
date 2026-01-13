@@ -149,6 +149,74 @@ async function start() {
   });
 
   /* ===========================
+     USER SETTINGS
+     =========================== */
+
+    fastify.get("/user/me/settings", async (req, reply) => {
+      const userId = getUserIdFromAuth(req, reply);
+      if (!userId) return;
+
+      const settings = await prisma.userSettings.upsert({
+        where: { userId },
+        update: {},
+        create: {
+          userId,
+          background: "/images/abstract.png",
+        },
+        select: { background: true },
+      });
+
+      return settings;
+    });
+
+    fastify.put("/user/me/settings", async (req, reply) => {
+    const userId = getUserIdFromAuth(req, reply);
+    if (!userId) return;
+
+    const { background } = req.body || {};
+
+    if (typeof background !== "string" || background.length < 1 || background.length > 255) {
+      return reply.code(400).send({ error: "INVALID BACKGROUND" });
+    }
+
+    const ALLOWED_BACKGROUNDS = new Set([
+      "/images/enter.jpg",
+      "/images/sun.png",
+      "/images/round.jpg",
+      "/images/cybersun.jpg",
+      "/images/black.webp",
+      "/images/mountain.jpg",
+      "/images/japan.jpg",
+      "/images/japan2.jpg",
+      "/images/car.jpg",
+      "/images/car2.jpg",
+      "/images/night.jpg",
+      "/images/rocket.jpg",
+      "/images/abstract.png",
+      "/images/dom.jpg",
+      "/images/setup.jpg",
+      "/images/setup2.jpg",
+      "/images/girlwork.jpg",
+      "/images/boywork.jpg",
+      "/images/vicecity.jpg",
+    ]);
+
+    if (!ALLOWED_BACKGROUNDS.has(background)) {
+      return reply.code(400).send({ error: "BACKGROUND NOT ALLOWED" });
+    }
+
+    const settings = await prisma.userSettings.upsert({
+      where: { userId },
+      update: { background },
+      create: { userId, background },
+      select: { background: true },
+    });
+
+    return settings;
+  });
+
+
+  /* ===========================
      USER DATA
      =========================== */
 
@@ -501,6 +569,5 @@ function getUserIdFromAuth(req, reply) {
   }
   return userId;
 }
-
 
 start();
