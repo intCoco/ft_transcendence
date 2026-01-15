@@ -13,7 +13,6 @@ services:
       - "443:443"
       - "80:80"
 
-
   backend:
     restart: always
     build: ./backend
