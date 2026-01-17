@@ -404,14 +404,14 @@ export default function App() {
 
       switch (msg.type) {
 
-      case "USERS_STATUS":
-        setUsers(prev =>
-          prev.map(u => ({
-            ...u,
-            online: msg.onlineUsers.includes(u.id),
-          }))
-        );
-        break;
+        case "USERS_STATUS":
+          setUsers(prev =>
+            prev.map(u => ({
+              ...u,
+              online: msg.onlineUsers.includes(u.id),
+            }))
+          );
+          break;
 
         case "FRIEND_REQUEST":
           setFriendRequests(prev => {
@@ -642,6 +642,7 @@ export default function App() {
     const from = location.state?.from || "/dashboard";
     const [user, setUser] = useState(undefined);
 
+    // FETCH INITIAL
     useEffect(() => {
       if (String(id) === String(localStorage.getItem(USER_ID_KEY))) {
         navigate("/profile");
@@ -653,7 +654,7 @@ export default function App() {
           Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
         },
       })
-        .then(async res => {
+        .then(res => {
           if (!res.ok) throw new Error("PROFILE_NOT_FOUND");
           return res.json();
         })
@@ -661,6 +662,26 @@ export default function App() {
         .catch(() => setUser(null));
     }, [id]);
 
+    // 🔥 SYNC ONLINE STATUS VIA WS
+    useEffect(() => {
+      const ws = wsRef.current;
+      if (!ws) return;
+
+      const onMessage = (event) => {
+        const msg = JSON.parse(event.data);
+
+        if (msg.type === "USERS_STATUS") {
+          setUser(prev =>
+            prev
+              ? { ...prev, online: msg.onlineUsers.includes(prev.id) }
+              : prev
+          );
+        }
+      };
+
+      ws.addEventListener("message", onMessage);
+      return () => ws.removeEventListener("message", onMessage);
+    }, []);
 
     if (user === undefined) {
       return <div className="text-white">Loading...</div>;
@@ -688,8 +709,18 @@ export default function App() {
           {user.nickname}
         </h1>
 
-        <p className="text-cyan-300 mt-2">
-          {user.online ? "● Online" : "○ Offline"}
+        <p className="text-cyan-300 mt-2 flex items-center gap-2">
+          {user.online ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-green-400" />
+              Online
+            </>
+          ) : (
+            <>
+              <span className="w-2 h-2 rounded-full bg-gray-400" />
+              Offline
+            </>
+          )}
         </p>
       </div>
     );
