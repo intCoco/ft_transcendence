@@ -164,6 +164,33 @@ async function start() {
       onlineSockets.delete(connection.socket);
       broadcastUsers();
     });
+
+    connection.socket.on("message", async (raw) => {
+      let msg;
+
+      try
+      {
+        msg = JSON.parse(raw.toString());
+      }
+      catch { return; }
+
+      if (msg.type !== "DM_SEND") return;
+
+      const fromId = onlineSockets.get(connection.socket);
+      if (!fromId) return;
+
+      const toId = Number(msg.to);
+
+      if (!msg.content || !toId) return;
+      if (await isBlocked(fromId, toId)) return;
+
+      sendToUser(toId, {
+        type: "DM_MSG",
+        from: fromId,
+        content: msg.content,
+        at: Date.now()
+      });
+    });
   }
 
 
