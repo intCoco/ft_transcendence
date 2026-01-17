@@ -1,39 +1,49 @@
-volumes:
-  backend_db:
+version: "3.8"
 
-  
 services:
   nginx:
     container_name: nginx
-    image: nginx:1.23-alpine  # not the latest version
+    image: nginx:1.23-alpine
     volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro  # ro -> read only
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./certs:/etc/nginx/ssl:ro
     ports:
-      - "443:443"
       - "80:80"
+      - "443:443"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - transcendence
 
   backend:
-    restart: always
-    build: ./backend
     container_name: back
+    build: ./backend
     image: back
-    ports:
-      - "3000:3000"
+    restart: always
     environment:
       DATABASE_URL: file:/app/backend/prisma/prisma/dev.db
     volumes:
       - backend_db:/app/backend/prisma
       - ./certs:/certs:ro
-    # env_file:
-    #   - .env
-  
+    expose:
+      - "3000"
+    networks:
+      - transcendence
+
   frontend:
-    restart: always
-    build: ./frontend
     container_name: front
+    build: ./frontend
     image: front
-    ports:
-      - "8080:8080"
-    # env_file:
-    #   - .env
+    restart: always
+    expose:
+      - "8080"
+    networks:
+      - transcendence
+
+volumes:
+  backend_db:
+
+networks:
+  transcendence:
+    driver: bridge

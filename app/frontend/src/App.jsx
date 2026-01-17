@@ -4,10 +4,10 @@
 import React, { useEffect, useRef, useState } from "react";
 /*  Routes / Route : routing
     useNavigate : programmatic navigation */
-import { Routes, Route, useNavigate, Link } from "react-router-dom";
+import { Routes, Route, useNavigate, Link, useLocation, useParams } from "react-router-dom";
 
-/*  useLocation : know the current URL */
-import { useLocation } from "react-router-dom";
+// /*  useLocation : know the current URL */
+// import { useLocation } from "react-router-dom";
 
 /* Centralized keys for localStorage */
 const LOGIN_KEY = "auth_login";
@@ -57,6 +57,10 @@ function useAuth() {
   };
 
   return { isAuthed, login, signIn, signOut };
+}
+
+function Loading() {
+  return <div className="text-white">Loading...</div>;
 }
 
 /* ================================================================================= */
@@ -141,7 +145,7 @@ export default function App() {
     const token = localStorage.getItem(AUTH_KEY);
     if (!token) return;
 
-    const res = await fetch("https://localhost:3000/user/me/settings", {
+    const res = await fetch("/api/user/me/settings", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -160,7 +164,7 @@ export default function App() {
     const token = localStorage.getItem(AUTH_KEY);
     if (!token) return;
 
-    const res = await fetch("https://localhost:3000/user/me/settings", {
+    const res = await fetch("/api/user/me/settings", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -214,7 +218,7 @@ export default function App() {
   const handleSubmitLogin = async (e) => {
     e.preventDefault();
       try {
-        const res = await fetch("https://localhost:3000/auth/login", {
+        const res = await fetch("/api/auth/login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -254,7 +258,7 @@ export default function App() {
   const handleSubmitSub = async (e) => {
     e.preventDefault();
       try {
-        const res = await fetch("https://localhost:3000/auth/register", {
+        const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -272,7 +276,7 @@ export default function App() {
         }
 
         if (!res.ok) {
-          notify("User already exist");
+          notify(data?.message || "User already exists");
           return;
         }
         
@@ -301,7 +305,7 @@ export default function App() {
     reader.onload = async () => {
       const avatarBase64 = reader.result;
 
-      await fetch("https://localhost:3000/user/me/avatar", {
+      await fetch("/api/user/me/avatar", {
         method: "POST",
         headers: { "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
@@ -318,7 +322,7 @@ export default function App() {
     const token = localStorage.getItem(AUTH_KEY);
     if (!token) return;
 
-    fetch("https://localhost:3000/user/me/avatar", {
+    fetch("/api/user/me/avatar", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -337,17 +341,40 @@ export default function App() {
 
   const handleLogout = async () => {
     wsRef.current?.close();
-    await fetch("https://localhost:3000/auth/logout", {
+    wsRef.current = null;
+
+    await fetch("/api/auth/logout", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
       },
     });
+
+    setShowChat(false);
+    setActiveChatUser(null);
+    setSelectedUser(null);
     setAuthUserId(null);
     setBgSrc(DEFAULT_BG);
+
     signOut();
     navigate("/");
   };
+  //
+  //
+  useEffect(() => {
+    if (!isAuthed) {
+      setShowChat(false);
+      setActiveChatUser(null);
+      setSelectedUser(null);
+      setUsers([]);
+      setFriends([]);
+      setFriendRequests([]);
+      setBlockedUsers([]);
+      setMessages({});
+    }
+  }, [isAuthed]);
+//
+//
 
   //
   //
@@ -355,7 +382,7 @@ export default function App() {
   useEffect(() => {
     if (!showChat || userTab !== "friends") return;
 
-    fetch("https://localhost:3000/friends", {
+    fetch("/api/friends", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
       },
@@ -376,15 +403,16 @@ export default function App() {
     const token = localStorage.getItem(AUTH_KEY);
     if (!token) return;
 
-    fetch("https://localhost:3000/users", {
-      headers: { Authorization: `Bearer ${token}` },
+    fetch("/api/users", {
+      headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_KEY)}`,
+      },
     })
-      .then((r) => r.json())
-      .then(setUsers)
-      .catch(() => {});
+    .then(res => res.json())
+    .then(setUsers)
+    .catch(() => setUsers([]));
 
     const ws = new WebSocket(
-      `wss://localhost:3000/ws?token=${token}`
+      `wss://${window.location.host}/api/ws?token=${token}`
     );
     wsRef.current = ws;
 
@@ -394,12 +422,22 @@ export default function App() {
       switch (msg.type) {
 
         case "USERS_STATUS":
-          setUsers(prev =>
-            prev.map(u => ({
+          setUsers(prev => {
+            const map = new Map(prev.map(u => [u.id, u]));
+
+            msg.onlineUsers.forEach(id => {
+              if (map.has(id)) {
+                map.set(id, { ...map.get(id), online: true });
+              } else {
+                map.set(id, { id, nickname: `user_${id}`, online: true });
+              }
+            });
+
+            return Array.from(map.values()).map(u => ({
               ...u,
               online: msg.onlineUsers.includes(u.id),
-            }))
-          );
+            }));
+          });
           break;
 
         case "FRIEND_REQUEST":
@@ -429,16 +467,22 @@ export default function App() {
           setFriends(prev =>
             prev.filter(f => f.id !== msg.userId)
           );
+          setUsers(prev =>
+            prev.map(u =>
+              u.id === msg.userId ? { ...u, online: false } : u
+            )
+          );
           setActiveChatUser(prev =>
             prev?.id === msg.userId ? null : prev
           );
           break;
-
+        
         default:
           break;
       }
     };
 
+        
     ws.onclose = () => {
       if (wsRef.current === ws) wsRef.current = null;
     };
@@ -454,7 +498,7 @@ export default function App() {
   useEffect(() => {
     if (!showChat || userTab !== "requests") return;
 
-    fetch("https://localhost:3000/friends/requests", {
+    fetch("/api/friends/requests", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
       },
@@ -482,7 +526,7 @@ export default function App() {
   useEffect(() => {
     if (!showChat) return;
 
-    fetch("https://localhost:3000/user/blocked", {
+    fetch("/api/user/blocked", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
       },
@@ -519,7 +563,7 @@ export default function App() {
   };
 
   const handleSendFriendRequest = async () => {
-    await fetch(`https://localhost:3000/friends/request/${selectedUser.id}`, {
+    await fetch(`/api/friends/request/${selectedUser.id}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
@@ -531,7 +575,7 @@ export default function App() {
   };
 
   const handleAcceptFriend = async (userId) => {
-    await fetch(`https://localhost:3000/friends/accept/${userId}`, {
+    await fetch(`/api/friends/accept/${userId}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
@@ -555,19 +599,21 @@ export default function App() {
     //   });
   };
 
-
-
   const handleRefuseFriend = async (userId) => {
-    await fetch(`https://localhost:3000/friends/refuse/${userId}`, {
+    await fetch(`/api/friends/refuse/${userId}`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
       },
     });
+
+    setFriendRequests(prev =>
+      prev.filter(u => u.id !== userId)
+    );
   };
 
   const handleRemoveFriend = async () => {
-    await fetch(`https://localhost:3000/friends/${selectedUser.id}`, {
+    await fetch(`/api/friends/${selectedUser.id}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
@@ -600,7 +646,7 @@ export default function App() {
   // };
 
   const handleBlock = async () => {
-    await fetch(`https://localhost:3000/user/${selectedUser.id}/block`, {
+    await fetch(`/api/user/${selectedUser.id}/block`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
@@ -614,6 +660,115 @@ export default function App() {
   //     refreshFriends();
   //   }
   // }, [showChat, userTab]);
+
+function PublicProfile() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || "/dashboard";
+
+  const [user, setUser] = useState(undefined);
+  const isMe = String(id) === String(localStorage.getItem(USER_ID_KEY));
+
+  // FETCH PROFIL UNIQUEMENT SI PAS MOI
+  useEffect(() => {
+    if (isMe) {
+      setUser(null);
+      return;
+    }
+
+    fetch(`/api/users/${id}/profile`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+      },
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("PROFILE_NOT_FOUND");
+        return res.json();
+      })
+      .then(setUser)
+      .catch(() => setUser(null));
+  }, [id, isMe]);
+
+  // SYNC ONLINE STATUS
+  useEffect(() => {
+    const ws = wsRef.current;
+    if (!ws || isMe) return;
+
+    const handler = (event) => {
+      const msg = JSON.parse(event.data);
+      if (msg.type === "USERS_STATUS") {
+        setUser(u =>
+          u ? { ...u, online: msg.onlineUsers.includes(u.id) } : u
+        );
+      }
+    };
+
+    ws.addEventListener("message", handler);
+    return () => ws.removeEventListener("message", handler);
+  }, [isMe]);
+
+  // ===== RENDER =====
+
+  if (isMe) {
+    return (
+      <div className="w-full h-full flex flex-col items-center text-white">
+        <button
+          className="absolute top-4 left-4 neon-border px-2 py-1"
+          onClick={() => navigate("/dashboard")}
+        >
+          ← 𝔹𝔸ℂ𝕂
+        </button>
+
+        <p className="mt-[20vh] text-cyan-300">
+          This is your own profile
+        </p>
+      </div>
+    );
+  }
+
+  if (user === undefined) {
+    return <div className="text-white">Loading...</div>;
+  }
+
+  if (user === null) {
+    return <div className="text-red-400">Profile not found</div>;
+  }
+
+  return (
+    <div className="w-full h-full flex flex-col items-center text-white">
+      <button
+        className="absolute top-4 left-4 neon-border px-2 py-1"
+        onClick={() => navigate(from)}
+      >
+        ← 𝔹𝔸ℂ𝕂
+      </button>
+
+      <img
+        src={user.avatar || "/images/default-avatar.png"}
+        className="w-32 h-32 rounded-full neon-border mt-[15vh]"
+      />
+
+      <h1 className="neon-glitch text-3xl mt-6">
+        {user.nickname}
+      </h1>
+
+      <p className="text-cyan-300 mt-2 flex items-center gap-2">
+        {user.online ? (
+          <>
+            <span className="w-2 h-2 rounded-full bg-green-400" />
+            Online
+          </>
+        ) : (
+          <>
+            <span className="w-2 h-2 rounded-full bg-gray-400" />
+            Offline
+          </>
+        )}
+      </p>
+    </div>
+  );
+}
 
 /* ================================================================================= */
 /* ================================================================================= */
@@ -662,7 +817,7 @@ export default function App() {
 /* ================================================================================= */
 
   return (
-    <div id="app" className="w-screen h-screen">
+    <div id="app" className="relative min-h-screen flex flex-col">
 
       {notification && (
         <div className="fixed inset-0 z-[99999] flex items-center justify-center">
@@ -689,16 +844,10 @@ export default function App() {
         </div>
       )}
 
-      <footer className="absolute top-[880px] left-1/2 -translate-x-1/2
-        text-xs text-cyan-300 neon-glitch z-50">
-        <Link to="/privacy">Privacy Policy</Link>
-          {" | "}
-        <Link to="/terms">Terms of Service</Link>
-      </footer>
 
       <img
         src={bgSrc}
-        className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+        className="absolute inset-0 w-full h-full object-cover -z-10 pointer-events-none"
         alt=""
       />
 
@@ -946,6 +1095,22 @@ export default function App() {
             )}
 
             {/* =============================================
+                ================ VIEW PROFILE ===============
+                ============================================= */}
+
+            <button
+              onClick={() => {
+                navigate(`/profile/${selectedUser.id}`, {
+                  state: { from: location.pathname }
+                });
+                closeUserMenu();
+              }}
+              className="block w-full px-2 py-1 hover:bg-cyan-500/20 text-left text-white"
+            >
+              View profile 👁
+            </button>
+
+            {/* =============================================
                 ================ HANDLE BLOCK ===============
                 ============================================= */}
 
@@ -953,7 +1118,7 @@ export default function App() {
               <button
                 onClick={async () => {
                   await fetch(
-                    `https://localhost:3000/user/${selectedUser.id}/block`,
+                    `/api/user/${selectedUser.id}/block`,
                     {
                       method: "POST",
                       headers: {
@@ -972,7 +1137,7 @@ export default function App() {
               <button
                 onClick={async () => {
                   await fetch(
-                    `https://localhost:3000/user/${selectedUser.id}/unblock`,
+                    `/api/user/${selectedUser.id}/unblock`,
                     {
                       method: "POST",
                       headers: {
@@ -999,6 +1164,7 @@ export default function App() {
   ====================================================================================== 
   ======================================================================================*/}
 
+        {/* <main className="flex-1 flex flex-col"> */}
         <Routes>
           <Route path="/" element={
             <div className="w-full h-full flex flex-col items-center">
@@ -1310,6 +1476,15 @@ export default function App() {
   ====================================================================================== 
   ======================================================================================*/}
 
+        <Route
+          path="/profile/:id"
+          element={
+            <div className="relative w-full h-full z-30">
+              <PublicProfile />
+            </div>
+          }
+        />
+
         <Route path="/profile" element={
           <div className="w-full h-full relative overflow-hidden">
             <div className="mt-[1vh] w-full h-full flex flex-col items-center">
@@ -1427,7 +1602,16 @@ export default function App() {
             </button>
           </div>
         } />
+
       </Routes>
+      {/* </main>
+      <footer className="mt-auto w-full py-4 flex justify-center text-xs sm:text-sm text-cyan-300">
+        <div className="flex gap-2 neon-glitch text-center">
+          <Link to="/privacy">Privacy Policy</Link>
+          <span>|</span>
+          <Link to="/terms">Terms of Service</Link>
+        </div>
+      </footer> */}
     </div>
   );
 }

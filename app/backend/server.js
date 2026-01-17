@@ -53,10 +53,6 @@ const { registerUser, loginUser } = require("./auth/auth.service");
 async function start() {
   const fastify = Fastify({
     logger: true,
-    https: {
-      key: fs.readFileSync("/certs/key.pem"),
-      cert: fs.readFileSync("/certs/cert.pem"),
-    },
   });
 
   await fastify.register(cors, {
@@ -78,21 +74,35 @@ async function start() {
      =========================== */
 
   fastify.post("/auth/register", async (req, reply) => {
-    const { email, password, nickname } = req.body;
+    const email = req.body?.email?.trim().toLowerCase();
+    const password = req.body?.password?.trim();
+    const nickname = req.body?.nickname?.trim();
+
+    if (!email || !password || !nickname) {
+      return reply.code(400).send({ message: "INVALID_INPUT" });
+    }
 
     const result = await registerUser(email, password, nickname);
+
     if (!result.success) {
-      return reply.status(400).send({ error: result.reason });
+      return reply.code(409).send({ message: result.reason });
     }
-    return { ok: true };
+
+    return reply.code(201).send({ message: "USER_CREATED" });
   });
 
   fastify.post("/auth/login", async (req, reply) => {
-    const { email, password } = req.body;
+    const email = req.body?.email?.trim().toLowerCase();
+    const password = req.body?.password?.trim();
+
+    if (!email || !password) {
+      return reply.code(400).send({ message: "INVALID_INPUT" });
+    }
 
     const result = await loginUser(email, password);
+
     if (!result.success) {
-      return reply.status(401).send({ error: "bad credentials" });
+      return reply.code(401).send({ message: "BAD_CREDENTIALS" });
     }
 
     return {
@@ -125,7 +135,7 @@ async function start() {
      WEBSOCKET
      =========================== */
 
-  fastify.get("/ws", { websocket: true }, (connection, req) => {
+  function handleWs(connection, req) {
     const token = new URL(req.url, "http://localhost").searchParams.get("token");
 
     if (!token || !token.startsWith("DEV_TOKEN_")) {
@@ -139,6 +149,14 @@ async function start() {
       return;
     }
 
+    // ⚠️ Empêche doublons (multi-onglets)
+    for (const [socket, uid] of onlineSockets.entries()) {
+      if (uid === userId) {
+        socket.close();
+        onlineSockets.delete(socket);
+      }
+    }
+
     onlineSockets.set(connection.socket, userId);
     broadcastUsers();
 
@@ -146,7 +164,11 @@ async function start() {
       onlineSockets.delete(connection.socket);
       broadcastUsers();
     });
-  });
+  }
+
+
+  fastify.get("/ws", { websocket: true }, handleWs);
+  fastify.get("/api/ws", { websocket: true }, handleWs);
 
   /* ===========================
      USER SETTINGS
@@ -176,7 +198,7 @@ async function start() {
     const { background } = req.body || {};
 
     if (typeof background !== "string" || background.length < 1 || background.length > 255) {
-      return reply.code(400).send({ error: "INVALID BACKGROUND" });
+      return reply.code(400).send({ message: "INVALID BACKGROUND" });
     }
 
     const ALLOWED_BACKGROUNDS = new Set([
@@ -202,7 +224,7 @@ async function start() {
     ]);
 
     if (!ALLOWED_BACKGROUNDS.has(background)) {
-      return reply.code(400).send({ error: "BACKGROUND NOT ALLOWED" });
+      return reply.code(400).send({ message: "BACKGROUND NOT ALLOWED" });
     }
 
     const settings = await prisma.userSettings.upsert({
@@ -279,7 +301,7 @@ async function start() {
     if (me === targetId) return reply.code(400).send();
 
     if (await isBlocked(me, targetId)) {
-      return reply.code(403).send({ error: "BLOCKED" });
+      return reply.code(403).send({ message: "BLOCKED" });
     }
 
     const existing = await prisma.friendship.findFirst({
@@ -291,7 +313,11 @@ async function start() {
       }
     });
 
-    if (existing) return reply.code(400).send();
+    if (existing) {
+      return reply.code(409).send({
+        message: "FRIENDSHIP_ALREADY_EXISTS"
+      });
+    }
 
     await prisma.friendship.create({
       data: {
@@ -461,6 +487,40 @@ async function start() {
   });
 
   /* ===========================
+    PUBLIC USER PROFILE
+    =========================== */
+
+    fastify.get("/users/:id/profile", async (req, reply) => {
+      const userId = Number(req.params.id);
+      if (Number.isNaN(userId)) {
+        return reply.code(400).send({ message: "INVALID_USER_ID" });
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          nickname: true,
+          avatarUrl: true,
+        },
+      });
+
+      if (!user) {
+        return reply.code(404).send({ message: "USER_NOT_FOUND" });
+      }
+
+      const online = [...onlineSockets.values()].includes(userId);
+
+      return {
+        id: user.id,
+        nickname: user.nickname,
+        avatar: user.avatarUrl,
+        online,
+      };
+    });
+
+
+  /* ===========================
     HANDLE BLACKLIST
     =========================== */
 
@@ -559,13 +619,11 @@ async function start() {
 function getUserIdFromAuth(req, reply) {
   const auth = req.headers.authorization;
   if (!auth?.startsWith("Bearer DEV_TOKEN_")) {
-    reply.code(401).send();
-    return null;
+    return reply.code(401).send({ message: "UNAUTHORIZED" });
   }
   const userId = Number(auth.replace("Bearer DEV_TOKEN_", ""));
   if (Number.isNaN(userId)) {
-    reply.code(401).send();
-    return null;
+    return reply.code(401).send({ message: "UNAUTHORIZED" });
   }
   return userId;
 }
