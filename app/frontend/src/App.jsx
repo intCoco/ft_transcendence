@@ -404,12 +404,24 @@ export default function App() {
     if (!token) return;
 
     fetch("/api/users", {
-      headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_KEY)}`,
-      },
+      headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_KEY)}` },
     })
-    .then(res => res.json())
-    .then(setUsers)
-    .catch(() => setUsers([]));
+      .then(res => res.json())
+      .then(data => {
+        const meId = Number(localStorage.getItem(USER_ID_KEY));
+        const usersWithMe = [...data];
+
+        if (!usersWithMe.some(u => u.id === meId)) {
+          usersWithMe.push({
+            id: meId,
+            nickname: login,
+            online: true,
+          });
+        }
+
+        setUsers(usersWithMe);
+      })
+      .catch(() => setUsers([]));
 
     const ws = new WebSocket(
       `wss://${window.location.host}/api/ws?token=${token}`
@@ -423,22 +435,14 @@ export default function App() {
 
         case "USERS_STATUS":
           setUsers(prev => {
-            const map = new Map(prev.map(u => [u.id, u]));
+            const meId = Number(localStorage.getItem(USER_ID_KEY));
 
-            msg.onlineUsers.forEach(id => {
-              if (map.has(id)) {
-                map.set(id, { ...map.get(id), online: true });
-              } else {
-                map.set(id, { id, nickname: `user_${id}`, online: true });
-              }
-            });
-
-            return Array.from(map.values()).map(u => ({
+            return prev.map(u => ({
               ...u,
-              online: msg.onlineUsers.includes(u.id),
+              online: u.id === meId || msg.onlineUsers.includes(u.id),
             }));
           });
-          break;
+        break;
 
         case "FRIEND_REQUEST":
           setFriendRequests(prev => {
@@ -490,7 +494,7 @@ export default function App() {
     return () => {
       ws.close();
     };
-  }, [isAuthed, authUserId]);
+  }, [isAuthed]);
 
   //
   //
@@ -669,6 +673,9 @@ function PublicProfile() {
 
   const [user, setUser] = useState(undefined);
   const isMe = String(id) === String(localStorage.getItem(USER_ID_KEY));
+  
+  const liveUser = users.find(u => String(u.id) === String(id));
+  const online = isMe || liveUser?.online;
 
   // FETCH PROFIL UNIQUEMENT SI PAS MOI
   useEffect(() => {
@@ -690,23 +697,6 @@ function PublicProfile() {
       .catch(() => setUser(null));
   }, [id, isMe]);
 
-  // SYNC ONLINE STATUS
-  useEffect(() => {
-    const ws = wsRef.current;
-    if (!ws || isMe) return;
-
-    const handler = (event) => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "USERS_STATUS") {
-        setUser(u =>
-          u ? { ...u, online: msg.onlineUsers.includes(u.id) } : u
-        );
-      }
-    };
-
-    ws.addEventListener("message", handler);
-    return () => ws.removeEventListener("message", handler);
-  }, [isMe]);
 
   // ===== RENDER =====
 
@@ -714,7 +704,7 @@ function PublicProfile() {
     return (
       <div className="w-full h-full flex flex-col items-center text-white">
         <button
-          className="absolute top-4 left-4 neon-border px-2 py-1"
+          className="absolute top-5 left-1/2 -translate-x-1/2 neon-border px-2 py-1"
           onClick={() => navigate("/dashboard")}
         >
           ← 𝔹𝔸ℂ𝕂
@@ -738,7 +728,7 @@ function PublicProfile() {
   return (
     <div className="w-full h-full flex flex-col items-center text-white">
       <button
-        className="absolute top-4 left-4 neon-border px-2 py-1"
+        className="absolute top-5 left-1/2 -translate-x-1/2 neon-border px-2 py-1"
         onClick={() => navigate(from)}
       >
         ← 𝔹𝔸ℂ𝕂
@@ -754,7 +744,7 @@ function PublicProfile() {
       </h1>
 
       <p className="text-cyan-300 mt-2 flex items-center gap-2">
-        {user.online ? (
+        {online ? (
           <>
             <span className="w-2 h-2 rounded-full bg-green-400" />
             Online
@@ -1164,7 +1154,7 @@ function PublicProfile() {
   ====================================================================================== 
   ======================================================================================*/}
 
-        {/* <main className="flex-1 flex flex-col"> */}
+        <main className="flex-1 flex flex-col">
         <Routes>
           <Route path="/" element={
             <div className="w-full h-full flex flex-col items-center">
@@ -1604,14 +1594,14 @@ function PublicProfile() {
         } />
 
       </Routes>
-      {/* </main>
+      </main>
       <footer className="mt-auto w-full py-4 flex justify-center text-xs sm:text-sm text-cyan-300">
         <div className="flex gap-2 neon-glitch text-center">
           <Link to="/privacy">Privacy Policy</Link>
           <span>|</span>
           <Link to="/terms">Terms of Service</Link>
         </div>
-      </footer> */}
+      </footer>
     </div>
   );
 }

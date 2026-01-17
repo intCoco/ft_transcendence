@@ -149,7 +149,6 @@ async function start() {
       return;
     }
 
-    // ⚠️ Empêche doublons (multi-onglets)
     for (const [socket, uid] of onlineSockets.entries()) {
       if (uid === userId) {
         socket.close();
@@ -158,6 +157,12 @@ async function start() {
     }
 
     onlineSockets.set(connection.socket, userId);
+
+    connection.socket.send(JSON.stringify({
+      type: "USERS_STATUS",
+      onlineUsers: [...new Set(onlineSockets.values())],
+    }));
+
     broadcastUsers();
 
     connection.socket.on("close", () => {
@@ -264,7 +269,6 @@ async function start() {
     return settings;
   });
 
-
   /* ===========================
      USER DATA
      =========================== */
@@ -350,7 +354,6 @@ async function start() {
       data: {
         requesterId: me,
         receiverId: targetId
-        // status = PENDING auto, merci Prisma
       }
     });
 
