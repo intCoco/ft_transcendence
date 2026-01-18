@@ -180,28 +180,36 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (isAuthed) {
-      fetchUserSettings();
-    } else {
+    if (!isAuthed || location.pathname === "/") {
       setBgSrc(DEFAULT_BG);
+      return;
     }
-  }, [isAuthed]);
+
+    fetchUserSettings();
+  }, [isAuthed, location.pathname]);
 
   const BACKGROUNDS = [
-  "/images/enter.jpg",
-  "/images/sun.png",
-  "/images/japan2.jpg",
-  "/images/car.jpg",
-  "/images/car2.jpg",
-  "/images/night.jpg",
-  "/images/rocket.jpg",
-  "/images/abstract.png",
-  "/images/dom.jpg",
-  "/images/setup.jpg",
-  "/images/setup2.jpg",
-  "/images/girlwork.jpg",
-  "/images/boywork.jpg",
-  "/images/vicecity.jpg",
+      "/images/enter.jpg",
+      "/images/sun.png",
+      "/images/japan2.jpg",
+      "/images/abstract.png",
+      "/images/manwork.png",
+      "/images/pacman.png",
+      "/images/womanwork.png",
+      "/images/roundenter.png",
+      "/images/neonbh.png",
+      "/images/worldtech.png",
+      "/images/abstract2.png",
+      "/images/womanview.png",
+      "/images/enterdisk.png",
+      "/images/manwork2.png",
+      "/images/womanwork2.png",
+      "/images/enter2.png",
+      "/images/entertriangle.png",
+      "/images/datacenter.png",
+      "/images/abstract3.png",
+      "/images/manwork3.png",
+      "/images/datacenter2.png",
   ];
 
 /* ================================================================================= */
