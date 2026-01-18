@@ -190,11 +190,6 @@ export default function App() {
   const BACKGROUNDS = [
   "/images/enter.jpg",
   "/images/sun.png",
-  "/images/round.jpg",
-  "/images/cybersun.jpg",
-  "/images/black.webp",
-  "/images/mountain.jpg",
-  "/images/japan.jpg",
   "/images/japan2.jpg",
   "/images/car.jpg",
   "/images/car2.jpg",
@@ -1362,7 +1357,7 @@ function PublicProfile() {
           <div className="relative w-screen h-screen">
 
             <h1
-              className="absolute top-[60px] left-1/2 -translate-x-1/2 neon-glitch text-5xl"
+              className="absolute top-4 left-1/2 -translate-x-1/2 neon-glitch text-5xl"
               data-text="ℂℍ𝕆𝕆𝕊𝔼 𝔾𝔸𝕄𝔼"
             >
               ℂℍ𝕆𝕆𝕊𝔼 𝔾𝔸𝕄𝔼
@@ -1389,7 +1384,7 @@ function PublicProfile() {
             </div>
 
             <button
-              className="absolute left-4 px-1 py-1 neon-border bg-gray-900/60 text-cyan-300"
+              className="absolute top-4 left-4 px-1 py-1 neon-border bg-gray-900/60 text-cyan-300"
               onClick={() => navigate(-1)}
             >
               ← 𝔹𝔸ℂ𝕂
@@ -1477,7 +1472,7 @@ function PublicProfile() {
 
         <Route path="/profile" element={
           <div className="w-full h-full relative overflow-hidden">
-            <div className="mt-[1vh] w-full h-full flex flex-col items-center">
+            <div className="mt-[2vh] w-full h-full flex flex-col items-center">
               <h1 className="neon-glitch relative inline-block text-7xl"
                 data-text="ℙℝ𝕆𝔽𝕀𝕃𝔼">
                 ℙℝ𝕆𝔽𝕀𝕃𝔼
