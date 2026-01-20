@@ -130,6 +130,11 @@ export default function App() {
   const isBlockedUser = (id) =>
   blockedUsers.some(u => u.id === id);
 
+  /* For message unread */
+  const [unread, setUnread] = useState({});
+  const isChatVisibleRef = useRef(false);
+
+
 /* ================================================================================= */
 /* ================================================================================= */
 /* ============================ HANDLE BACKGROUND ================================== */
@@ -422,7 +427,14 @@ export default function App() {
           });
         }
 
-        setUsers(usersWithMe);
+        setUsers(prev => {
+          const prevMap = new Map(prev.map(u => [u.id, u]));
+
+          return usersWithMe.map(u => ({
+            ...u,
+            online: prevMap.get(u.id)?.online ?? u.online ?? false,
+          }));
+        });
       })
       .catch(() => setUsers([]));
 
@@ -430,6 +442,10 @@ export default function App() {
       `wss://${window.location.host}/api/ws?token=${token}`
     );
     wsRef.current = ws;
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: "WHO_IS_ONLINE" }));
+    };
 
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
@@ -483,6 +499,33 @@ export default function App() {
             prev?.id === msg.userId ? null : prev
           );
           break;
+
+        case "DM_MESSAGE": {
+          const fromId = msg.fromUserId;
+          const meId = Number(localStorage.getItem(USER_ID_KEY));
+
+          setMessages(prev => ({
+            ...prev,
+            [fromId]: [
+              ...(prev[fromId] || []),
+              { from: "other", text: msg.text }
+            ]
+          }));
+
+          if (
+              fromId !== meId &&
+              !(
+                isChatVisibleRef.current &&
+                activeChatUser?.id === fromId
+              )
+            ) {
+            setUnread(prev => ({
+              ...prev,
+              [fromId]: (prev[fromId] || 0) + 1,
+            }));
+          }
+          break;
+        }
         
         default:
           break;
@@ -500,6 +543,12 @@ export default function App() {
   }, [isAuthed]);
 
   //
+  //
+  //
+  useEffect(() => {
+    isChatVisibleRef.current = Boolean(showChat && activeChatUser);
+  }, [showChat, activeChatUser]);
+
   //
   //
   useEffect(() => {
@@ -559,7 +608,28 @@ export default function App() {
 
   const closeUserMenu = () => setSelectedUser(null);
 
-  const handleDM = () => {
+  const handleDM = async () => {
+    const token = localStorage.getItem(AUTH_KEY);
+
+    const res = await fetch(`/api/messages/${selectedUser.id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const history = await res.json();
+
+    setMessages(prev => ({
+      ...prev,
+      [selectedUser.id]: history,
+    }));
+
+    setUnread(prev => {
+      const copy = { ...prev };
+      delete copy[selectedUser.id];
+      return copy;
+    });
+
     setActiveChatUser(selectedUser);
     closeUserMenu();
   };
@@ -593,17 +663,6 @@ export default function App() {
     setFriendRequests(prev =>
       prev.filter(req => req.id !== userId)
     );
-
-    // // refresh friends
-    // fetch("https://localhost:3000/friends", {
-    //   headers: {
-    //     Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-    //   },
-    // })
-    //   .then(res => res.json())
-    //   .then(data => {
-    //     setFriends(Array.isArray(data) ? data : []);
-    //   });
   };
 
   const handleRefuseFriend = async (userId) => {
@@ -627,30 +686,8 @@ export default function App() {
       },
     });
 
-    // fetch("https://localhost:3000/friends", {
-    //   headers: {
-    //     Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-    //   },
-    // })
-      // .then(res => res.json())
-      // .then(data => {
-      //   setFriends(Array.isArray(data) ? data : []);
-      // });
-
     closeUserMenu();
   };
-
-  // const refreshFriends = () => {
-  //   fetch("https://localhost:3000/friends", {
-  //     headers: {
-  //       Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-  //     },
-  //   })
-  //     .then(res => res.json())
-  //     .then(data => {
-  //       setFriends(Array.isArray(data) ? data : []);
-  //     });
-  // };
 
   const handleBlock = async () => {
     await fetch(`/api/user/${selectedUser.id}/block`, {
@@ -662,11 +699,14 @@ export default function App() {
     closeUserMenu();
   };
 
-  // useEffect(() => {
-  //   if (showChat && userTab === "friends") {
-  //     refreshFriends();
-  //   }
-  // }, [showChat, userTab]);
+  const handleBackFromChat = () => {
+    setUnread(prev => {
+      const copy = { ...prev };
+      delete copy[activeChatUser.id];
+      return copy;
+    });
+    setActiveChatUser(null);
+  };
 
 function PublicProfile() {
   const { id } = useParams();
@@ -915,7 +955,14 @@ function PublicProfile() {
                         >
                           {u.online && <span className="w-2 h-2 rounded-full bg-green-400" />}
                           <span className="text-white">{u.nickname}</span>
+                          {unread[u.id] && (
+                            <span className="text-xs px-1 py-0.5 rounded-full bg-cyan-500 text-white">
+                              {unread[u.id]}
+                            </span>
+                          )}
                         </button>
+
+
                       </li>
                     ))}
 
@@ -935,6 +982,11 @@ function PublicProfile() {
                           <span className="text-white">
                             {u.nickname}
                           </span>
+                          {unread[u.id] && (
+                            <span className="text-xs px-1 py-0.5 rounded-full bg-cyan-500 text-white">
+                              {unread[u.id]}
+                            </span>
+                          )}
                         </button>
                       </li>
                     ))}
@@ -973,7 +1025,7 @@ function PublicProfile() {
                 <div className="flex items-center gap-2 p-3 border-b border-cyan-500/30">
                   <button
                     className="text-cyan-300 text-sm"
-                    onClick={() => setActiveChatUser(null)}
+                    onClick={handleBackFromChat}
                   >
                     ← 𝔹𝔸ℂ𝕂
                   </button>
@@ -987,10 +1039,11 @@ function PublicProfile() {
                     <div
                       key={i}
                       className={`max-w-[80%] px-3 py-1 rounded
-                          whitespace-pre-wrap break-words
+                          whitespace-pre-wrap break-words text-white
+                          border shadow-[0_0_8px_rgba(34,211,238,0.6)]
                         ${msg.from === "me"
-                          ? "ml-auto bg-cyan-600/30"
-                          : "mr-auto bg-gray-700/40"}`}
+                          ? "ml-auto bg-black/70 border-cyan-400"
+                          : "mr-auto bg-black/50 border-purple-400"}`}
                     >
                       {msg.text}
                     </div>
@@ -1014,6 +1067,11 @@ function PublicProfile() {
                         ...(prev[activeChatUser.id] || []),
                         { from: "me", text: chatInput }
                       ]
+                    }));
+                    wsRef.current?.send(JSON.stringify({
+                      type: "DM_SEND",
+                      toUserId: activeChatUser.id,
+                      text: chatInput,
                     }));
                     setChatInput("");
                   }}

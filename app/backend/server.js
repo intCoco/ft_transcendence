@@ -165,9 +165,45 @@ async function start() {
 
     broadcastUsers();
 
-    connection.socket.on("close", () => {
-      onlineSockets.delete(connection.socket);
-      broadcastUsers();
+    connection.socket.on("message", async (raw) => {
+      let msg;
+      try {
+        msg = JSON.parse(raw);
+      } catch {
+        return;
+      }
+
+      if (msg.type === "DM_SEND") {
+        try {
+          const { toUserId, text } = msg;
+          if (!text) return;
+
+          const saved = await prisma.message.create({
+            data: {
+              fromUserId: userId,
+              toUserId,
+              content: text,
+            },
+          });
+
+          sendToUser(toUserId, {
+            type: "DM_MESSAGE",
+            fromUserId: userId,
+            text: saved.content,
+            at: saved.createdAt,
+          });
+
+          sendToUser(userId, {
+            type: "DM_MESSAGE",
+            fromUserId: userId,
+            text: saved.content,
+            at: saved.createdAt,
+          });
+
+        } catch (err) {
+          console.error("DM_SEND ERROR:", err);
+        }
+      }
     });
 
     connection.socket.on("message", async (raw) => {
@@ -551,6 +587,32 @@ async function start() {
       };
     });
 
+  /* ===========================
+    HANDLE MESSAGE
+    =========================== */
+
+  fastify.get("/messages/:userId", async (req, reply) => {
+    const me = getUserIdFromAuth(req, reply);
+    if (!me) return;
+
+    const otherId = Number(req.params.userId);
+
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { fromUserId: me, toUserId: otherId },
+          { fromUserId: otherId, toUserId: me },
+        ],
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return messages.map(m => ({
+      from: m.fromUserId === me ? "me" : "other",
+      text: m.content,
+      at: m.createdAt,
+    }));
+  });
 
   /* ===========================
     HANDLE BLACKLIST

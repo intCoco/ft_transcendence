@@ -46,6 +46,10 @@ model User {
 
 	// ... UserSettings
   	settings     UserSettings?
+
+	// --- SetMassage ---
+	sentMessages     Message[] @relation("MessageFromUser")
+	receivedMessages Message[] @relation("MessageToUser")
 }
 
 model UserSettings {
@@ -81,4 +85,19 @@ model Block {
   blocked User @relation("UserBlockedBy", fields: [blockedId], references: [id])
 
   @@id([blockerId, blockedId])
+}
+
+model Message {
+  id         Int      @id @default(autoincrement())
+
+  fromUserId Int
+  toUserId   Int
+  content    String
+
+  createdAt  DateTime @default(now())
+
+  fromUser User @relation("MessageFromUser", fields: [fromUserId], references: [id])
+  toUser   User @relation("MessageToUser", fields: [toUserId], references: [id])
+
+  @@index([fromUserId, toUserId])
 }
