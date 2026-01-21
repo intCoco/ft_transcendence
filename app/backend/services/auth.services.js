@@ -30,7 +30,7 @@ async function registerUser(email, pass, nickname) {
       email,
       nickname,
       passwordHash,
-      avatarUrl: "", // avatar par défaut
+      avatarUrl: "",
     },
   });
 

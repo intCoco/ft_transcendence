@@ -3,48 +3,7 @@ const cors = require("@fastify/cors");
 const websocketPlugin = require("@fastify/websocket");
 const fs = require("fs");
 const { PrismaClient } = require("@prisma/client");
-
 const prisma = new PrismaClient();
-
-/* ===========================
-   ONLINE / WEBSOCKET STATE
-   =========================== */
-
-// socket -> userId
-const onlineSockets = new Map();
-
-function sendToUser(userId, payload) {
-  for (const [socket, uid] of onlineSockets.entries()) {
-    if (uid === userId && socket.readyState === 1) {
-      socket.send(JSON.stringify(payload));
-    }
-  }
-}
-
-function sendToUsers(userIds, payload) {
-  userIds.forEach(id => sendToUser(id, payload));
-}
-
-function broadcastUsers() {
-  const onlineUserIds = [...new Set(onlineSockets.values())];
-
-  const payload = JSON.stringify({
-    type: "USERS_STATUS",
-    onlineUsers: onlineUserIds,
-  });
-
-  for (const socket of onlineSockets.keys()) {
-    if (socket.readyState === 1) {
-      socket.send(payload);
-    }
-  }
-}
-
-/* ===========================
-   AUTH SERVICES
-   =========================== */
-
-const { registerUser, loginUser } = require("./auth/auth.service");
 
 /* ===========================
    SERVER BOOTSTRAP
@@ -62,74 +21,9 @@ async function start() {
 
   await fastify.register(websocketPlugin);
 
-  /* ===========================
-     CHAT
-     =========================== */
 
-  // const { Chat } = require("./ws/chat");
-  // const chat = new Chat();
-
-  /* ===========================
-     HTTP AUTH
-     =========================== */
-
-  fastify.post("/auth/register", async (req, reply) => {
-    const email = req.body?.email?.trim().toLowerCase();
-    const password = req.body?.password?.trim();
-    const nickname = req.body?.nickname?.trim();
-
-    if (!email || !password || !nickname) {
-      return reply.code(400).send({ message: "INVALID_INPUT" });
-    }
-
-    const result = await registerUser(email, password, nickname);
-
-    if (!result.success) {
-      return reply.code(409).send({ message: result.reason });
-    }
-
-    return reply.code(201).send({ message: "USER_CREATED" });
-  });
-
-  fastify.post("/auth/login", async (req, reply) => {
-    const email = req.body?.email?.trim().toLowerCase();
-    const password = req.body?.password?.trim();
-
-    if (!email || !password) {
-      return reply.code(400).send({ message: "INVALID_INPUT" });
-    }
-
-    const result = await loginUser(email, password);
-
-    if (!result.success) {
-      return reply.code(401).send({ message: "BAD_CREDENTIALS" });
-    }
-
-    return {
-      userId: result.user.id,
-      nickname: result.user.nickname,
-      token: `DEV_TOKEN_${result.user.id}`,
-    };
-  });
-
-  fastify.post("/auth/logout", async (req, reply) => {
-    const auth = req.headers.authorization;
-    if (!auth?.startsWith("Bearer DEV_TOKEN_")) {
-      return reply.status(401).send();
-    }
-
-    const userId = Number(auth.replace("Bearer DEV_TOKEN_", ""));
-
-    for (const [socket, uid] of onlineSockets.entries()) {
-      if (uid === userId) {
-        socket.close();
-        onlineSockets.delete(socket);
-      }
-    }
-
-    broadcastUsers();
-    return { ok: true };
-  });
+  await fastify.register(require("./routes/auth.routes"));  // http
+  await fastify.register(require("./routes/ws.routes"));
 
   /* ===========================
      WEBSOCKET
