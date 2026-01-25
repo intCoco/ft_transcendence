@@ -392,37 +392,37 @@ export default function App() {
   };
 
   useEffect(() => {
-      if (!isAuthed || location.pathname === "/") {
-        setBgSrc(DEFAULT_BG);
-        return;
-      }
-  
-      fetchUserSettings();
-    }, [isAuthed, location.pathname]);
-  
-    const BACKGROUNDS = [
-        "/images/enter.jpg",
-        "/images/sun.png",
-        "/images/japan2.jpg",
-        "/images/abstract.png",
-        "/images/manwork.png",
-        "/images/pacman.png",
-        "/images/womanwork.png",
-        "/images/roundenter.png",
-        "/images/neonbh.png",
-        "/images/worldtech.png",
-        "/images/abstract2.png",
-        "/images/womanview.png",
-        "/images/enterdisk.png",
-        "/images/manwork2.png",
-        "/images/womanwork2.png",
-        "/images/enter2.png",
-        "/images/entertriangle.png",
-        "/images/datacenter.png",
-        "/images/abstract3.png",
-        "/images/manwork3.png",
-        "/images/datacenter2.png",
-    ];
+    if (!isAuthed || location.pathname === "/") {
+      setBgSrc(DEFAULT_BG);
+      return;
+    }
+
+    fetchUserSettings();
+  }, [isAuthed, location.pathname]);
+
+  const BACKGROUNDS = [
+      "/images/enter.jpg",
+      "/images/sun.png",
+      "/images/japan2.jpg",
+      "/images/abstract.png",
+      "/images/manwork.png",
+      "/images/pacman.png",
+      "/images/womanwork.png",
+      "/images/roundenter.png",
+      "/images/neonbh.png",
+      "/images/worldtech.png",
+      "/images/abstract2.png",
+      "/images/womanview.png",
+      "/images/enterdisk.png",
+      "/images/manwork2.png",
+      "/images/womanwork2.png",
+      "/images/enter2.png",
+      "/images/entertriangle.png",
+      "/images/datacenter.png",
+      "/images/abstract3.png",
+      "/images/manwork3.png",
+      "/images/datacenter2.png",
+  ];
 
 /* ================================================================================= */
 /* ================================================================================= */

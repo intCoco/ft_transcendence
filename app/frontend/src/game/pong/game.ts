@@ -710,8 +710,8 @@ export function startPongGame(canvas: HTMLCanvasElement, playersConfig?: any) {
             drawScore();
             drawPaddle(leftPaddle);
             drawPaddle(rightPaddle);
-            drawServeTimer();
             drawDash();
+            drawServeTimer();
             drawTimer();
             drawAIDebug();
             drawBall();

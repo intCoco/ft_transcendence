@@ -149,7 +149,6 @@ async function start() {
       return;
     }
 
-    // ⚠️ Empêche doublons (multi-onglets)
     for (const [socket, uid] of onlineSockets.entries()) {
       if (uid === userId) {
         socket.close();
@@ -158,11 +157,53 @@ async function start() {
     }
 
     onlineSockets.set(connection.socket, userId);
+
+    connection.socket.send(JSON.stringify({
+      type: "USERS_STATUS",
+      onlineUsers: [...new Set(onlineSockets.values())],
+    }));
+
     broadcastUsers();
 
-    connection.socket.on("close", () => {
-      onlineSockets.delete(connection.socket);
-      broadcastUsers();
+    connection.socket.on("message", async (raw) => {
+      let msg;
+      try {
+        msg = JSON.parse(raw);
+      } catch {
+        return;
+      }
+
+      if (msg.type === "DM_SEND") {
+        try {
+          const { toUserId, text } = msg;
+          if (!text) return;
+
+          const saved = await prisma.message.create({
+            data: {
+              fromUserId: userId,
+              toUserId,
+              content: text,
+            },
+          });
+
+          sendToUser(toUserId, {
+            type: "DM_MESSAGE",
+            fromUserId: userId,
+            text: saved.content,
+            at: saved.createdAt,
+          });
+
+          sendToUser(userId, {
+            type: "DM_MESSAGE",
+            fromUserId: userId,
+            text: saved.content,
+            at: saved.createdAt,
+          });
+
+        } catch (err) {
+          console.error("DM_SEND ERROR:", err);
+        }
+      }
     });
   }
 
@@ -204,23 +245,25 @@ async function start() {
     const ALLOWED_BACKGROUNDS = new Set([
       "/images/enter.jpg",
       "/images/sun.png",
-      "/images/round.jpg",
-      "/images/cybersun.jpg",
-      "/images/black.webp",
-      "/images/mountain.jpg",
-      "/images/japan.jpg",
       "/images/japan2.jpg",
-      "/images/car.jpg",
-      "/images/car2.jpg",
-      "/images/night.jpg",
-      "/images/rocket.jpg",
       "/images/abstract.png",
-      "/images/dom.jpg",
-      "/images/setup.jpg",
-      "/images/setup2.jpg",
-      "/images/girlwork.jpg",
-      "/images/boywork.jpg",
-      "/images/vicecity.jpg",
+      "/images/manwork.png",
+      "/images/pacman.png",
+      "/images/womanwork.png",
+      "/images/roundenter.png",
+      "/images/neonbh.png",
+      "/images/worldtech.png",
+      "/images/abstract2.png",
+      "/images/womanview.png",
+      "/images/enterdisk.png",
+      "/images/manwork2.png",
+      "/images/womanwork2.png",
+      "/images/enter2.png",
+      "/images/entertriangle.png",
+      "/images/datacenter.png",
+      "/images/abstract3.png",
+      "/images/manwork3.png",
+      "/images/datacenter2.png",
     ]);
 
     if (!ALLOWED_BACKGROUNDS.has(background)) {
@@ -236,7 +279,6 @@ async function start() {
 
     return settings;
   });
-
 
   /* ===========================
      USER DATA
@@ -323,7 +365,6 @@ async function start() {
       data: {
         requesterId: me,
         receiverId: targetId
-        // status = PENDING auto, merci Prisma
       }
     });
 
@@ -519,6 +560,32 @@ async function start() {
       };
     });
 
+  /* ===========================
+    HANDLE MESSAGE
+    =========================== */
+
+  fastify.get("/messages/:userId", async (req, reply) => {
+    const me = getUserIdFromAuth(req, reply);
+    if (!me) return;
+
+    const otherId = Number(req.params.userId);
+
+    const messages = await prisma.message.findMany({
+      where: {
+        OR: [
+          { fromUserId: me, toUserId: otherId },
+          { fromUserId: otherId, toUserId: me },
+        ],
+      },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return messages.map(m => ({
+      from: m.fromUserId === me ? "me" : "other",
+      text: m.content,
+      at: m.createdAt,
+    }));
+  });
 
   /* ===========================
     HANDLE BLACKLIST
