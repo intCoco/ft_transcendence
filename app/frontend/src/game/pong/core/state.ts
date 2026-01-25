@@ -20,4 +20,6 @@ export const game = {
     ctx: null as CanvasRenderingContext2D | null,
 
     onGameOver: undefined as (() => void) | undefined,
+    shakeTime: 0,
+    shakeStrength: 0,
 };

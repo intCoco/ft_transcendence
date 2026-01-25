@@ -1,5 +1,3 @@
-// systems/collisions.ts
-
 import { game } from "../core/state.js";
 import { Paddle, leftPaddle, rightPaddle } from "../entities/paddle.js";
 import { ball, resetBall } from "../entities/ball.js";
@@ -8,11 +6,13 @@ import { GOAL_TOP, GOAL_BOTTOM } from "../modifiers/arena.js";
 import { updateAIZone } from "../ai/ai.js";
 import { leftController, rightController } from "../game.js";
 import { PlayerController } from "../controllers/playerController.js";
+import { spawnGoalExplosion, spawnParticles } from "../entities/particles.js";
 import { AIController } from "../controllers/aiController.js";
 import { applyAngularBounce } from "../modifiers/angularBounce.js";
 import { applySpeedIncrease } from "../modifiers/speedIncrease.js";
 import { bounce } from "../modifiers/modifiers.js";
-import { GAME_HEIGHT, GAME_WIDTH } from "../core/constants.js";
+import { ARENA_MARGIN_LEFT, ARENA_MARGIN_RIGHT, GAME_HEIGHT, GAME_WIDTH } from "../core/constants.js";
+
 
 export interface CollisionResult {
     hit: boolean;
@@ -20,24 +20,14 @@ export interface CollisionResult {
     paddle?: Paddle;
 }
 
-function testPaddleCollision(
-    paddle: Paddle,
-    prevX: number,
-    prevY: number,
-    currX: number,
-    currY: number
-): { hit: boolean; side: "vertical" | "horizontal" } {
+function testPaddleCollision(paddle: Paddle, prevX: number, prevY: number, currX: number, currY: number): { hit: boolean; side: "vertical" | "horizontal" } {
     const left = paddle.x;
     const right = paddle.x + paddle.width;
     const top = paddle.y;
     const bottom = paddle.y + paddle.height;
 
-    if (
-        currX + ball.radius < left ||
-        currX - ball.radius > right ||
-        currY + ball.radius < top ||
-        currY - ball.radius > bottom
-    ) {
+    if (currX + ball.radius < left || currX - ball.radius > right
+        || currY + ball.radius < top || currY - ball.radius > bottom) {
         return { hit: false, side: "horizontal" };
     }
 
@@ -56,13 +46,7 @@ function testPaddleCollision(
     return { hit: true, side: "horizontal" };
 }
 
-export function checkPaddleCollision(
-    paddles: Paddle[],
-    prevX: number,
-    prevY: number,
-    currX: number,
-    currY: number
-): CollisionResult {
+export function checkPaddleCollision(paddles: Paddle[], prevX: number, prevY: number, currX: number, currY: number): CollisionResult {
     let nearest: Paddle | null = null;
     let minDist = Infinity;
 
@@ -78,59 +62,100 @@ export function checkPaddleCollision(
         }
     }
 
-    if (!nearest) {
-        return { hit: false, side: "horizontal" };
-    }
+    if (!nearest) return { hit: false, side: "horizontal" };
 
     const res = testPaddleCollision(nearest, prevX, prevY, currX, currY);
 
-    if (!res.hit) {
-        return { hit: false, side: "horizontal" };
-    }
+    if (!res.hit) return { hit: false, side: "horizontal" };
 
-    return {
-        hit: true,
-        side: res.side,
-        paddle: nearest
-    };
+    return { hit: true, side: res.side, paddle: nearest };
 }
 
-export function handleTopBotCollision() {
+export function handleTopBotCollision(modifiers: GameModifiers) {
     if (ball.y - ball.radius <= 0) {
         ball.y = ball.radius;
         ball.velY *= -1;
         ball.spin = 0;
+        spawnParticles("horizontal");
     }
 
     if (ball.y + ball.radius >= GAME_HEIGHT) {
         ball.y = GAME_HEIGHT - ball.radius;
         ball.velY *= -1;
         ball.spin = 0;
+        spawnParticles("horizontal");
+    }
+
+    if (!modifiers.arena) return;
+
+    // left tunnel
+    if (ball.x <= 0) {
+        if (ball.y - ball.radius <= GOAL_TOP && Math.abs(ball.y - GOAL_TOP) < Math.abs(ball.x)) {
+            ball.y = GOAL_TOP + ball.radius;
+            ball.velY *= -1;
+            ball.spin = 0;
+            spawnParticles("horizontal");
+        }
+        if (ball.y + ball.radius >= GOAL_BOTTOM && Math.abs(GOAL_BOTTOM - ball.y) < Math.abs(ball.x)) {
+            ball.y = GOAL_BOTTOM - ball.radius;
+            ball.velY *= -1;
+            ball.spin = 0;
+            spawnParticles("horizontal");
+        }
+    }
+
+    // right tunnel
+    if (ball.x >= GAME_WIDTH) {
+        if (ball.y - ball.radius <= GOAL_TOP && Math.abs(ball.y - GOAL_TOP) < Math.abs(GAME_WIDTH - ball.x)) {
+            ball.y = GOAL_TOP + ball.radius;
+            ball.velY *= -1;
+            ball.spin = 0;
+            spawnParticles("horizontal");
+        }
+        if (ball.y + ball.radius >= GOAL_BOTTOM && Math.abs(GOAL_BOTTOM - ball.y) < Math.abs(GAME_WIDTH - ball.x)) {
+            ball.y = GOAL_BOTTOM - ball.radius;
+            ball.velY *= -1;
+            ball.spin = 0;
+            spawnParticles("horizontal");
+        }
     }
 }
+
 
 export function handleLeftRightCollision(modifiers: GameModifiers) {
     // handles scoring (or collision if arena modifier)
     if (ball.x - ball.radius < 0) { // left side
         // if arena modifier AND in the goals limits OR if no arena modifier, same behavior
         if ((modifiers.arena && ball.y >= GOAL_TOP && ball.y <= GOAL_BOTTOM) || !modifiers.arena) {
-            game.scoreRight++;
-            resetBall("right");
+            if (ball.x < 0 - ARENA_MARGIN_LEFT - ball.radius * 2) {
+                game.scoreRight++;
+                spawnGoalExplosion("left");
+                resetBall("right");
+            }
         } else { // if arena modifiers, side collisions
-            ball.x = ball.radius;
-            ball.velX *= -1;
-            ball.spin = 0;
+            if (Math.abs(ball.x) <= (ball.y < GOAL_TOP ? Math.abs(ball.y - GOAL_TOP) : Math.abs(GOAL_BOTTOM - ball.y))) { //?
+                ball.x = ball.radius;
+                ball.velX *= -1;
+                ball.spin = 0;
+                spawnParticles("vertical");
+            }
         }
     }
 
     if (ball.x + ball.radius > GAME_WIDTH) { // right side
         if ((modifiers.arena && ball.y >= GOAL_TOP && ball.y <= GOAL_BOTTOM) || !modifiers.arena) {
-            game.scoreLeft++;
-            resetBall("left");
+            if (ball.x > GAME_WIDTH + ARENA_MARGIN_RIGHT + ball.radius * 2) {
+                game.scoreLeft++;
+                spawnGoalExplosion("right");
+                resetBall("left");
+            }
         } else {
-            ball.x = GAME_WIDTH - ball.radius;
-            ball.velX *= -1;
-            ball.spin = 0;
+            if (Math.abs(GAME_WIDTH - ball.x) <= (ball.y < GOAL_TOP ? Math.abs(ball.y - GOAL_TOP) : Math.abs(GOAL_BOTTOM - ball.y))) { //?
+                ball.x = GAME_WIDTH - ball.radius;
+                ball.velX *= -1;
+                ball.spin = 0;
+                spawnParticles("vertical");
+            }
         }
     }
 }
@@ -152,12 +177,16 @@ export function handlePaddleCollision(now: number, modifiers: GameModifiers) {
             if (modifiers.increaseSpeed)
                 applySpeedIncrease();
 
+            spawnParticles("vertical");
+
         } else {
             ball.velY *= -1;
+            spawnParticles("horizontal");
 
             // reposition to avoid unexpected behaviors
             ball.y = ball.prevY;
             return;
+
         }
 
         // spin management

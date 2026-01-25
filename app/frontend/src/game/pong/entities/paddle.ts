@@ -24,7 +24,7 @@ export class Paddle {
     }
 
     clamp(maxHeight: number) {
-        this.y = Math.max(0, Math.min(maxHeight - this.height, this.y));
+        this.y = Math.max(5, Math.min(maxHeight - this.height - 5, this.y));
     }
 }
 

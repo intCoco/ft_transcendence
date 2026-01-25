@@ -128,11 +128,12 @@ function GameCanvas({ setupPlayers }) {
     window.addEventListener("keyup", handleKeyUp);
 
     const dpr = window.devicePixelRatio || 1;
-    canvas.width = 800 * dpr;
-    canvas.height = 600 * dpr;
+    canvas.width = 860 * dpr;
+    canvas.height = 660 * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     stopGameRef.current = startPongGame(canvas, setupPlayers);
+    forceUpdate(v => v + 1);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
@@ -217,17 +218,17 @@ function GameCanvas({ setupPlayers }) {
               className="text-4xl mb-6 neon-glitch neon-glitch--always tracking-widest"
               data-text={
                 game.scoreLeft > game.scoreRight
-                  ? "LEFT WINS!"
+                  ? "𝕃𝔼𝔽𝕋 𝕎𝕀ℕ𝕊!"
                   : game.scoreRight > game.scoreLeft
-                  ? "RIGHT WINS!"
-                  : "DRAW!"
+                  ? "ℝ𝕀𝔾ℍ𝕋 𝕎𝕀ℕ𝕊!"
+                  : "𝔻ℝ𝔸𝕎!"
               }
             >
               {game.scoreLeft > game.scoreRight
-                ? "LEFT WINS!"
+                ? "𝕃𝔼𝔽𝕋 𝕎𝕀ℕ𝕊!"
                 : game.scoreRight > game.scoreLeft
-                ? "RIGHT WINS!"
-                : "DRAW!"}
+                ? "ℝ𝕀𝔾ℍ𝕋 𝕎𝕀ℕ𝕊!"
+                : "𝔻ℝ𝔸𝕎!"}
             </h1>
             <div className="flex flex-col gap-4">
               <button
