@@ -262,7 +262,6 @@ function GameCanvas({ setupPlayers }) {
 }
 
 
-
 /* ================================================================================= */
 /* ================================================================================= */
 /* ====================================== APP ====================================== */
@@ -333,6 +332,16 @@ export default function App() {
   const [setupPlayers, setSetupPlayers] = useState(null);
   const [showGameSetup, setShowGameSetup] = useState(false);
 
+  /* For message unread */
+  const [unread, setUnread] = useState({});
+  const isChatVisibleRef = useRef(false);
+  /* auto scrolling */
+  const messagesEndRef = useRef(null);
+
+  /* Check if this is you */
+  const meId = Number(localStorage.getItem(USER_ID_KEY));
+  const isMe = selectedUser?.id === meId;
+
 /* ================================================================================= */
 /* ================================================================================= */
 /* ============================ HANDLE BACKGROUND ================================== */
@@ -383,34 +392,37 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (isAuthed) {
+      if (!isAuthed || location.pathname === "/") {
+        setBgSrc(DEFAULT_BG);
+        return;
+      }
+  
       fetchUserSettings();
-    } else {
-      setBgSrc(DEFAULT_BG);
-    }
-  }, [isAuthed]);
-
-  const BACKGROUNDS = [
-  "/images/enter.jpg",
-  "/images/sun.png",
-  "/images/round.jpg",
-  "/images/cybersun.jpg",
-  "/images/black.webp",
-  "/images/mountain.jpg",
-  "/images/japan.jpg",
-  "/images/japan2.jpg",
-  "/images/car.jpg",
-  "/images/car2.jpg",
-  "/images/night.jpg",
-  "/images/rocket.jpg",
-  "/images/abstract.png",
-  "/images/dom.jpg",
-  "/images/setup.jpg",
-  "/images/setup2.jpg",
-  "/images/girlwork.jpg",
-  "/images/boywork.jpg",
-  "/images/vicecity.jpg",
-  ];
+    }, [isAuthed, location.pathname]);
+  
+    const BACKGROUNDS = [
+        "/images/enter.jpg",
+        "/images/sun.png",
+        "/images/japan2.jpg",
+        "/images/abstract.png",
+        "/images/manwork.png",
+        "/images/pacman.png",
+        "/images/womanwork.png",
+        "/images/roundenter.png",
+        "/images/neonbh.png",
+        "/images/worldtech.png",
+        "/images/abstract2.png",
+        "/images/womanview.png",
+        "/images/enterdisk.png",
+        "/images/manwork2.png",
+        "/images/womanwork2.png",
+        "/images/enter2.png",
+        "/images/entertriangle.png",
+        "/images/datacenter.png",
+        "/images/abstract3.png",
+        "/images/manwork3.png",
+        "/images/datacenter2.png",
+    ];
 
 /* ================================================================================= */
 /* ================================================================================= */
@@ -607,17 +619,40 @@ export default function App() {
     if (!token) return;
 
     fetch("/api/users", {
-      headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_KEY)}`,
-      },
+      headers: { Authorization: `Bearer ${localStorage.getItem(AUTH_KEY)}` },
     })
-    .then(res => res.json())
-    .then(setUsers)
-    .catch(() => setUsers([]));
+      .then(res => res.json())
+      .then(data => {
+        const meId = Number(localStorage.getItem(USER_ID_KEY));
+        const usersWithMe = [...data];
+
+        if (!usersWithMe.some(u => u.id === meId)) {
+          usersWithMe.push({
+            id: meId,
+            nickname: login,
+            online: true,
+          });
+        }
+
+        setUsers(prev => {
+          const prevMap = new Map(prev.map(u => [u.id, u]));
+
+          return usersWithMe.map(u => ({
+            ...u,
+            online: prevMap.get(u.id)?.online ?? u.online ?? false,
+          }));
+        });
+      })
+      .catch(() => setUsers([]));
 
     const ws = new WebSocket(
       `wss://${window.location.host}/api/ws?token=${token}`
     );
     wsRef.current = ws;
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ type: "WHO_IS_ONLINE" }));
+    };
 
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
@@ -626,22 +661,14 @@ export default function App() {
 
         case "USERS_STATUS":
           setUsers(prev => {
-            const map = new Map(prev.map(u => [u.id, u]));
+            const meId = Number(localStorage.getItem(USER_ID_KEY));
 
-            msg.onlineUsers.forEach(id => {
-              if (map.has(id)) {
-                map.set(id, { ...map.get(id), online: true });
-              } else {
-                map.set(id, { id, nickname: `user_${id}`, online: true });
-              }
-            });
-
-            return Array.from(map.values()).map(u => ({
+            return prev.map(u => ({
               ...u,
-              online: msg.onlineUsers.includes(u.id),
+              online: u.id === meId || msg.onlineUsers.includes(u.id),
             }));
           });
-          break;
+        break;
 
         case "FRIEND_REQUEST":
           setFriendRequests(prev => {
@@ -680,6 +707,33 @@ export default function App() {
           );
           break;
         
+        case "DM_MESSAGE": {
+          const fromId = msg.fromUserId;
+          const meId = Number(localStorage.getItem(USER_ID_KEY));
+
+          setMessages(prev => ({
+            ...prev,
+            [fromId]: [
+              ...(prev[fromId] || []),
+              { from: "other", text: msg.text }
+            ]
+          }));
+
+          if (
+              fromId !== meId &&
+              !(
+                isChatVisibleRef.current &&
+                activeChatUser?.id === fromId
+              )
+            ) {
+            setUnread(prev => ({
+              ...prev,
+              [fromId]: (prev[fromId] || 0) + 1,
+            }));
+          }
+          break;
+        }
+
         default:
           break;
       }
@@ -693,9 +747,15 @@ export default function App() {
     return () => {
       ws.close();
     };
-  }, [isAuthed, authUserId]);
+  }, [isAuthed]);
 
   //
+  //
+  //
+  useEffect(() => {
+    isChatVisibleRef.current = Boolean(showChat && activeChatUser);
+  }, [showChat, activeChatUser]);
+
   //
   //
   useEffect(() => {
@@ -743,6 +803,16 @@ export default function App() {
 //
 //
 //
+  useEffect(() => {
+    if (!activeChatUser) return;
+
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, activeChatUser]);
+//
+//
+//
 
   const isFriend = (id) => friends.some(f => f.id === id);
   const isPending = (id) => friendRequests.some(r => r.id === id);
@@ -755,7 +825,28 @@ export default function App() {
 
   const closeUserMenu = () => setSelectedUser(null);
 
-  const handleDM = () => {
+  const handleDM = async () => {
+    const token = localStorage.getItem(AUTH_KEY);
+
+    const res = await fetch(`/api/messages/${selectedUser.id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const history = await res.json();
+
+    setMessages(prev => ({
+      ...prev,
+      [selectedUser.id]: history,
+    }));
+
+    setUnread(prev => {
+      const copy = { ...prev };
+      delete copy[selectedUser.id];
+      return copy;
+    });
+
     setActiveChatUser(selectedUser);
     closeUserMenu();
   };
@@ -773,7 +864,7 @@ export default function App() {
       },
     });
 
-    notify("Friend request sent");
+    //notify("Friend request sent");
     closeUserMenu();
   };
 
@@ -789,17 +880,6 @@ export default function App() {
     setFriendRequests(prev =>
       prev.filter(req => req.id !== userId)
     );
-
-    // // refresh friends
-    // fetch("https://localhost:3000/friends", {
-    //   headers: {
-    //     Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-    //   },
-    // })
-    //   .then(res => res.json())
-    //   .then(data => {
-    //     setFriends(Array.isArray(data) ? data : []);
-    //   });
   };
 
   const handleRefuseFriend = async (userId) => {
@@ -823,30 +903,8 @@ export default function App() {
       },
     });
 
-    // fetch("https://localhost:3000/friends", {
-    //   headers: {
-    //     Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-    //   },
-    // })
-      // .then(res => res.json())
-      // .then(data => {
-      //   setFriends(Array.isArray(data) ? data : []);
-      // });
-
     closeUserMenu();
   };
-
-  // const refreshFriends = () => {
-  //   fetch("https://localhost:3000/friends", {
-  //     headers: {
-  //       Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-  //     },
-  //   })
-  //     .then(res => res.json())
-  //     .then(data => {
-  //       setFriends(Array.isArray(data) ? data : []);
-  //     });
-  // };
 
   const handleBlock = async () => {
     await fetch(`/api/user/${selectedUser.id}/block`, {
@@ -858,11 +916,14 @@ export default function App() {
     closeUserMenu();
   };
 
-  // useEffect(() => {
-  //   if (showChat && userTab === "friends") {
-  //     refreshFriends();
-  //   }
-  // }, [showChat, userTab]);
+  const handleBackFromChat = () => {
+    setUnread(prev => {
+      const copy = { ...prev };
+      delete copy[activeChatUser.id];
+      return copy;
+    });
+    setActiveChatUser(null);
+  };
 
 function PublicProfile() {
   const { id } = useParams();
@@ -873,13 +934,16 @@ function PublicProfile() {
   const [user, setUser] = useState(undefined);
   const isMe = String(id) === String(localStorage.getItem(USER_ID_KEY));
 
+  const liveUser = users.find(u => String(u.id) === String(id));
+  const online = isMe || liveUser?.online;
+
+  if (isMe) {
+    navigate("/profile", { replace: true });
+    return null;
+  }
+
   // FETCH PROFIL UNIQUEMENT SI PAS MOI
   useEffect(() => {
-    if (isMe) {
-      setUser(null);
-      return;
-    }
-
     fetch(`/api/users/${id}/profile`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
@@ -891,44 +955,10 @@ function PublicProfile() {
       })
       .then(setUser)
       .catch(() => setUser(null));
-  }, [id, isMe]);
+  }, [id]);
 
-  // SYNC ONLINE STATUS
-  useEffect(() => {
-    const ws = wsRef.current;
-    if (!ws || isMe) return;
-
-    const handler = (event) => {
-      const msg = JSON.parse(event.data);
-      if (msg.type === "USERS_STATUS") {
-        setUser(u =>
-          u ? { ...u, online: msg.onlineUsers.includes(u.id) } : u
-        );
-      }
-    };
-
-    ws.addEventListener("message", handler);
-    return () => ws.removeEventListener("message", handler);
-  }, [isMe]);
 
   // ===== RENDER =====
-
-  if (isMe) {
-    return (
-      <div className="w-full h-full flex flex-col items-center text-white">
-        <button
-          className="absolute top-4 left-4 neon-border px-2 py-1"
-          onClick={() => navigate("/dashboard")}
-        >
-          ← 𝔹𝔸ℂ𝕂
-        </button>
-
-        <p className="mt-[20vh] text-cyan-300">
-          This is your own profile
-        </p>
-      </div>
-    );
-  }
 
   if (user === undefined) {
     return <div className="text-white">Loading...</div>;
@@ -941,7 +971,7 @@ function PublicProfile() {
   return (
     <div className="w-full h-full flex flex-col items-center text-white">
       <button
-        className="absolute top-4 left-4 neon-border px-2 py-1"
+        className="absolute top-5 left-1/2 -translate-x-1/2 neon-border px-2 py-1"
         onClick={() => navigate(from)}
       >
         ← 𝔹𝔸ℂ𝕂
@@ -1000,7 +1030,7 @@ function PublicProfile() {
 
             <button
               onClick={() => setNotification(null)}
-              className="neon-glitch neon-glitch--always mt-5 px-10 py-0 neon-border text-white"
+              className="neon-glitch neon-glitch--hover mt-5 px-10 py-0 neon-border text-white"
               data-text="𝕆𝕂">
               𝕆𝕂
             </button>
@@ -1018,7 +1048,7 @@ function PublicProfile() {
         {showConnectedUI && (
           <div className="fixed top-4 right-4 z-[9999]">
             <button
-              className="neon-glitch neon-glitch--always text-2xl px-2 py-0 bg-transparent rounded neon-border"
+              className="neon-glitch neon-glitch--hover text-2xl px-2 py-0 bg-transparent rounded neon-border"
               data-text="✉"
               onClick={() => setShowChat(v => !v)}
             >
@@ -1086,6 +1116,11 @@ function PublicProfile() {
                         >
                           {u.online && <span className="w-2 h-2 rounded-full bg-green-400" />}
                           <span className="text-white">{u.nickname}</span>
+                          {unread[u.id] && (
+                            <span className="text-xs px-1 py-0.5 rounded-full bg-cyan-500 text-white">
+                              {unread[u.id]}
+                            </span>
+                          )}
                         </button>
                       </li>
                     ))}
@@ -1106,6 +1141,11 @@ function PublicProfile() {
                           <span className="text-white">
                             {u.nickname}
                           </span>
+                          {unread[u.id] && (
+                            <span className="text-xs px-1 py-0.5 rounded-full bg-cyan-500 text-white">
+                              {unread[u.id]}
+                            </span>
+                          )}
                         </button>
                       </li>
                     ))}
@@ -1144,7 +1184,7 @@ function PublicProfile() {
                 <div className="flex items-center gap-2 p-3 border-b border-cyan-500/30">
                   <button
                     className="text-cyan-300 text-sm"
-                    onClick={() => setActiveChatUser(null)}
+                    onClick={handleBackFromChat}
                   >
                     ← 𝔹𝔸ℂ𝕂
                   </button>
@@ -1153,19 +1193,21 @@ function PublicProfile() {
                   </span>
                 </div>
 
-                <div className="flex-1 overflow-y-auto p-3 space-y-2">
+                <div className="flex-1 overflow-y-auto p-3 space-y-2 chat-scroll">
                   {(messages[activeChatUser.id] || []).map((msg, i) => (
                     <div
                       key={i}
                       className={`max-w-[80%] px-3 py-1 rounded
-                          whitespace-pre-wrap break-words
+                          whitespace-pre-wrap break-words text-white
+                          border shadow-[0_0_8px_rgba(34,211,238,0.6)]
                         ${msg.from === "me"
-                          ? "ml-auto bg-cyan-600/30"
-                          : "mr-auto bg-gray-700/40"}`}
+                          ? "ml-auto bg-black/70 border-cyan-400"
+                          : "mr-auto bg-black/50 border-purple-400"}`}
                     >
                       {msg.text}
                     </div>
                   ))}
+                  <div ref={messagesEndRef} />
                 </div>
                 
                 <form
@@ -1185,6 +1227,11 @@ function PublicProfile() {
                         ...(prev[activeChatUser.id] || []),
                         { from: "me", text: chatInput }
                       ]
+                    }));
+                    wsRef.current?.send(JSON.stringify({
+                      type: "DM_SEND",
+                      toUserId: activeChatUser.id,
+                      text: chatInput,
                     }));
                     setChatInput("");
                   }}
@@ -1207,7 +1254,7 @@ function PublicProfile() {
   ======================================================================================
   ======================================================================================*/}
 
-        {selectedUser && (
+        {selectedUser && !isMe && (
           <div
             className="fixed bg-black/90 neon-border rounded p-2
                       text-sm z-[1000]"
@@ -1328,7 +1375,7 @@ function PublicProfile() {
   ====================================================================================== 
   ======================================================================================*/}
 
-        {/* <main className="flex-1 flex flex-col"> */}
+        <main className="flex-1 flex flex-col">
         <Routes>
           <Route path="/" element={
             <div className="w-full h-full flex flex-col items-center">
@@ -1341,7 +1388,7 @@ function PublicProfile() {
               </div>
               <div className="mt-[12vh] flex justify-center w-full">
                 <button
-                  className="neon-glitch neon-glitch--always relative inline-block text-4xl bg-transparent border-0"
+                  className="neon-glitch neon-glitch--hover relative inline-block text-4xl bg-transparent border-0"
                   data-text="ℂ𝕆ℕℕ𝔼ℂ𝕋𝕀𝕆ℕ➣"
                   onClick={() => setAuthMode("login")}
                 >
@@ -1350,7 +1397,7 @@ function PublicProfile() {
               </div>
               <div className="mt-[1vh] flex justify-center w-full">
                 <button
-                  className="neon-glitch neon-glitch--always relative inline-block text-4xl bg-transparent border-0"
+                  className="neon-glitch neon-glitch--hover relative inline-block text-4xl bg-transparent border-0"
                   data-text="𝕊𝕌𝔹𝕊ℂℝ𝕀𝔹𝔼➢"
                   onClick={() => setAuthMode("register")}
                 >
@@ -1447,7 +1494,7 @@ function PublicProfile() {
                   <div className="flex gap-4 justify-center">
                     <button
                       type="button"
-                      className="neon-glitch neon-glitch--always px-9 py-0 text-1xl bg-gray-900/80 text-black-300
+                      className="neon-glitch neon-glitch--hover px-9 py-0 text-1xl bg-gray-900/80 text-black-300
                         rounded neon-border"
                         data-text="♂ 𝕄𝔸𝕃𝔼 ♂">
                       ♂ 𝕄𝔸𝕃𝔼 ♂
@@ -1455,14 +1502,14 @@ function PublicProfile() {
 
                     <button
                       type="button"
-                      className="neon-glitch neon-glitch--always px-7 py-0 text-1xl bg-gray-900/80 text-black-300
+                      className="neon-glitch neon-glitch--hover px-7 py-0 text-1xl bg-gray-900/80 text-black-300
                       rounded neon-border"
                       data-text="♀ 𝔽𝔼𝕄𝔸𝕃𝔼 ♀">
                       ♀ 𝔽𝔼𝕄𝔸𝕃𝔼 ♀
                     </button>
                   </div>
 
-                  <button type="submit" className="neon-glitch neon-glitch--always px-0 py-0 text-xl
+                  <button type="submit" className="neon-glitch neon-glitch--hover px-0 py-0 text-xl
                     bg-gray-900/80 text-cyan-300 rounded neon-border"
                     data-text="⇧ 𝔾𝕆 ⇧">
                       ⇧ 𝔾𝕆 ⇧
@@ -1536,7 +1583,7 @@ function PublicProfile() {
           <div className="relative w-screen h-screen">
 
             <h1
-              className="absolute top-[60px] left-1/2 -translate-x-1/2 neon-glitch neon-glitch--always text-5xl"
+              className="absolute top-4 left-1/2 -translate-x-1/2 neon-glitch neon-glitch--always text-5xl"
               data-text="ℂℍ𝕆𝕆𝕊𝔼 𝔾𝔸𝕄𝔼"
             >
               ℂℍ𝕆𝕆𝕊𝔼 𝔾𝔸𝕄𝔼
@@ -1563,7 +1610,7 @@ function PublicProfile() {
             </div>
 
             <button
-              className="absolute left-4 px-1 py-1 neon-border bg-gray-900/60 text-cyan-300"
+              className="absolute top-4 left-4 px-1 py-1 neon-border bg-gray-900/60 text-cyan-300"
               onClick={() => navigate(-1)}
             >
               ← 𝔹𝔸ℂ𝕂
@@ -1651,14 +1698,14 @@ function PublicProfile() {
 
         <Route path="/profile" element={
           <div className="w-full h-full relative overflow-hidden">
-            <div className="mt-[1vh] w-full h-full flex flex-col items-center">
+            <div className="mt-[2vh] w-full h-full flex flex-col items-center">
               <h1 className="neon-glitch neon-glitch--always relative inline-block text-7xl"
                 data-text="ℙℝ𝕆𝔽𝕀𝕃𝔼">
                 ℙℝ𝕆𝔽𝕀𝕃𝔼
               </h1>
 
               <button
-                className="neon-glitch neon-glitch--always absolute text-xl top-[125px] px-3 py-0
+                className="neon-glitch neon-glitch--hover absolute text-xl top-[125px] px-3 py-0
                 neon-border bg-gray-900/60"
                 onClick={() => navigate(-1)}
                 data-text="← 𝔹𝔸ℂ𝕂">
@@ -1667,7 +1714,7 @@ function PublicProfile() {
 
               <label
                 className="
-                  absolute top-[310px] text-xs cursor-pointer neon-border neon-glitch neon-glitch--always
+                  absolute top-[310px] text-xs cursor-pointer neon-border neon-glitch neon-glitch--hover
                   px-2 py-1 font-mono text-cyan-300 hover:underline"
               >
                 change avatar
@@ -1768,14 +1815,14 @@ function PublicProfile() {
         } />
 
       </Routes>
-      {/* </main>
+      </main>
       <footer className="mt-auto w-full py-4 flex justify-center text-xs sm:text-sm text-cyan-300">
-        <div className="flex gap-2 neon-glitch neon-glitch--always text-center">
+        <div className="flex gap-2 neon-glitch text-center">
           <Link to="/privacy">Privacy Policy</Link>
           <span>|</span>
           <Link to="/terms">Terms of Service</Link>
         </div>
-      </footer> */}
+      </footer>
       {showGameSetup && (
         <GameSetup
           onStart={(playersConfig) => {
