@@ -1,5 +1,5 @@
 import { ball } from "../entities/ball.js";
-import { GAME_HEIGHT, GAME_WIDTH, ARENA_MARGIN_TOP, ARENA_MARGIN_LEFT } from "../core/constants.js";
+import { GAME_HEIGHT, GAME_WIDTH, ARENA_MARGIN_TOP, ARENA_MARGIN_LEFT, ARENA_MARGIN_RIGHT } from "../core/constants.js";
 import { GOAL_TOP, GOAL_HEIGHT, GOAL_BOTTOM } from "../modifiers/arena.js";
 import { gameConfig } from "../modifiers/modifiers.js";
 import { Paddle, leftPaddle, rightPaddle } from "../entities/paddle.js";
@@ -17,8 +17,6 @@ interface Particle {
 }
 
 export const particles: Particle[] = [];
-
-
 
 /**
  * Spawn particles from ball collision
@@ -95,7 +93,7 @@ function handleParticleTopBotCollision(p: Particle) {
 function handleParticleLeftRightCollision(p: Particle) {
 	// left side
 	if (p.x < 0) {
-		if (gameConfig.modifiers.arena && p.y >= GOAL_TOP && p.y <= GOAL_BOTTOM) {
+		if (gameConfig.modifiers.arena && p.y >= GOAL_TOP && p.y <= GOAL_BOTTOM || !gameConfig.modifiers.arena) {
 			return;
 		} else {
 			if (Math.abs(p.x) <= (p.y < GOAL_TOP ? Math.abs(p.y - GOAL_TOP) : Math.abs(GOAL_BOTTOM - p.y))) {
@@ -107,7 +105,7 @@ function handleParticleLeftRightCollision(p: Particle) {
 
 	// right side
 	if (p.x > GAME_WIDTH) {
-		if (gameConfig.modifiers.arena && p.y >= GOAL_TOP && p.y <= GOAL_BOTTOM) {
+		if ((gameConfig.modifiers.arena && p.y >= GOAL_TOP && p.y <= GOAL_BOTTOM) || !gameConfig.modifiers.arena) { // COLLISION ALORS QUE PAS DARENA
 			return;
 		} else {
 			if (Math.abs(GAME_WIDTH - p.x) <= (p.y < GOAL_TOP ? Math.abs(p.y - GOAL_TOP) : Math.abs(GOAL_BOTTOM - p.y))) {
@@ -151,10 +149,6 @@ function handleParticlePaddleCollision(p: Particle) {
 	}
 }
 
-/* ============================================================
-   UPDATE
-   ============================================================ */
-
 export function updateParticles(delta: number, ctx: CanvasRenderingContext2D) {
 	for (let i = particles.length - 1; i >= 0; i--) {
 		const p = particles[i];
@@ -194,18 +188,20 @@ export function updateParticles(delta: number, ctx: CanvasRenderingContext2D) {
 }
 
 export function spawnGoalExplosion(side: "left" | "right") {
-	const centerY = (GOAL_TOP + GOAL_BOTTOM) * 0.5;
-	const startX = side === "left" ? 0 : GAME_WIDTH;
+	const startX = side === "left" ? 0 - ARENA_MARGIN_LEFT : GAME_WIDTH + ARENA_MARGIN_RIGHT;
+	const minY = gameConfig.modifiers.arena ? GOAL_TOP : GAME_HEIGHT * 0.05;
+	const maxY = gameConfig.modifiers.arena ? GOAL_BOTTOM : GAME_HEIGHT * 0.95;
 
 	for (let i = 0; i < 80 + Math.floor(Math.random() * 40); i++) {
-		const angle = side === "left" ? 0 : Math.PI + (Math.random() - 0.5) * Math.PI / 2.5;
+		const y = minY + Math.random() * (maxY - minY);
+		const angle = side === "left" ? (Math.random() - 0.5) * Math.PI / 2 : Math.PI + (Math.random() - 0.5) * Math.PI / 2;
 		const speed = 600 + Math.random() * 500;
 
 		particles.push({
 			x: startX,
-			y: centerY + (Math.random() - 0.5) * GOAL_HEIGHT,
+			y,
 			prevX: startX,
-			prevY: centerY,
+			prevY: y,
 			velX: Math.cos(angle) * speed,
 			velY: Math.sin(angle) * speed,
 			life: 0.6 + Math.random() * 0.5,
@@ -213,3 +209,4 @@ export function spawnGoalExplosion(side: "left" | "right") {
 		});
 	}
 }
+

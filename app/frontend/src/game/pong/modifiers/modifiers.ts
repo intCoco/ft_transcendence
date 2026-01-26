@@ -1,5 +1,3 @@
-// modifiers/modifiers.ts
-
 import { Ball } from "../entities/ball.js";
 
 export interface GameModifiers {

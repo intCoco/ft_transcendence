@@ -1,4 +1,3 @@
-
 export const GAMEDURATION = 60;
 
 export const GAME_WIDTH = 800;

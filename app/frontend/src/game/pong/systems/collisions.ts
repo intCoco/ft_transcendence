@@ -127,7 +127,7 @@ export function handleLeftRightCollision(modifiers: GameModifiers) {
     if (ball.x - ball.radius < 0) { // left side
         // if arena modifier AND in the goals limits OR if no arena modifier, same behavior
         if ((modifiers.arena && ball.y >= GOAL_TOP && ball.y <= GOAL_BOTTOM) || !modifiers.arena) {
-            if (ball.x < 0 - ARENA_MARGIN_LEFT - ball.radius * 2) {
+            if (ball.x < 0 - ARENA_MARGIN_LEFT - ball.radius * 2 && !game.isGameOver) {
                 game.scoreRight++;
                 spawnGoalExplosion("left");
                 resetBall("right");
@@ -144,7 +144,7 @@ export function handleLeftRightCollision(modifiers: GameModifiers) {
 
     if (ball.x + ball.radius > GAME_WIDTH) { // right side
         if ((modifiers.arena && ball.y >= GOAL_TOP && ball.y <= GOAL_BOTTOM) || !modifiers.arena) {
-            if (ball.x > GAME_WIDTH + ARENA_MARGIN_RIGHT + ball.radius * 2) {
+            if (ball.x > GAME_WIDTH + ARENA_MARGIN_RIGHT + ball.radius * 2 && !game.isGameOver) {
                 game.scoreLeft++;
                 spawnGoalExplosion("right");
                 resetBall("left");

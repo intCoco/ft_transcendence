@@ -1,5 +1,3 @@
-// ai/ai.ts
-
 import { AIController } from "../controllers/aiController.js";
 import { GAME_HEIGHT, GAME_WIDTH } from "../core/constants.js";
 import { ball } from "../entities/ball.js";

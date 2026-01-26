@@ -1,5 +1,3 @@
-// entities/paddle.ts
-
 export class Paddle {
     x: number;
     y: number;

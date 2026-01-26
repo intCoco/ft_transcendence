@@ -1,5 +1,3 @@
-// core/state.ts
-
 import { GameState, GAMEDURATION } from "./constants.js";
 
 export const game = {

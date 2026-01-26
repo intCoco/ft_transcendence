@@ -1,5 +1,3 @@
-// controllers/PlayerController.ts
-
 import { Controller } from "./controller.js";
 import { Paddle } from "../entities/paddle.js";
 import { isKeyDown } from "../core/input.js";

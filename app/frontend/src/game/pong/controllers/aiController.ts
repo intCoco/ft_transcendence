@@ -1,5 +1,3 @@
-// controllers/AIController.ts
-
 import { game } from "../core/state.js";
 import { Controller } from "./controller.js";
 import { Paddle } from "../entities/paddle.js";

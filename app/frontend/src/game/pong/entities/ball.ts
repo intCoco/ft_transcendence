@@ -1,5 +1,3 @@
-// entities/ball.ts
-
 import { game } from "../core/state.js";
 import { GAME_HEIGHT, GAME_WIDTH, GameState } from "../core/constants.js";
 import { leftPaddle, rightPaddle } from "./paddle.js";

@@ -1,4 +1,3 @@
-// core/input.ts
 import { game } from "./state.ts";
 
 

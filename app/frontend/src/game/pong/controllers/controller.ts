@@ -1,5 +1,3 @@
-// controllers/Controller.ts
-
 import { Paddle } from "../entities/paddle.js";
 
 export interface Controller {
