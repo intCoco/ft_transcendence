@@ -1,7 +1,7 @@
 import { GameState, GAMEDURATION } from "./constants.js";
 
 export const game = {
-    state: GameState.MENU,
+    state: GameState.COIN_TOSS,
     isPaused: false,
     isGameOver: false,
 

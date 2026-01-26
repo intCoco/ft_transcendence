@@ -3,6 +3,9 @@ import { GAME_HEIGHT, GAME_WIDTH, GameState } from "../core/constants.js";
 import { leftPaddle, rightPaddle } from "./paddle.js";
 import { leftController, rightController } from "../game.js";
 import { AIController } from "../controllers/aiController.js";
+import { gameConfig } from "../modifiers/modifiers.js";
+import { applySpin } from "../modifiers/spin.js";
+import { handleLeftRightCollision, handlePaddleCollision, handleTopBotCollision } from "../systems/collisions.js";
 
 export interface Ball {
     x: number;
@@ -28,12 +31,24 @@ export const ball: Ball = {
     spin: 0
 };
 
+export function updateBall(now: number, delta: number) {
+    if (game.state === GameState.END) { ball.velX /= 1.05; ball.velY /= 1.05; }
+    
+    ball.prevX = ball.x; // save ball position before moving for anti tunneling
+    ball.prevY = ball.y;
+    if (gameConfig.modifiers.spin)
+        applySpin(delta);
+    ball.x += ball.velX * ball.speedCoef * delta * (ball.spin ? 1.1 : 1); // moves the ball
+    ball.y += ball.velY * ball.speedCoef * delta * (ball.spin ? 1.1 : 1); //
+
+    // collisions: handles collisions with every collidable elements (top, bottom, paddles, ...)
+    handleTopBotCollision(gameConfig.modifiers);
+    handlePaddleCollision(now, gameConfig.modifiers);
+    handleLeftRightCollision(gameConfig.modifiers);
+}
 
 export function resetBall(scorer: "left" | "right") {
-    ball.x =
-        scorer === "left"
-            ? rightPaddle.x - 4 * rightPaddle.width
-            : leftPaddle.x + leftPaddle.width + 4 * leftPaddle.width;
+    ball.x = scorer === "left" ? rightPaddle.x - 4 * rightPaddle.width : leftPaddle.x + leftPaddle.width + 4 * leftPaddle.width;
 
     if (leftController instanceof AIController) {
         leftController.state.wantsSpin = false;

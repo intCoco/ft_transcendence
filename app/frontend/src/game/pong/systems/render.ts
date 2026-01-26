@@ -8,6 +8,7 @@ import { GOAL_BOTTOM, GOAL_TOP } from "../modifiers/arena";
 import { gameConfig } from "../modifiers/modifiers";
 import { coinToss } from "./coinToss";
 import { Paddle } from "../entities/paddle"
+import { particles } from "../entities/particles";
 
 // display functions
 function drawPaddle(paddle: any) {
@@ -437,21 +438,44 @@ function drawAIDebug() {
     drawAIInfos();
 }
 
+function drawParticles() {
+    for (const p of particles) {    
+        game.ctx!.save();
+        game.ctx!.globalAlpha = p.alpha;
+        game.ctx!.fillStyle = "cyan";
+        game.ctx!.beginPath();
+        game.ctx!.arc(
+            p.x + ARENA_MARGIN_LEFT,
+            p.y + ARENA_MARGIN_TOP,
+            2 + Math.random() * 2,
+            0,
+            Math.PI * 2
+        );
+        game.ctx!.fill();
+        game.ctx!.restore();
+    }
+}
+
 export function render(leftPaddle: Paddle, rightPaddle: Paddle) {
-	if (game.state === GameState.COIN_TOSS)
-		drawCoinToss();
-	else {
-		if (gameConfig.modifiers.arena)
-			drawGoalsArena();
-		else
-			drawArena();
-		drawScore();
-		drawPaddle(leftPaddle);
-		drawPaddle(rightPaddle);
-		drawDash();
-		drawServeTimer();
-		drawTimer();
-		drawAIDebug();
-		drawBall();
-	}
+    if (!game.isPaused) {
+        game.ctx!.fillStyle = "#0a02147a";
+        game.ctx!.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        if (game.state === GameState.COIN_TOSS)
+            drawCoinToss();
+        else {
+            if (gameConfig.modifiers.arena)
+                drawGoalsArena();
+            else
+                drawArena();
+            drawScore();
+            drawPaddle(leftPaddle);
+            drawPaddle(rightPaddle);
+            drawDash();
+            drawServeTimer();
+            drawTimer();
+            drawAIDebug();
+            drawBall();
+            drawParticles();
+        }
+    }
 }

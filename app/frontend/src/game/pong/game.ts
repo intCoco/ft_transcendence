@@ -1,10 +1,9 @@
 import { game } from "./core/state.js";
-import { GAMEDURATION, CANVAS_HEIGHT, CANVAS_WIDTH } from "./core/constants.js";
+import { GAMEDURATION, GameState } from "./core/constants.js";
 import { leftPaddle, rightPaddle } from "./entities/paddle.js";
 import { PlayerController } from "./controllers/playerController.js";
 import { AIController } from "./controllers/aiController.js";
 import { AI_EASY, AI_HARD, AI_NORMAL } from "./ai/ai.js";
-import { updateParticles } from "./entities/particles.js";
 import { startCoinToss } from "./systems/coinToss.js";
 import { render } from "./systems/render.js";
 import { update } from "./systems/update.js";
@@ -18,6 +17,7 @@ export let rightController: PlayerController | AIController =
 
 // called to initialize the game when pressing start button
 export function startGame(playersConfig?: { left: any, right: any })  {
+    game.state = GameState.COIN_TOSS;
     game.scoreLeft = 0;
     game.scoreRight = 0;
     game.gameTimer = GAMEDURATION;
@@ -55,17 +55,11 @@ export function startPongGame(canvas: HTMLCanvasElement, playersConfig?: any) {
     startGame(playersConfig);
     function loop(now: number) {
         if (!running || !leftController || !rightController) return;
-
         game.ctx = ctx;
 
         const delta = (now - lastTime) / 1000;
         lastTime = now;
-        updateParticles(delta, ctx);
         update(delta);
-
-        game.ctx!.fillStyle = "#0a0214a7";
-        game.ctx!.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
-
         render(leftPaddle, rightPaddle);
         requestAnimationFrame(loop);
     }

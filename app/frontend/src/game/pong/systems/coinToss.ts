@@ -35,8 +35,6 @@ export function startCoinToss(now: number) {
 
 	coinToss.current = "left";
 	coinToss.winner = null;
-
-	game.state = GameState.COIN_TOSS;
 }
 
 export function updateCoinToss(now: number) {

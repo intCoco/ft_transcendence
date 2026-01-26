@@ -19,7 +19,6 @@ export const ARENA_LEFT = 0 + ARENA_MARGIN_LEFT;
 export const ARENA_RIGHT = CANVAS_WIDTH - ARENA_MARGIN_RIGHT;
 
 export enum GameState {
-    MENU,
     COIN_TOSS,
     SERVE,
     PLAY,

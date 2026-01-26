@@ -115,7 +115,7 @@ function GameCanvas({ setupPlayers }) {
     const handleKeyDown = (e) => {
       setKey(e.key, true);
 
-      if (e.key === "Escape") {
+      if (e.key === "Escape" && !game.isGameOver) {
         game.isPaused = !game.isPaused
         forceUpdate(v => v + 1); 
         // setIsPaused(prev => !prev);

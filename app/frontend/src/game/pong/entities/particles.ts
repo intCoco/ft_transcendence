@@ -149,7 +149,7 @@ function handleParticlePaddleCollision(p: Particle) {
 	}
 }
 
-export function updateParticles(delta: number, ctx: CanvasRenderingContext2D) {
+export function updateParticles(delta: number) {
 	for (let i = particles.length - 1; i >= 0; i--) {
 		const p = particles[i];
 
@@ -168,20 +168,6 @@ export function updateParticles(delta: number, ctx: CanvasRenderingContext2D) {
 
 		p.life -= delta;
 		p.alpha = Math.max(0, p.life / 0.6);
-
-		ctx.save();
-		ctx.globalAlpha = p.alpha;
-		ctx.fillStyle = "cyan";
-		ctx.beginPath();
-		ctx.arc(
-			p.x + ARENA_MARGIN_LEFT,
-			p.y + ARENA_MARGIN_TOP,
-			2 + Math.random() * 2,
-			0,
-			Math.PI * 2
-		);
-		ctx.fill();
-		ctx.restore();
 
 		if (p.life <= 0) particles.splice(i, 1);
 	}
