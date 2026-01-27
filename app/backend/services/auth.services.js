@@ -1,6 +1,8 @@
 const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+
 const bcrypt = require("bcrypt");
+const prisma = new PrismaClient();
+
 
 function isAlphaNum(str) {
   return /^[a-zA-Z0-9]+$/.test(str);

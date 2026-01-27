@@ -1,5 +1,6 @@
 const { registerUser, loginUser } = require("../services/auth.services");
 
+
 module.exports = async function (fastify) {
     fastify.post("/auth/register", async (req, reply) => {
         const email = req.body?.email?.trim().toLowerCase();
