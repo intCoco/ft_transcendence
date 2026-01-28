@@ -264,11 +264,6 @@ async function start() {
       "/images/abstract3.png",
       "/images/manwork3.png",
       "/images/datacenter2.png",
-      "/images/viewpurple.png",
-      "/images/miner.png",
-      "/images/arcade.png",
-      "/images/purpleplanet.png",
-      "/images/vaisseau.png"
     ]);
 
     if (!ALLOWED_BACKGROUNDS.has(background)) {
@@ -679,6 +674,26 @@ async function start() {
     });
     return !!block;
   }
+
+  fastify.get("/leaderboard", async (req, reply) => {
+    try {
+      const users = await prisma.user.findMany({
+        orderBy: {
+          wins: "desc",
+        },
+        select: {
+          id: true,
+          nickname: true,
+          wins: true,
+          losses: true,
+        },
+      });
+      return users;
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.code(500).send({ message: "Internal server error" });
+    }
+  });
 
   /* ===========================
       START
