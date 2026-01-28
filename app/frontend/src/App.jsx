@@ -422,6 +422,11 @@ export default function App() {
       "/images/abstract3.png",
       "/images/manwork3.png",
       "/images/datacenter2.png",
+      "/images/viewpurple.png",
+      "/images/miner.png",
+      "/images/arcade.png",
+      "/images/purpleplanet.png",
+      "/images/vaisseau.png"
   ];
 
 /* ================================================================================= */
