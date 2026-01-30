@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { gameConfig } from "./game/pong/modifiers/modifiers";
+import "./i18n";
 
 function formatKey(key) {
-   if (key === "ArrowUp") return "🠕";
+  if (key === "ArrowUp") return "🠕";
   if (key === "ArrowDown") return "🠗";
   if (key === "ArrowLeft") return "🠔";
   if (key === "ArrowRight") return "🠖";
@@ -10,11 +12,16 @@ function formatKey(key) {
   return key.length > 4 ? key.slice(0, 4) + "…" : key.toUpperCase();
 }
 
-
 export default function GameSetup({ onStart, onClose }) {
+  const { t } = useTranslation();
   const [players, setPlayers] = useState({
     left: { type: "Player", up: "w", down: "s", aiDifficulty: "Normal" },
-    right: { type: "Player", up: "ArrowUp", down: "ArrowDown", aiDifficulty: "Normal" },
+    right: {
+      type: "Player",
+      up: "ArrowUp",
+      down: "ArrowDown",
+      aiDifficulty: "Normal",
+    },
   });
 
   const [modifiers, setModifiers] = useState({ ...gameConfig.modifiers });
@@ -43,26 +50,29 @@ export default function GameSetup({ onStart, onClose }) {
   };
 
   const modifierDescriptions = {
-    increaseSpeed: "Ball speed increases after each paddle bounce.",
-    spin: "Hitting the ball while moving applies a spin effect.",
-    arena: "Enable delimited goal zones.",
-    paddleBounceAngle: "The ball bounce at an angle depending where it hits the paddle."
+    increaseSpeed: t("increaseSpeedDescription"),
+    spin: t("spinDescription"),
+    arena: t("arenaDescription"),
+    paddleBounceAngle: t("paddleBounceAngleDescription"),
   };
-
 
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-50">
       <div className="bg-[#0a0446]/60 neon-border rounded-xl px-8 py-6 w-[600px] max-h-[80vh] overflow-y-auto text-white">
-        <h1 className="text-4xl mb-8 neon-glitch neon-glitch--always text-center tracking-widest"
-          data-text="𝔾𝔸𝕄𝔼 𝕊𝔼𝕋𝕌ℙ">
-          𝔾𝔸𝕄𝔼 𝕊𝔼𝕋𝕌ℙ</h1>
+        <h1
+          className="text-4xl mb-8 neon-glitch neon-glitch--always text-center tracking-widest"
+          data-text={t("gameSetup")}
+        >
+          {t("gameSetup")}
+        </h1>
 
         <div className="flex items-start justify-center gap-8 mb-2">
           <div className="flex gap-10 justify-center mb-6">
-
             {/* LEFT PLAYER */}
             <div className="flex flex-col gap-3 items-center w-32">
-              <h2 className="text-xl text-cyan-300 text-center">Left Player</h2>
+              <h2 className="text-xl text-cyan-300 text-center">
+                {t("leftPlayer")}
+              </h2>
 
               <select
                 value={players.left.type}
@@ -74,14 +84,14 @@ export default function GameSetup({ onStart, onClose }) {
                 }
                 className="px-2 py-1 rounded bg-gray-900/80 text-cyan-300 small-border w-full"
               >
-                <option value="Player">Player</option>
-                <option value="AI">AI</option>
+                <option value="Player">{t("player")}</option>
+                <option value="AI">{t("ai")}</option>
               </select>
 
               {players.left.type === "Player" ? (
                 <div className="flex flex-col gap-3 mt-2 w-full">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-cyan-300">UP:</span>
+                    <span className="text-sm text-cyan-300">{t("up")}:</span>
                     <button
                       onClick={() => setListeningKey("left-up")}
                       className="key-box bg-gray-900/80 small-border text-cyan-300 rounded hover:bg-gray-700 transition"
@@ -91,7 +101,7 @@ export default function GameSetup({ onStart, onClose }) {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-cyan-300">DOWN:</span>
+                    <span className="text-sm text-cyan-300">{t("down")}:</span>
                     <button
                       onClick={() => setListeningKey("left-down")}
                       className="key-box bg-gray-900/80 small-border text-cyan-300 rounded hover:bg-gray-700 transition"
@@ -102,7 +112,7 @@ export default function GameSetup({ onStart, onClose }) {
                 </div>
               ) : (
                 <div className="flex items-center justify-between mt-2 w-full">
-                  <span className="text-sm text-cyan-300">{" "}DIFF:</span>
+                  <span className="text-sm text-cyan-300"> {t("diff")}:</span>
                   <select
                     value={players.left.aiDifficulty}
                     onChange={(e) =>
@@ -113,9 +123,9 @@ export default function GameSetup({ onStart, onClose }) {
                     }
                     className="px-1 py-1 rounded bg-gray-900/80 text-cyan-300 small-border w-20 text-center"
                   >
-                    <option value="Easy">Easy</option>
-                    <option value="Normal">Normal</option>
-                    <option value="Hard">Hard</option>
+                    <option value="Easy">{t("easy")}</option>
+                    <option value="Normal">{t("normal")}</option>
+                    <option value="Hard">{t("hard")}</option>
                   </select>
                 </div>
               )}
@@ -126,7 +136,9 @@ export default function GameSetup({ onStart, onClose }) {
 
             {/* RIGHT PLAYER */}
             <div className="flex flex-col gap-3 items-center w-32">
-              <h2 className="text-xl text-cyan-300 text-center">Right Player</h2>
+              <h2 className="text-xl text-cyan-300 text-center">
+                {t("rightPlayer")}
+              </h2>
 
               <select
                 value={players.right.type}
@@ -138,14 +150,14 @@ export default function GameSetup({ onStart, onClose }) {
                 }
                 className="px-2 py-1 rounded bg-gray-900/80 text-cyan-300 small-border w-full"
               >
-                <option value="Player">Player</option>
-                <option value="AI">AI</option>
+                <option value="Player">{t("player")}</option>
+                <option value="AI">{t("ai")}</option>
               </select>
 
               {players.right.type === "Player" ? (
                 <div className="flex flex-col gap-3 mt-2 w-full">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-cyan-300">UP:</span>
+                    <span className="text-sm text-cyan-300">{t("up")}:</span>
                     <button
                       onClick={() => setListeningKey("right-up")}
                       className="key-box bg-gray-900/80 small-border text-cyan-300 rounded hover:bg-gray-700 transition"
@@ -155,7 +167,7 @@ export default function GameSetup({ onStart, onClose }) {
                   </div>
 
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-cyan-300">DOWN:</span>
+                    <span className="text-sm text-cyan-300">{t("down")}:</span>
                     <button
                       onClick={() => setListeningKey("right-down")}
                       className="key-box bg-gray-900/80 small-border text-cyan-300 rounded hover:bg-gray-700 transition"
@@ -166,7 +178,7 @@ export default function GameSetup({ onStart, onClose }) {
                 </div>
               ) : (
                 <div className="flex items-center justify-between mt-2 w-full">
-                  <span className="text-sm text-cyan-300">DIFF:</span>
+                  <span className="text-sm text-cyan-300">{t("diff")}:</span>
                   <select
                     value={players.right.aiDifficulty}
                     onChange={(e) =>
@@ -177,20 +189,20 @@ export default function GameSetup({ onStart, onClose }) {
                     }
                     className="px-1 py-1 rounded bg-gray-900/80 text-cyan-300 small-border w-20 text-center"
                   >
-                    <option value="Easy">Easy</option>
-                    <option value="Normal">Normal</option>
-                    <option value="Hard">Hard</option>
+                    <option value="Easy">{t("easy")}</option>
+                    <option value="Normal">{t("normal")}</option>
+                    <option value="Hard">{t("hard")}</option>
                   </select>
                 </div>
               )}
             </div>
-
           </div>
-
         </div>
 
         <div className="mb-16">
-          <h2 className="text-xl text-cyan-300 mb-4 text-center">Modifiers</h2>
+          <h2 className="text-xl text-cyan-300 mb-4 text-center">
+            {t("modifiers")}
+          </h2>
 
           <div className="flex justify-center gap-4 relative group">
             {Object.keys(modifiers).map((key) => (
@@ -202,9 +214,11 @@ export default function GameSetup({ onStart, onClose }) {
                 onMouseEnter={() => setModifiersHover(key)}
                 onMouseLeave={() => setModifiersHover(null)}
                 className={`w-12 h-12 flex items-center justify-center small-border rounded transition
-                  ${modifiers[key] 
-                    ? "bg-cyan-500 scale-90 shadow-lg shadow-cyan-400/50 transform transition-all duration-200" 
-                    : "bg-gray-900/80 hover:bg-gray-700"}
+                  ${
+                    modifiers[key]
+                      ? "bg-cyan-500 scale-90 shadow-lg shadow-cyan-400/50 transform transition-all duration-200"
+                      : "bg-gray-900/80 hover:bg-gray-700"
+                  }
                 `}
               >
                 <img
@@ -221,19 +235,16 @@ export default function GameSetup({ onStart, onClose }) {
           </div>
         </div>
 
-
-
-
         <div className="flex justify-center gap-4">
           <button
             onClick={handleStart}
             className="neon-glitch-parent px-6 py-2 neon-border rounded hover:bg-gray-700 transition"
           >
             <span
-              data-text="ℙ𝕃𝔸𝕐"
+              data-text={t("play")}
               className="neon-glitch neon-glitch--hover inline-block"
             >
-              ℙ𝕃𝔸𝕐
+              {t("play")}
             </span>
           </button>
           <button
@@ -241,10 +252,10 @@ export default function GameSetup({ onStart, onClose }) {
             className="neon-glitch-parent px-6 py-2 neon-border rounded hover:bg-gray-700 transition"
           >
             <span
-              data-text="ℂ𝔸ℕℂ𝔼𝕃"
+              data-text={t("cancel")}
               className="neon-glitch neon-glitch--hover inline-block"
             >
-              ℂ𝔸ℕℂ𝔼𝕃
+              {t("cancel")}
             </span>
           </button>
         </div>

@@ -22,7 +22,7 @@ function sendToUser(userId, payload) {
 }
 
 function sendToUsers(userIds, payload) {
-  userIds.forEach(id => sendToUser(id, payload));
+  userIds.forEach((id) => sendToUser(id, payload));
 }
 
 function broadcastUsers() {
@@ -136,7 +136,9 @@ async function start() {
      =========================== */
 
   function handleWs(connection, req) {
-    const token = new URL(req.url, "http://localhost").searchParams.get("token");
+    const token = new URL(req.url, "http://localhost").searchParams.get(
+      "token",
+    );
 
     if (!token || !token.startsWith("DEV_TOKEN_")) {
       connection.socket.close();
@@ -158,10 +160,12 @@ async function start() {
 
     onlineSockets.set(connection.socket, userId);
 
-    connection.socket.send(JSON.stringify({
-      type: "USERS_STATUS",
-      onlineUsers: [...new Set(onlineSockets.values())],
-    }));
+    connection.socket.send(
+      JSON.stringify({
+        type: "USERS_STATUS",
+        onlineUsers: [...new Set(onlineSockets.values())],
+      }),
+    );
 
     broadcastUsers();
 
@@ -199,14 +203,12 @@ async function start() {
             text: saved.content,
             at: saved.createdAt,
           });
-
         } catch (err) {
           console.error("DM_SEND ERROR:", err);
         }
       }
     });
   }
-
 
   fastify.get("/ws", { websocket: true }, handleWs);
   fastify.get("/api/ws", { websocket: true }, handleWs);
@@ -215,30 +217,34 @@ async function start() {
      USER SETTINGS
      =========================== */
 
-    fastify.get("/user/me/settings", async (req, reply) => {
-      const userId = getUserIdFromAuth(req, reply);
-      if (!userId) return;
+  fastify.get("/user/me/settings", async (req, reply) => {
+    const userId = getUserIdFromAuth(req, reply);
+    if (!userId) return;
 
-      const settings = await prisma.userSettings.upsert({
-        where: { userId },
-        update: {},
-        create: {
-          userId,
-          background: "/images/abstract.png",
-        },
-        select: { background: true },
-      });
-
-      return settings;
+    const settings = await prisma.userSettings.upsert({
+      where: { userId },
+      update: {},
+      create: {
+        userId,
+        background: "/images/abstract.png",
+      },
+      select: { background: true },
     });
 
-    fastify.put("/user/me/settings", async (req, reply) => {
+    return settings;
+  });
+
+  fastify.put("/user/me/settings", async (req, reply) => {
     const userId = getUserIdFromAuth(req, reply);
     if (!userId) return;
 
     const { background } = req.body || {};
 
-    if (typeof background !== "string" || background.length < 1 || background.length > 255) {
+    if (
+      typeof background !== "string" ||
+      background.length < 1 ||
+      background.length > 255
+    ) {
       return reply.code(400).send({ message: "INVALID BACKGROUND" });
     }
 
@@ -264,11 +270,6 @@ async function start() {
       "/images/abstract3.png",
       "/images/manwork3.png",
       "/images/datacenter2.png",
-      "/images/viewpurple.png",
-      "/images/miner.png",
-      "/images/arcade.png",
-      "/images/purpleplanet.png",
-      "/images/vaisseau.png"
     ]);
 
     if (!ALLOWED_BACKGROUNDS.has(background)) {
@@ -355,44 +356,43 @@ async function start() {
       where: {
         OR: [
           { requesterId: me, receiverId: targetId },
-          { requesterId: targetId, receiverId: me }
-        ]
-      }
+          { requesterId: targetId, receiverId: me },
+        ],
+      },
     });
 
     if (existing) {
       return reply.code(409).send({
-        message: "FRIENDSHIP_ALREADY_EXISTS"
+        message: "FRIENDSHIP_ALREADY_EXISTS",
       });
     }
 
     await prisma.friendship.create({
       data: {
         requesterId: me,
-        receiverId: targetId
-      }
+        receiverId: targetId,
+      },
     });
 
     const meUser = await prisma.user.findUnique({
       where: { id: me },
-      select: { id: true, nickname: true }
+      select: { id: true, nickname: true },
     });
 
     sendToUser(targetId, {
       type: "FRIEND_REQUEST",
-      from: meUser
+      from: meUser,
     });
 
     return { ok: true };
   });
 
   fastify.post("/friends/accept/:userId", async (req, reply) => {
-
     const me = getUserIdFromAuth(req, reply);
     if (!me) return;
-    
+
     const fromId = Number(req.params.userId);
-    
+
     if (await isBlocked(me, fromId)) {
       return reply.code(403).send();
     }
@@ -401,44 +401,41 @@ async function start() {
       where: {
         requesterId_receiverId: {
           requesterId: fromId,
-          receiverId: me
-        }
+          receiverId: me,
+        },
       },
-      data: { status: "ACCEPTED" }
+      data: { status: "ACCEPTED" },
     });
 
-    
     const meUser = await prisma.user.findUnique({
       where: { id: me },
-      select: { id: true, nickname: true }
+      select: { id: true, nickname: true },
     });
 
     const fromUser = await prisma.user.findUnique({
       where: { id: fromId },
-      select: { id: true, nickname: true }
+      select: { id: true, nickname: true },
     });
-    
+
     sendToUser(fromId, {
       type: "FRIEND_ADDED",
-      user: meUser
+      user: meUser,
     });
 
     sendToUser(me, {
       type: "FRIEND_ADDED",
-      user: fromUser
+      user: fromUser,
     });
 
     return { ok: true };
   });
 
-
   fastify.post("/friends/refuse/:userId", async (req, reply) => {
-
     const me = getUserIdFromAuth(req, reply);
     if (!me) return;
-    
+
     const fromId = Number(req.params.userId);
-    
+
     if (await isBlocked(me, fromId)) {
       return reply.code(403).send();
     }
@@ -447,23 +444,24 @@ async function start() {
       where: {
         requesterId_receiverId: {
           requesterId: fromId,
-          receiverId: me
-        }
-      }
+          receiverId: me,
+        },
+      },
     });
 
     for (const [socket, uid] of onlineSockets.entries()) {
       if (uid === fromId && socket.readyState === 1) {
-        socket.send(JSON.stringify({
-          type: "FRIEND_REFUSED",
-          userId: me
-        }));
+        socket.send(
+          JSON.stringify({
+            type: "FRIEND_REFUSED",
+            userId: me,
+          }),
+        );
       }
     }
 
     return { ok: true };
   });
-
 
   fastify.get("/friends", async (req, reply) => {
     const me = getUserIdFromAuth(req, reply);
@@ -472,19 +470,16 @@ async function start() {
     const friendships = await prisma.friendship.findMany({
       where: {
         status: "ACCEPTED",
-        OR: [
-          { requesterId: me },
-          { receiverId: me }
-        ]
+        OR: [{ requesterId: me }, { receiverId: me }],
       },
       include: {
         requester: { select: { id: true, nickname: true } },
-        receiver: { select: { id: true, nickname: true } }
-      }
+        receiver: { select: { id: true, nickname: true } },
+      },
     });
 
-    const friends = friendships.map(f =>
-      f.requesterId === me ? f.receiver : f.requester
+    const friends = friendships.map((f) =>
+      f.requesterId === me ? f.receiver : f.requester,
     );
 
     return friends;
@@ -501,19 +496,19 @@ async function start() {
         status: "ACCEPTED",
         OR: [
           { requesterId: me, receiverId: otherId },
-          { requesterId: otherId, receiverId: me }
-        ]
-      }
+          { requesterId: otherId, receiverId: me },
+        ],
+      },
     });
 
     sendToUser(me, {
       type: "FRIEND_REMOVED",
-      userId: otherId
+      userId: otherId,
     });
 
     sendToUser(otherId, {
       type: "FRIEND_REMOVED",
-      userId: me
+      userId: me,
     });
 
     return { ok: true };
@@ -526,44 +521,90 @@ async function start() {
     const reqs = await prisma.friendship.findMany({
       where: { status: "PENDING", receiverId: me },
       include: { requester: { select: { id: true, nickname: true } } },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     });
 
-    return reqs.map(r => r.requester);
+    return reqs.map((r) => r.requester);
   });
 
   /* ===========================
     PUBLIC USER PROFILE
     =========================== */
 
-    fastify.get("/users/:id/profile", async (req, reply) => {
-      const userId = Number(req.params.id);
-      if (Number.isNaN(userId)) {
-        return reply.code(400).send({ message: "INVALID_USER_ID" });
-      }
+  fastify.get("/users/:id/profile", async (req, reply) => {
+    const userId = Number(req.params.id);
+    if (Number.isNaN(userId)) {
+      return reply.code(400).send({ message: "INVALID_USER_ID" });
+    }
 
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        nickname: true,
+        avatarUrl: true,
+        xp: true,
+        success1: true,
+        success2: true,
+        success3: true,
+      },
+    });
+
+    if (!user) {
+      return reply.code(404).send({ message: "USER_NOT_FOUND" });
+    }
+
+    const online = [...onlineSockets.values()].includes(userId);
+
+    return {
+      id: user.id,
+      nickname: user.nickname,
+      avatar: user.avatarUrl,
+      online,
+      xp: user.xp,
+      success1: user.success1,
+      success2: user.success2,
+      success3: user.success3,
+    };
+  });
+
+  /* ===========================
+    LEADERBOARD
+    =========================== */
+
+  fastify.get("/leaderboard", async (req, reply) => {
+    try {
+      const users = await prisma.user.findMany({
         select: {
           id: true,
           nickname: true,
-          avatarUrl: true,
+          wins: true,
+          losses: true,
         },
       });
 
-      if (!user) {
-        return reply.code(404).send({ message: "USER_NOT_FOUND" });
-      }
+      const leaderboard = users
+        .map((user) => {
+          const totalGames = user.wins + user.losses;
+          const winRate = totalGames === 0 ? 0 : user.wins / totalGames;
+          return {
+            id: user.id,
+            nickname: user.nickname,
+            wins: user.wins,
+            losses: user.losses,
+            winRate: parseFloat(winRate.toFixed(3)),
+          };
+        })
+        .sort((a, b) => b.winRate - a.winRate);
 
-      const online = [...onlineSockets.values()].includes(userId);
-
-      return {
-        id: user.id,
-        nickname: user.nickname,
-        avatar: user.avatarUrl,
-        online,
-      };
-    });
+      return reply.code(200).send(leaderboard);
+    } catch (error) {
+      fastify.log.error("Error retrieving leaderboard:", error);
+      return reply
+        .code(500)
+        .send({ message: "FAILED_TO_RETRIEVE_LEADERBOARD" });
+    }
+  });
 
   /* ===========================
     HANDLE MESSAGE
@@ -585,7 +626,7 @@ async function start() {
       orderBy: { createdAt: "asc" },
     });
 
-    return messages.map(m => ({
+    return messages.map((m) => ({
       from: m.fromUserId === me ? "me" : "other",
       text: m.content,
       at: m.createdAt,
@@ -608,33 +649,33 @@ async function start() {
       where: {
         OR: [
           { requesterId: me, receiverId: targetId },
-          { requesterId: targetId, receiverId: me }
-        ]
-      }
+          { requesterId: targetId, receiverId: me },
+        ],
+      },
     });
 
     await prisma.block.upsert({
       where: {
         blockerId_blockedId: {
           blockerId: me,
-          blockedId: targetId
-        }
+          blockedId: targetId,
+        },
       },
       update: {},
       create: {
         blockerId: me,
-        blockedId: targetId
-      }
+        blockedId: targetId,
+      },
     });
 
     sendToUser(me, {
       type: "FRIEND_REMOVED",
-      userId: targetId
+      userId: targetId,
     });
 
     sendToUser(targetId, {
       type: "FRIEND_REMOVED",
-      userId: me
+      userId: me,
     });
 
     return { ok: true };
@@ -647,7 +688,7 @@ async function start() {
     const targetId = Number(req.params.id);
 
     await prisma.block.deleteMany({
-      where: { blockerId: me, blockedId: targetId }
+      where: { blockerId: me, blockedId: targetId },
     });
 
     return { ok: true };
@@ -660,11 +701,62 @@ async function start() {
     const blocks = await prisma.block.findMany({
       where: { blockerId: me },
       include: {
-        blocked: { select: { id: true, nickname: true } }
-      }
+        blocked: { select: { id: true, nickname: true } },
+      },
     });
 
-    return blocks.map(b => b.blocked);
+    return blocks.map((b) => b.blocked);
+  });
+
+  /* ===========================
+    GAME RESULTS
+    =========================== */
+
+  fastify.post("/game/result", async (req, reply) => {
+    const userId = getUserIdFromAuth(req, reply);
+    if (!userId) return;
+
+    const { didWin, isPlayerVsAi } = req.body;
+
+    if (typeof didWin !== "boolean" || typeof isPlayerVsAi !== "boolean") {
+      return reply.code(400).send({ message: "INVALID_INPUT" });
+    }
+
+    if (!isPlayerVsAi) {
+      return reply.code(200).send({ message: "NOT_PLAYER_VS_AI_MATCH" });
+    }
+
+    try {
+      const XP_FOR_WIN = 20;
+      const XP_FOR_LOSS = 5;
+
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { success1: true, success2: true, success3: true },
+      });
+
+      const achievementUpdates = {
+        success1: currentUser.success1 || isPlayerVsAi,
+        success2: currentUser.success2 || (isPlayerVsAi && didWin),
+        success3: currentUser.success3 || (isPlayerVsAi && !didWin),
+      };
+
+      const updateData = didWin
+        ? { wins: { increment: 1 }, xp: { increment: XP_FOR_WIN }, ...achievementUpdates }
+        : { losses: { increment: 1 }, xp: { increment: XP_FOR_LOSS }, ...achievementUpdates };
+
+      await prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+      });
+      return reply.code(200).send({ message: "GAME_RESULT_RECORDED" });
+    } catch (error) {
+      fastify.log.error(
+        `Error recording game result for user ${userId}:`,
+        error,
+      );
+      return reply.code(500).send({ message: "FAILED_TO_RECORD_GAME_RESULT" });
+    }
   });
 
   /* ======BLOQUER LES ACTIONS=====*/
@@ -673,9 +765,9 @@ async function start() {
       where: {
         OR: [
           { blockerId: a, blockedId: b },
-          { blockerId: b, blockedId: a }
-        ]
-      }
+          { blockerId: b, blockedId: a },
+        ],
+      },
     });
     return !!block;
   }
