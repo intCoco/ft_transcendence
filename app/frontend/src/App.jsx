@@ -302,6 +302,121 @@ function GameCanvas({ setupPlayers }) {
   );
 }
 
+function GameRoute({ setupPlayers }) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!setupPlayers) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [setupPlayers, navigate]);
+
+  return (
+    <div className="w-full h-full relative">
+      <div className="w-full h-full flex items-center justify-center">
+        <GameCanvas setupPlayers={setupPlayers} />
+      </div>
+    </div>
+  );
+}
+
+function PrivacyModal({ onClose }) {
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    game.isPaused = true;
+  });
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-50">
+      <div className="bg-[#0a0446]/60 neon-border rounded-xl px-8 py-6 w-[600px] max-h-[80vh] overflow-y-auto text-white">
+
+        <h1
+          className="text-4xl mb-8 neon-glitch neon-glitch--always text-center tracking-widest"
+          data-text={t("privacy")}
+        >
+          {t("privacy")}
+        </h1>
+
+        <div className="text-sm leading-relaxed space-y-4 text-cyan-100">
+          <p>{t("p1")}</p>
+          <p>{t("p2")}</p>
+          <p>{t("p3")}</p>
+          <p>{t("p4")}</p>
+          <p>{t("p5")}</p>
+          <p>{t("p6")}</p>
+          <p>{t("p7")}</p>
+          <p>{t("p8")}</p>
+        </div>
+
+        <div className="flex justify-center mt-10">
+          <button
+            onClick={onClose}
+            className="neon-glitch-parent px-6 py-2 neon-border rounded hover:bg-gray-700 transition"
+          >
+            <span
+              data-text={t("back")}
+              className="neon-glitch neon-glitch--hover inline-block"
+            >
+              {t("back")}
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+function TermsModal({ onClose }) {
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    game.isPaused = true;
+  });
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-50">
+      <div className="bg-[#0a0446]/60 neon-border rounded-xl px-8 py-6 w-[600px] max-h-[80vh] overflow-y-auto text-white">
+
+        <h1
+          className="text-4xl mb-8 neon-glitch neon-glitch--always text-center tracking-widest"
+          data-text={t("terms")}
+        >
+          {t("terms")}
+        </h1>
+
+        <div className="text-sm leading-relaxed space-y-4 text-cyan-100">
+          <p>{t("t1")}</p>
+          <p>{t("t2")}</p>
+          <p>{t("t3")}</p>
+          <p>{t("t4")}</p>
+          <p>{t("t5")}</p>
+          <p>{t("t6")}</p>
+          <p>{t("t7")}</p>
+          <p>{t("t8")}</p>
+        </div>
+
+        <div className="flex justify-center mt-10">
+          <button
+            onClick={onClose}
+            className="neon-glitch-parent px-6 py-2 neon-border rounded hover:bg-gray-700 transition"
+          >
+            <span
+              data-text={t("back")}
+              className="neon-glitch neon-glitch--hover inline-block"
+            >
+              {t("back")}
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
 /* ================================================================================= */
 /* ================================================================================= */
 /* ====================================== APP ====================================== */
@@ -380,6 +495,9 @@ export default function App() {
 
   const [setupPlayers, setSetupPlayers] = useState(null);
   const [showGameSetup, setShowGameSetup] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+
 
   /* For message unread */
   const [unread, setUnread] = useState({});
@@ -1730,7 +1848,7 @@ export default function App() {
                   <button
                     className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
                     data-text={t("play")}
-                    onClick={() => navigate("/play")}
+                    onClick={() => setShowGameSetup(true)}
                   >
                     {t("play")}
                   </button>
@@ -1761,52 +1879,6 @@ export default function App() {
             }
           />
 
-          {/*=====================================================================================
-  ======================================================================================
-  ===================================== CHOOSE GAME ====================================
-  ======================================================================================
-  ======================================================================================*/}
-
-          <Route
-            path="/play"
-            element={
-              <div className="relative w-screen h-screen">
-                <h1
-                  className="absolute top-4 left-1/2 -translate-x-1/2 neon-glitch neon-glitch--always text-5xl"
-                  data-text={t("choosegame")}
-                >
-                  {t("choosegame")}
-                </h1>
-
-                <div className="absolute left-1/2 top-[260px] -translate-x-1/2">
-                  <button
-                    className="neon-glitch neon-glitch--hover text-4xl"
-                    onClick={() => setShowGameSetup(true)}
-                    data-text="◐ ℙ𝕆ℕ𝔾 ◑"
-                  >
-                    ◐ ℙ𝕆ℕ𝔾 ◑
-                  </button>
-                </div>
-
-                <div className="absolute left-1/2 top-[400px] -translate-x-1/2">
-                  <button
-                    className="neon-glitch neon-glitch--hover text-4xl"
-                    onClick={() => navigate("/game/bonus")}
-                    data-text="◐ 𝔹𝕆ℕ𝕌𝕊 ◑"
-                  >
-                    ◐ 𝔹𝕆ℕ𝕌𝕊 ◑
-                  </button>
-                </div>
-
-                <button
-                  className="absolute top-4 left-4 px-1 py-1 neon-border bg-gray-900/60 text-cyan-300"
-                  onClick={() => navigate(-1)}
-                >
-                  {t("back")}
-                </button>
-              </div>
-            }
-          />
 
           {/*=====================================================================================
   ======================================================================================
@@ -1859,18 +1931,8 @@ export default function App() {
   ======================================================================================*/}
 
           <Route
-            path="/game/pong"
-            element={
-              <div className="w-full h-full relative">
-                <div className="w-full h-full flex items-center justify-center">
-                  {setupPlayers ? (
-                    <GameCanvas setupPlayers={setupPlayers} />
-                  ) : (
-                    <div className="text-white">Loading game setup...</div>
-                  )}
-                </div>
-              </div>
-            }
+            path="/game"
+            element={<GameRoute setupPlayers={setupPlayers} />}
           />
 
           {/*=====================================================================================
@@ -2013,124 +2075,44 @@ export default function App() {
 
           <Route path="/leaderboard" element={<LeaderboardPage />} />
 
-          {/*=====================================================================================
-  ======================================================================================
-  ==================================== PRIVACY POLICY ==================================
-  ======================================================================================
-  ======================================================================================*/}
 
-          <Route
-            path="/privacy"
-            element={
-              <div
-                className="fixed inset-0 flex flex-col items-center bg-black/80 p-8 pt-[200px]
-            text-cyan-300 z-30"
-              >
-                <h1 className="text-3xl mb-4 neon-glitch neon-glitch--always">
-                  {t("privacy")}
-                </h1>
-                <p className="max-w-3xl text-sm leading-relaxed text-center">
-                  {t("p1")}
-                  <br />
-                  <br />
-                  {t("p2")}
-                  <br />
-                  <br />
-                  {t("p3")}
-                  <br />
-                  <br />
-                  {t("p4")}
-                  <br />
-                  <br />
-                  {t("p5")}
-                  <br />
-                  <br />
-                  {t("p6")}
-                  <br />
-                  <br />
-                  {t("p7")}
-                  <br />
-                  <br />
-                  {t("p8")}
-                </p>
-                <button
-                  className="mt-6 neon-border px-4 py-1"
-                  onClick={() => navigate(-1)}
-                >
-                  {t("back")}
-                </button>
-              </div>
-            }
-          />
-
-          {/*=====================================================================================
-  ======================================================================================
-  =================================== TERMS OF SERVICE =================================
-  ======================================================================================
-  ======================================================================================*/}
-
-          <Route
-            path="/terms"
-            element={
-              <div
-                className="fixed inset-0 flex flex-col items-center bg-black/80 p-8 pt-[200px]
-            text-cyan-300 z-30"
-              >
-                <h1 className="text-3xl mb-4 neon-glitch neon-glitch--always">
-                  {t("terms")}
-                </h1>
-                <p className="max-w-3xl text-sm leading-relaxed text-center">
-                  {t("t1")}
-                  <br />
-                  <br />
-                  {t("t2")}
-                  <br />
-                  <br />
-                  {t("t3")}
-                  <br />
-                  <br />
-                  {t("t4")}
-                  <br />
-                  <br />
-                  {t("t5")}
-                  <br />
-                  <br />
-                  {t("t6")}
-                  <br />
-                  <br />
-                  {t("t7")}
-                  <br />
-                  <br />
-                  {t("t8")}
-                </p>
-                <button
-                  className="mt-6 neon-border px-4 py-1 relative z-[1001]"
-                  onClick={() => navigate(-1)}
-                >
-                  {t("back")}
-                </button>
-              </div>
-            }
-          />
         </Routes>
       </main>
       <footer className="mt-auto w-full py-4 flex justify-center text-xs sm:text-sm text-cyan-300">
         <div className="flex gap-2 neon-glitch text-center">
-          <Link to="/privacy">{t("privacy")}</Link>
-          <span>|</span>
-          <Link to="/terms">{t("terms")}</Link>
+          <button onClick={() => setShowPrivacy(true)}>
+            {t("privacy")}
+          </button>
+
+          <span> | </span>
+
+          <button onClick={() => setShowTerms(true)}>
+            {t("terms")}
+          </button>
         </div>
       </footer>
+
+
       {showGameSetup && (
         <GameSetup
           onStart={(playersConfig) => {
             setSetupPlayers(playersConfig);
             setShowGameSetup(false);
-            navigate("/game/pong");
+            navigate("/game");
           }}
           onClose={() => setShowGameSetup(false)}
         />
       )}
+
+
+      {showPrivacy && (
+        <PrivacyModal onClose={() => setShowPrivacy(false)} />
+      )}
+
+      {showTerms && (
+        <TermsModal onClose={() => setShowTerms(false)} />
+      )}
+
     </div>
   );
 }

@@ -198,7 +198,7 @@ function drawCoinToss() {
   );
 
   game.ctx!.font = "18px monospace";
-  if (coinToss.winner && performance.now() / 1000 - coinToss.startTime > 0.7) {
+  if (coinToss.winner && coinToss.elapsed > 0.7) {
     game.ctx!.fillText(
       i18n.t("servesFirst").toUpperCase(),
       CANVAS_WIDTH / 2,
