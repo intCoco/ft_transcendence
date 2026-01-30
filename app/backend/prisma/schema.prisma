@@ -36,6 +36,13 @@ model User {
 	// --- Stats ---
 	wins			Int     @default(0) // initialized to 0 because it's a counter
   	losses			Int     @default(0) // same
+	xp				Int     @default(0) // same
+
+	// --- success ---
+	success1		Boolean @default(false)
+	success2		Boolean @default(false)
+	success3		Boolean @default(false)
+
 
 	// --- Meta ---
 	createdAt 		DateTime @default(now())

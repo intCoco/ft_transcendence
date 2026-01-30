@@ -70,7 +70,9 @@ export default function GameSetup({ onStart, onClose }) {
           <div className="flex gap-10 justify-center mb-6">
             {/* LEFT PLAYER */}
             <div className="flex flex-col gap-3 items-center w-32">
-              <h2 className="text-xl text-cyan-300 text-center">{t("leftPlayer")}</h2>
+              <h2 className="text-xl text-cyan-300 text-center">
+                {t("leftPlayer")}
+              </h2>
 
               <select
                 value={players.left.type}
@@ -198,7 +200,9 @@ export default function GameSetup({ onStart, onClose }) {
         </div>
 
         <div className="mb-16">
-          <h2 className="text-xl text-cyan-300 mb-4 text-center">{t("modifiers")}</h2>
+          <h2 className="text-xl text-cyan-300 mb-4 text-center">
+            {t("modifiers")}
+          </h2>
 
           <div className="flex justify-center gap-4 relative group">
             {Object.keys(modifiers).map((key) => (

@@ -26,8 +26,8 @@ import { startGame, startPongGame } from "./game/pong/game";
 import { setKey, resetKeys } from "./game/pong/core/input";
 import { game } from "./game/pong/core/state";
 import GameSetup from "./GameSetup";
-import Leaderboard from "./Leaderboard";
 import { t } from "i18next";
+import LeaderboardPage from "./LeaderboardPage";
 
 /* ================================================================================= */
 /* ================================================================================= */
@@ -35,7 +35,7 @@ import { t } from "i18next";
 /* ================================================================================= */
 /* ================================================================================= */
 
-function useAuth() {
+function useAuth(setAuthUserId) {
   /* user is connected ? */
   const [isAuthed, setIsAuthed] = useState(false);
   /* login display */
@@ -58,6 +58,7 @@ function useAuth() {
     localStorage.setItem(USER_ID_KEY, userId);
     setIsAuthed(true);
     setLogin(loginValue);
+    setAuthUserId(userId); // Explicitly set authUserId
   };
 
   /* clean localstorage + reset state */
@@ -68,6 +69,7 @@ function useAuth() {
 
     setIsAuthed(false);
     setLogin("");
+    setAuthUserId(null); // Clear authUserId on sign out
   };
 
   return { isAuthed, login, signIn, signOut };
@@ -106,8 +108,48 @@ function GameCanvas({ setupPlayers }) {
   };
 
   useEffect(() => {
-    game.onGameOver = () => {
+    game.onGameOver = async () => {
       forceUpdate((v) => v + 1);
+
+      const isLeftPlayerHuman = setupPlayers.left.type === "Player";
+      const isRightPlayerHuman = setupPlayers.right.type === "Player";
+      const isLeftPlayerAI = setupPlayers.left.type === "AI";
+      const isRightPlayerAI = setupPlayers.right.type === "AI";
+
+      const isPlayerVsAiMatch =
+        (isLeftPlayerHuman && isRightPlayerAI) ||
+        (isRightPlayerHuman && isLeftPlayerAI);
+
+      if (isPlayerVsAiMatch) {
+        const userId = localStorage.getItem(USER_ID_KEY);
+        const token = localStorage.getItem(AUTH_KEY);
+
+        if (userId && token) {
+          let didWin = false;
+
+          if (isLeftPlayerHuman && game.scoreLeft > game.scoreRight) {
+            didWin = true;
+          } else if (isRightPlayerHuman && game.scoreRight > game.scoreLeft) {
+            didWin = true;
+          }
+
+          try {
+            await fetch("/api/game/result", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                didWin: didWin,
+                isPlayerVsAi: true,
+              }),
+            });
+          } catch (error) {
+            console.error("Failed to record game result:", error);
+          }
+        }
+      }
     };
 
     const canvas = canvasRef.current;
@@ -287,12 +329,6 @@ export default function App() {
   /* maintains the same WS connection between renders */
   const wsRef = useRef(null);
 
-  /* Authentication state and helpers */
-  const { isAuthed, login, signIn, signOut } = useAuth();
-
-  /* List of all users */
-  const [users, setUsers] = useState([]);
-
   /* Controlled inputs for authentication forms */
   const [loginInput, setLoginInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");
@@ -303,6 +339,12 @@ export default function App() {
   const [authUserId, setAuthUserId] = useState(
     localStorage.getItem(USER_ID_KEY),
   );
+
+  /* Authentication state and helpers */
+  const { isAuthed, login, signIn, signOut } = useAuth(setAuthUserId);
+
+  /* List of all users */
+  const [users, setUsers] = useState([]);
 
   /*  isOnAuthPage: Determines if the user is logged in
       showConnectedUI: Prevents the logged-in UI (chat, web services)
@@ -344,6 +386,12 @@ export default function App() {
   const isChatVisibleRef = useRef(false);
   /* auto scrolling */
   const messagesEndRef = useRef(null);
+
+  /* Current user XP */
+  const [currentUserXp, setCurrentUserXp] = useState(0);
+  const [currentUserSuccess1, setCurrentUserSuccess1] = useState(false);
+  const [currentUserSuccess2, setCurrentUserSuccess2] = useState(false);
+  const [currentUserSuccess3, setCurrentUserSuccess3] = useState(false);
 
   /* Check if this is you */
   const meId = Number(localStorage.getItem(USER_ID_KEY));
@@ -807,6 +855,32 @@ export default function App() {
   //
   //
 
+  useEffect(() => {
+    if (!isAuthed || !authUserId) return;
+
+    const fetchCurrentUserProfile = async () => {
+      try {
+        const token = localStorage.getItem(AUTH_KEY);
+        const response = await fetch(`/api/users/${authUserId}/profile`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (!response.ok) throw new Error("Failed to fetch user profile");
+        const data = await response.json();
+        setCurrentUserXp(data.xp);
+        setCurrentUserSuccess1(data.success1);
+        setCurrentUserSuccess2(data.success2);
+        setCurrentUserSuccess3(data.success3);
+      } catch (error) {
+        console.error("Error fetching current user XP:", error);
+        setCurrentUserXp(0);
+      }
+    };
+
+    fetchCurrentUserProfile();
+  }, [isAuthed, authUserId, location.pathname]); // Added location.pathname to dependencies
+
   const isFriend = (id) => friends.some((f) => f.id === id);
   const isPending = (id) => friendRequests.some((r) => r.id === id);
 
@@ -944,7 +1018,7 @@ export default function App() {
         })
         .then(setUser)
         .catch(() => setUser(null));
-    }, [id]);
+    }, [id, location.pathname]); // Added location.pathname to dependencies
 
     // ===== RENDER =====
 
@@ -987,6 +1061,60 @@ export default function App() {
             </>
           )}
         </p>
+
+        {/* XP and Level Display for Public Profile */}
+        {user.xp !== undefined && (
+          <div className="mt-4 text-white flex flex-col items-center">
+            <p className="text-xl">
+              {t("level")}: {Math.floor(user.xp / 100)}
+            </p>
+            <p className="text-sm">
+              {t("xp")}: {user.xp % 100} / 100
+            </p>
+            <div className="w-40 h-3 bg-gray-700 rounded-full mt-2">
+              <div
+                className="h-full bg-cyan-400 rounded-full"
+                style={{ width: `${user.xp % 100}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+
+        {/* Achievements Display for Public Profile */}
+        <div className="mt-6 text-white flex flex-col items-center">
+          <h2
+            className="text-2xl mb-4 neon-glitch neon-glitch--always"
+            data-text={t("achievements")}
+          >
+            {t("achievements")}
+          </h2>
+          <div className="flex flex-col gap-2">
+            <p className="text-lg">
+              {t("played_ai_game")}:{" "}
+              {user.success1 ? (
+                <span className="text-green-400">✓</span>
+              ) : (
+                <span className="text-red-400">✗</span>
+              )}
+            </p>
+            <p className="text-lg">
+              {t("won_ai_game")}:{" "}
+              {user.success2 ? (
+                <span className="text-green-400">✓</span>
+              ) : (
+                <span className="text-red-400">✗</span>
+              )}
+            </p>
+            <p className="text-lg">
+              {t("lost_ai_game")}:{" "}
+              {user.success3 ? (
+                <span className="text-green-400">✓</span>
+              ) : (
+                <span className="text-red-400">✗</span>
+              )}
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -1615,24 +1743,23 @@ export default function App() {
                   </button>
                   <button
                     className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
-                    data-text={t("leaderboard")}
-                    onClick={() => navigate("/leaderboard")}
-                  >
-                    {t("leaderboard")}
-                  </button>
-                  <button
-                    className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
                     data-text={t("customize")}
                     onClick={() => navigate("/customize")}
                   >
                     {t("customize")}
                   </button>
+                  {/* New Leaderboard Button */}
+                  <button
+                    className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
+                    data-text={t("leaderboard")}
+                    onClick={() => navigate("/leaderboard")}
+                  >
+                    {t("leaderboard")}
+                  </button>
                 </div>
               </div>
             }
           />
-
-          <Route path="/leaderboard" element={<Leaderboard />} />
 
           {/*=====================================================================================
   ======================================================================================
@@ -1774,47 +1901,117 @@ export default function App() {
                   </h1>
 
                   <button
-                    className="neon-glitch neon-glitch--hover absolute text-xl top-[125px] px-3 py-0
-                neon-border bg-gray-900/60"
+                    className="neon-glitch neon-glitch--hover mt-6 px-3 py-0 neon-border bg-gray-900/60"
                     onClick={() => navigate(-1)}
                     data-text={t("back")}
                   >
                     {t("back")}
                   </button>
 
-                  <label
-                    className="
-                  absolute top-[310px] text-xs cursor-pointer neon-border neon-glitch neon-glitch--hover
-                  px-2 py-1 font-mono text-cyan-300 hover:underline"
-                  >
-                    change avatar
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className="hidden"
-                    />
-                  </label>
+                  {/* MAIN PROFILE LAYOUT */}
+                  <div className="mt-14 w-full max-w-5xl px-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                      {/* LEFT — ACHIEVEMENTS */}
+                      <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
+                        <h2
+                          className="text-2xl mb-4 neon-glitch neon-glitch--always"
+                          data-text={t("achievements")}
+                        >
+                          {t("achievements")}
+                        </h2>
 
-                  <img
-                    src={avatar || "/images/default-avatar.png"}
-                    className="w-32 h-32 absolute top-[270px] rounded-full object-cover neon-border"
-                  />
+                        <div className="flex flex-col gap-3 text-lg">
+                          <p>
+                            {t("played_ai_game")}:{" "}
+                            {currentUserSuccess1 ? (
+                              <span className="text-green-400">✓</span>
+                            ) : (
+                              <span className="text-red-400">✗</span>
+                            )}
+                          </p>
 
-                  <h1
-                    className="neon-glitch neon-glitch--always absolute text-2xl top-[340px]"
-                    data-text={t("login")}
-                  >
-                    {t("login")}
-                  </h1>
+                          <p>
+                            {t("won_ai_game")}:{" "}
+                            {currentUserSuccess2 ? (
+                              <span className="text-green-400">✓</span>
+                            ) : (
+                              <span className="text-red-400">✗</span>
+                            )}
+                          </p>
 
-                  <h1 className="neon-glitch neon-glitch--always absolute z-30 font-bold font-mono text-3xl top-[370px]">
-                    <span className="text-cyan-300">{login}</span>
-                  </h1>
+                          <p>
+                            {t("lost_ai_game")}:{" "}
+                            {currentUserSuccess3 ? (
+                              <span className="text-green-400">✓</span>
+                            ) : (
+                              <span className="text-red-400">✗</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* RIGHT — AVATAR + XP */}
+                      <div className="flex flex-col gap-6">
+                        {/* AVATAR / IDENTITY */}
+                        <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
+                          <div className="flex items-center gap-6">
+                            <img
+                              src={avatar || "/images/default-avatar.png"}
+                              className="w-28 h-28 rounded-full object-cover neon-border"
+                            />
+
+                            <div className="flex flex-col">
+                              <div
+                                className="neon-glitch neon-glitch--always text-2xl"
+                                data-text={login}
+                              >
+                                {login}
+                              </div>
+
+                              <label className="mt-2 inline-block cursor-pointer neon-border px-2 py-1 text-sm hover:underline">
+                                {t("changeavatar")}
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleAvatarChange}
+                                  className="hidden"
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* XP / LEVEL */}
+                        <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
+                          <p className="text-xl">
+                            {t("level")}: {Math.floor(currentUserXp / 100)}
+                          </p>
+                          <p className="text-sm opacity-80">
+                            {t("xp")}: {currentUserXp % 100} / 100
+                          </p>
+
+                          <div className="mt-3 w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-cyan-400"
+                              style={{ width: `${currentUserXp % 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             }
           />
+
+          {/*=====================================================================================
+  ======================================================================================
+  ===================================== LEADERBOARD ====================================
+  ======================================================================================
+  ======================================================================================*/}
+
+          <Route path="/leaderboard" element={<LeaderboardPage />} />
 
           {/*=====================================================================================
   ======================================================================================
@@ -1830,32 +2027,31 @@ export default function App() {
             text-cyan-300 z-30"
               >
                 <h1 className="text-3xl mb-4 neon-glitch neon-glitch--always">
-                  Privacy Policy
+                  {t("privacy")}
                 </h1>
                 <p className="max-w-3xl text-sm leading-relaxed text-center">
-                  This application is part of an educational project
+                  {t("p1")}
                   <br />
                   <br />
-                  within the 42 curriculum.
+                  {t("p2")}
                   <br />
                   <br />
-                  We collect only the information necessary
+                  {t("p3")}
                   <br />
                   <br />
-                  to provide authentication and gameplay
+                  {t("p4")}
                   <br />
                   <br />
-                  features, such as username, encrypted password,
+                  {t("p5")}
                   <br />
                   <br />
-                  avatar, and game-related data.
+                  {t("p6")}
                   <br />
                   <br />
-                  All data is stored securely and is not shared with third
-                  parties.
+                  {t("p7")}
                   <br />
                   <br />
-                  This project is not intended for commercial use.
+                  {t("p8")}
                 </p>
                 <button
                   className="mt-6 neon-border px-4 py-1"
@@ -1881,31 +2077,31 @@ export default function App() {
             text-cyan-300 z-30"
               >
                 <h1 className="text-3xl mb-4 neon-glitch neon-glitch--always">
-                  Terms of Service
+                  {t("terms")}
                 </h1>
                 <p className="max-w-3xl text-sm leading-relaxed text-center">
-                  This application is provided as part of an educational project
+                  {t("t1")}
                   <br />
                   <br />
-                  within the 42 curriculum.
+                  {t("t2")}
                   <br />
                   <br />
-                  Users agree to use the platform respectfully
+                  {t("t3")}
                   <br />
                   <br />
-                  and must not attempt to abuse, disrupt,
+                  {t("t4")}
                   <br />
                   <br />
-                  or exploit the service.
+                  {t("t5")}
                   <br />
                   <br />
-                  The application is provided “as is”,
+                  {t("t6")}
                   <br />
                   <br />
-                  without any guarantees of availability,
+                  {t("t7")}
                   <br />
                   <br />
-                  security, or performance.
+                  {t("t8")}
                 </p>
                 <button
                   className="mt-6 neon-border px-4 py-1 relative z-[1001]"
@@ -1920,9 +2116,9 @@ export default function App() {
       </main>
       <footer className="mt-auto w-full py-4 flex justify-center text-xs sm:text-sm text-cyan-300">
         <div className="flex gap-2 neon-glitch text-center">
-          <Link to="/privacy">Privacy Policy</Link>
+          <Link to="/privacy">{t("privacy")}</Link>
           <span>|</span>
-          <Link to="/terms">Terms of Service</Link>
+          <Link to="/terms">{t("terms")}</Link>
         </div>
       </footer>
       {showGameSetup && (
