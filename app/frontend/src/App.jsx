@@ -338,7 +338,7 @@ function PrivacyModal({ onClose }) {
           {t("privacy")}
         </h1>
 
-        <div className="text-sm leading-relaxed space-y-4 text-cyan-100">
+        <div className="text-sm leading-relaxed space-y-4 text-cyan-100 text-center">
           <p>{t("p1")}</p>
           <p>{t("p2")}</p>
           <p>{t("p3")}</p>
@@ -367,7 +367,6 @@ function PrivacyModal({ onClose }) {
   );
 }
 
-
 function TermsModal({ onClose }) {
   const { t } = useTranslation();
 
@@ -386,7 +385,7 @@ function TermsModal({ onClose }) {
           {t("terms")}
         </h1>
 
-        <div className="text-sm leading-relaxed space-y-4 text-cyan-100">
+        <div className="text-sm leading-relaxed space-y-4 text-cyan-100 text-center">
           <p>{t("t1")}</p>
           <p>{t("t2")}</p>
           <p>{t("t3")}</p>
@@ -595,6 +594,10 @@ export default function App() {
     "/images/abstract3.png",
     "/images/manwork3.png",
     "/images/datacenter2.png",
+    "/images/miner.png",
+    "/images/arcade.png",
+    "/images/purpleplanet.png",
+    "/images/vaisseau.png",
   ];
 
   /* ================================================================================= */
@@ -667,7 +670,7 @@ export default function App() {
         return;
       }
 
-      notify("Compte créé, vous pouvez vous connecter");
+      notify("Account created");
       setLoginInput("");
       setEmailInput("");
       setPasswordInput("");

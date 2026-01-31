@@ -270,6 +270,10 @@ async function start() {
       "/images/abstract3.png",
       "/images/manwork3.png",
       "/images/datacenter2.png",
+      "/images/miner.png",
+      "/images/arcade.png",
+      "/images/purpleplanet.png",
+      "/images/vaisseau.png",
     ]);
 
     if (!ALLOWED_BACKGROUNDS.has(background)) {
