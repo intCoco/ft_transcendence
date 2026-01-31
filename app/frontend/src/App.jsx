@@ -302,6 +302,120 @@ function GameCanvas({ setupPlayers }) {
   );
 }
 
+function GameRoute({ setupPlayers }) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!setupPlayers) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [setupPlayers, navigate]);
+
+  return (
+    <div className="w-full h-full relative">
+      <div className="w-full h-full flex items-center justify-center">
+        <GameCanvas setupPlayers={setupPlayers} />
+      </div>
+    </div>
+  );
+}
+
+function PrivacyModal({ onClose }) {
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    game.isPaused = true;
+  });
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-50">
+      <div className="bg-[#0a0446]/60 neon-border rounded-xl px-8 py-6 w-[600px] max-h-[80vh] overflow-y-auto text-white">
+
+        <h1
+          className="text-4xl mb-8 neon-glitch neon-glitch--always text-center tracking-widest"
+          data-text={t("privacy")}
+        >
+          {t("privacy")}
+        </h1>
+
+        <div className="text-sm leading-relaxed space-y-4 text-cyan-100 text-center">
+          <p>{t("p1")}</p>
+          <p>{t("p2")}</p>
+          <p>{t("p3")}</p>
+          <p>{t("p4")}</p>
+          <p>{t("p5")}</p>
+          <p>{t("p6")}</p>
+          <p>{t("p7")}</p>
+          <p>{t("p8")}</p>
+        </div>
+
+        <div className="flex justify-center mt-10">
+          <button
+            onClick={onClose}
+            className="neon-glitch-parent px-6 py-2 neon-border rounded hover:bg-gray-700 transition"
+          >
+            <span
+              data-text={t("back")}
+              className="neon-glitch neon-glitch--hover inline-block"
+            >
+              {t("back")}
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TermsModal({ onClose }) {
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    game.isPaused = true;
+  });
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-50">
+      <div className="bg-[#0a0446]/60 neon-border rounded-xl px-8 py-6 w-[600px] max-h-[80vh] overflow-y-auto text-white">
+
+        <h1
+          className="text-4xl mb-8 neon-glitch neon-glitch--always text-center tracking-widest"
+          data-text={t("terms")}
+        >
+          {t("terms")}
+        </h1>
+
+        <div className="text-sm leading-relaxed space-y-4 text-cyan-100 text-center">
+          <p>{t("t1")}</p>
+          <p>{t("t2")}</p>
+          <p>{t("t3")}</p>
+          <p>{t("t4")}</p>
+          <p>{t("t5")}</p>
+          <p>{t("t6")}</p>
+          <p>{t("t7")}</p>
+          <p>{t("t8")}</p>
+        </div>
+
+        <div className="flex justify-center mt-10">
+          <button
+            onClick={onClose}
+            className="neon-glitch-parent px-6 py-2 neon-border rounded hover:bg-gray-700 transition"
+          >
+            <span
+              data-text={t("back")}
+              className="neon-glitch neon-glitch--hover inline-block"
+            >
+              {t("back")}
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
 /* ================================================================================= */
 /* ================================================================================= */
 /* ====================================== APP ====================================== */
@@ -343,6 +457,14 @@ export default function App() {
   /* Authentication state and helpers */
   const { isAuthed, login, signIn, signOut } = useAuth(setAuthUserId);
 
+  /* Handle login */
+  const [editLogin, setEditLogin] = useState(login);
+  const [isEditingLogin, setIsEditingLogin] = useState(false);
+
+  useEffect(() => {
+    setEditLogin(login);
+  }, [login]);
+
   /* List of all users */
   const [users, setUsers] = useState([]);
 
@@ -380,6 +502,9 @@ export default function App() {
 
   const [setupPlayers, setSetupPlayers] = useState(null);
   const [showGameSetup, setShowGameSetup] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
+
 
   /* For message unread */
   const [unread, setUnread] = useState({});
@@ -397,13 +522,15 @@ export default function App() {
   const meId = Number(localStorage.getItem(USER_ID_KEY));
   const isMe = selectedUser?.id === meId;
 
+  const DEFAULT_AVATAR = "/images/defaultavatar.png";
+
   /* ================================================================================= */
   /* ================================================================================= */
   /* ============================ HANDLE BACKGROUND ================================== */
   /* ================================================================================= */
   /* ================================================================================= */
 
-  const [avatar, setAvatar] = useState(null);
+  const [avatar, setAvatar] = useState(DEFAULT_AVATAR);
   const [authMode, setAuthMode] = useState(null);
   const DEFAULT_BG = "/images/abstract.png";
   const [bgSrc, setBgSrc] = useState(DEFAULT_BG);
@@ -477,6 +604,10 @@ export default function App() {
     "/images/abstract3.png",
     "/images/manwork3.png",
     "/images/datacenter2.png",
+    "/images/miner.png",
+    "/images/arcade.png",
+    "/images/purpleplanet.png",
+    "/images/vaisseau.png",
   ];
 
   /* ================================================================================= */
@@ -549,7 +680,7 @@ export default function App() {
         return;
       }
 
-      notify("Compte créé, vous pouvez vous connecter");
+      notify("Account created");
       setLoginInput("");
       setEmailInput("");
       setPasswordInput("");
@@ -598,9 +729,55 @@ export default function App() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setAvatar(data.avatar || null);
+        setAvatar(data.avatar || DEFAULT_AVATAR);
       });
   }, [isAuthed]);
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ================================ HANDLE LOGIN =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
+  const handleLoginChange = async () => {
+    if (!editLogin.trim() || editLogin === login) {
+      setIsEditingLogin(false);
+      return;
+    }
+
+    const token = localStorage.getItem(AUTH_KEY);
+
+    const res = await fetch("/api/user/me/nickname", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ nickname: editLogin }),
+    });
+
+    if (!res.ok) {
+      notify("Nickname update failed");
+      return;
+    }
+
+    const data = await res.json();
+
+    localStorage.setItem(LOGIN_KEY, data.nickname);
+    setIsEditingLogin(false);
+
+    signIn(
+      data.nickname,
+      localStorage.getItem(AUTH_KEY),
+      localStorage.getItem(USER_ID_KEY),
+    );
+
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === authUserId ? { ...u, nickname: data.nickname } : u,
+      ),
+    );
+  };
 
   /* ================================================================================= */
   /* ================================================================================= */
@@ -1040,7 +1217,7 @@ export default function App() {
         </button>
 
         <img
-          src={user.avatar || "/images/default-avatar.png"}
+          src={user.avatar || DEFAULT_AVATAR}
           className="w-32 h-32 rounded-full neon-border mt-[15vh]"
         />
 
@@ -1611,7 +1788,7 @@ export default function App() {
                       onSubmit={handleSubmitSub}
                     >
                       <h1
-                        className="neon-glitch neon-glitch--always absolute left-[95px] px-0 py-0 text-xl text-cyan-300"
+                        className="neon-glitch neon-glitch--always absolute left-1/2 -translate-x-1/2 px-0 py-0 text-xl text-cyan-300"
                         data-text={t("welcome")}
                       >
                         {t("welcome")}
@@ -1639,39 +1816,6 @@ export default function App() {
                         placeholder={t("password")}
                         className="px-3 py-2 rounded bg-gray-900/80 neon-border text-cyan-300"
                       />
-
-                      {/*=====================================================================================
-  ======================================================================================
-  =============================== CHOOSE YOUR GENDER ===================================
-  ======================================================================================
-  ======================================================================================*/}
-
-                      <h1
-                        className="neon-glitch neon-glitch--always absolute px-0 py-0 left-[2px] text-xl text-cyan-300"
-                        data-text={t("chooseyourgender")}
-                      >
-                        {t("chooseyourgender")}
-                      </h1>
-
-                      <div className="flex gap-4 justify-center">
-                        <button
-                          type="button"
-                          className="neon-glitch neon-glitch--hover px-9 py-0 text-1xl bg-gray-900/80 text-black-300
-                        rounded neon-border"
-                          data-text={t("male")}
-                        >
-                          {t("male")}
-                        </button>
-
-                        <button
-                          type="button"
-                          className="neon-glitch neon-glitch--hover px-7 py-0 text-1xl bg-gray-900/80 text-black-300
-                      rounded neon-border"
-                          data-text={t("female")}
-                        >
-                          {t("female")}
-                        </button>
-                      </div>
 
                       <button
                         type="submit"
@@ -1730,7 +1874,7 @@ export default function App() {
                   <button
                     className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
                     data-text={t("play")}
-                    onClick={() => navigate("/play")}
+                    onClick={() => setShowGameSetup(true)}
                   >
                     {t("play")}
                   </button>
@@ -1761,52 +1905,6 @@ export default function App() {
             }
           />
 
-          {/*=====================================================================================
-  ======================================================================================
-  ===================================== CHOOSE GAME ====================================
-  ======================================================================================
-  ======================================================================================*/}
-
-          <Route
-            path="/play"
-            element={
-              <div className="relative w-screen h-screen">
-                <h1
-                  className="absolute top-4 left-1/2 -translate-x-1/2 neon-glitch neon-glitch--always text-5xl"
-                  data-text={t("choosegame")}
-                >
-                  {t("choosegame")}
-                </h1>
-
-                <div className="absolute left-1/2 top-[260px] -translate-x-1/2">
-                  <button
-                    className="neon-glitch neon-glitch--hover text-4xl"
-                    onClick={() => setShowGameSetup(true)}
-                    data-text="◐ ℙ𝕆ℕ𝔾 ◑"
-                  >
-                    ◐ ℙ𝕆ℕ𝔾 ◑
-                  </button>
-                </div>
-
-                <div className="absolute left-1/2 top-[400px] -translate-x-1/2">
-                  <button
-                    className="neon-glitch neon-glitch--hover text-4xl"
-                    onClick={() => navigate("/game/bonus")}
-                    data-text="◐ 𝔹𝕆ℕ𝕌𝕊 ◑"
-                  >
-                    ◐ 𝔹𝕆ℕ𝕌𝕊 ◑
-                  </button>
-                </div>
-
-                <button
-                  className="absolute top-4 left-4 px-1 py-1 neon-border bg-gray-900/60 text-cyan-300"
-                  onClick={() => navigate(-1)}
-                >
-                  {t("back")}
-                </button>
-              </div>
-            }
-          />
 
           {/*=====================================================================================
   ======================================================================================
@@ -1859,18 +1957,8 @@ export default function App() {
   ======================================================================================*/}
 
           <Route
-            path="/game/pong"
-            element={
-              <div className="w-full h-full relative">
-                <div className="w-full h-full flex items-center justify-center">
-                  {setupPlayers ? (
-                    <GameCanvas setupPlayers={setupPlayers} />
-                  ) : (
-                    <div className="text-white">Loading game setup...</div>
-                  )}
-                </div>
-              </div>
-            }
+            path="/game"
+            element={<GameRoute setupPlayers={setupPlayers} />}
           />
 
           {/*=====================================================================================
@@ -1956,17 +2044,58 @@ export default function App() {
                         <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
                           <div className="flex items-center gap-6">
                             <img
-                              src={avatar || "/images/default-avatar.png"}
+                              src={avatar || DEFAULT_AVATAR}
                               className="w-28 h-28 rounded-full object-cover neon-border"
                             />
 
                             <div className="flex flex-col">
-                              <div
-                                className="neon-glitch neon-glitch--always text-2xl"
-                                data-text={login}
-                              >
-                                {login}
-                              </div>
+
+                              {isEditingLogin ? (
+                                <div className="flex flex-col gap-2">
+                                  <input
+                                    value={editLogin}
+                                    onChange={(e) => setEditLogin(e.target.value)}
+                                    className="px-2 py-1 rounded bg-black/60 neon-border text-cyan-300"
+                                  />
+
+                                  <div className="flex gap-2 text-sm">
+                                    <button
+                                      onClick={handleLoginChange}
+                                      className="px-2 py-1 neon-border text-green-400"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditLogin(login);
+                                        setIsEditingLogin(false);
+                                      }}
+                                      className="px-2 py-1 neon-border text-red-400"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  {/* LOGIN DISPLAY */}
+                                  <div
+                                    className="neon-glitch neon-glitch--always text-2xl"
+                                    data-text={login}
+                                  >
+                                    {login}
+                                  </div>
+
+                                  {/* EDIT BUTTON */}
+                                  <button
+                                    onClick={() => setIsEditingLogin(true)}
+                                    title="Edit nickname"
+                                    className="ml-1 cursor-pointer neon-border px-1 py-0.5"
+                                  >
+                                    ✎
+                                  </button>
+                                </div>
+                              )}
 
                               <label className="mt-2 inline-block cursor-pointer neon-border px-2 py-1 text-sm hover:underline">
                                 {t("changeavatar")}
@@ -2013,124 +2142,44 @@ export default function App() {
 
           <Route path="/leaderboard" element={<LeaderboardPage />} />
 
-          {/*=====================================================================================
-  ======================================================================================
-  ==================================== PRIVACY POLICY ==================================
-  ======================================================================================
-  ======================================================================================*/}
 
-          <Route
-            path="/privacy"
-            element={
-              <div
-                className="fixed inset-0 flex flex-col items-center bg-black/80 p-8 pt-[200px]
-            text-cyan-300 z-30"
-              >
-                <h1 className="text-3xl mb-4 neon-glitch neon-glitch--always">
-                  {t("privacy")}
-                </h1>
-                <p className="max-w-3xl text-sm leading-relaxed text-center">
-                  {t("p1")}
-                  <br />
-                  <br />
-                  {t("p2")}
-                  <br />
-                  <br />
-                  {t("p3")}
-                  <br />
-                  <br />
-                  {t("p4")}
-                  <br />
-                  <br />
-                  {t("p5")}
-                  <br />
-                  <br />
-                  {t("p6")}
-                  <br />
-                  <br />
-                  {t("p7")}
-                  <br />
-                  <br />
-                  {t("p8")}
-                </p>
-                <button
-                  className="mt-6 neon-border px-4 py-1"
-                  onClick={() => navigate(-1)}
-                >
-                  {t("back")}
-                </button>
-              </div>
-            }
-          />
-
-          {/*=====================================================================================
-  ======================================================================================
-  =================================== TERMS OF SERVICE =================================
-  ======================================================================================
-  ======================================================================================*/}
-
-          <Route
-            path="/terms"
-            element={
-              <div
-                className="fixed inset-0 flex flex-col items-center bg-black/80 p-8 pt-[200px]
-            text-cyan-300 z-30"
-              >
-                <h1 className="text-3xl mb-4 neon-glitch neon-glitch--always">
-                  {t("terms")}
-                </h1>
-                <p className="max-w-3xl text-sm leading-relaxed text-center">
-                  {t("t1")}
-                  <br />
-                  <br />
-                  {t("t2")}
-                  <br />
-                  <br />
-                  {t("t3")}
-                  <br />
-                  <br />
-                  {t("t4")}
-                  <br />
-                  <br />
-                  {t("t5")}
-                  <br />
-                  <br />
-                  {t("t6")}
-                  <br />
-                  <br />
-                  {t("t7")}
-                  <br />
-                  <br />
-                  {t("t8")}
-                </p>
-                <button
-                  className="mt-6 neon-border px-4 py-1 relative z-[1001]"
-                  onClick={() => navigate(-1)}
-                >
-                  {t("back")}
-                </button>
-              </div>
-            }
-          />
         </Routes>
       </main>
       <footer className="mt-auto w-full py-4 flex justify-center text-xs sm:text-sm text-cyan-300">
         <div className="flex gap-2 neon-glitch text-center">
-          <Link to="/privacy">{t("privacy")}</Link>
-          <span>|</span>
-          <Link to="/terms">{t("terms")}</Link>
+          <button onClick={() => setShowPrivacy(true)}>
+            {t("privacy")}
+          </button>
+
+          <span> | </span>
+
+          <button onClick={() => setShowTerms(true)}>
+            {t("terms")}
+          </button>
         </div>
       </footer>
+
+
       {showGameSetup && (
         <GameSetup
           onStart={(playersConfig) => {
             setSetupPlayers(playersConfig);
             setShowGameSetup(false);
-            navigate("/game/pong");
+            navigate("/game");
           }}
           onClose={() => setShowGameSetup(false)}
         />
       )}
+
+
+      {showPrivacy && (
+        <PrivacyModal onClose={() => setShowPrivacy(false)} />
+      )}
+
+      {showTerms && (
+        <TermsModal onClose={() => setShowTerms(false)} />
+      )}
+
     </div>
   );
 }

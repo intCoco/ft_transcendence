@@ -5,7 +5,7 @@ import { resetBall } from "../entities/ball.js";
 interface CoinTossState {
 	phase: "ROLLING" | "RESULT";
 
-	startTime: number;
+	elapsed: number;
 	rollDuration: number;
 	resultDuration: number;
 
@@ -18,7 +18,7 @@ interface CoinTossState {
 export const coinToss: CoinTossState = {
 	phase: "ROLLING",
 
-	startTime: 0,
+	elapsed: 0,
 	rollDuration: 4,
 	resultDuration: 2,
 
@@ -30,18 +30,18 @@ export const coinToss: CoinTossState = {
 
 export function startCoinToss(now: number) {
 	coinToss.phase = "ROLLING";
-	coinToss.startTime = now;
+	coinToss.elapsed = 0;
 	coinToss.lastSwitchTime = now;
 
 	coinToss.current = "left";
 	coinToss.winner = null;
 }
 
-export function updateCoinToss(now: number) {
-	const elapsed = now - coinToss.startTime;
+export function updateCoinToss(now: number, delta: number) {
+	coinToss.elapsed += delta;
 
 	if (coinToss.phase === "ROLLING") {
-		const progress = Math.min(1, elapsed / coinToss.rollDuration);
+		const progress = Math.min(1, coinToss.elapsed / coinToss.rollDuration);
 
 		const minInterval = 0.03;
 		const maxInterval = 0.5;
@@ -53,9 +53,9 @@ export function updateCoinToss(now: number) {
 			coinToss.lastSwitchTime = now;
 		}
 
-		if (elapsed >= coinToss.rollDuration) {
+		if (coinToss.elapsed >= coinToss.rollDuration) {
 			coinToss.phase = "RESULT";
-			coinToss.startTime = now;
+			coinToss.elapsed = 0;
 			coinToss.winner = coinToss.current;
 		}
 
@@ -63,7 +63,7 @@ export function updateCoinToss(now: number) {
 	}
 
 	if (coinToss.phase === "RESULT") {
-		if (elapsed >= coinToss.resultDuration) {
+		if (coinToss.elapsed >= coinToss.resultDuration) {
 			resetBall(coinToss.winner === "left" ? "right" : "left");
 			game.state = GameState.SERVE;
 		}

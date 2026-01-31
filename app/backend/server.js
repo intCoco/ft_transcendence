@@ -270,6 +270,10 @@ async function start() {
       "/images/abstract3.png",
       "/images/manwork3.png",
       "/images/datacenter2.png",
+      "/images/miner.png",
+      "/images/arcade.png",
+      "/images/purpleplanet.png",
+      "/images/vaisseau.png",
     ]);
 
     if (!ALLOWED_BACKGROUNDS.has(background)) {
@@ -335,6 +339,33 @@ async function start() {
       nickname: u.nickname,
       online: onlineIds.has(u.id),
     }));
+  });
+
+  fastify.put("/user/me/nickname", async (req, reply) => {
+    const userId = getUserIdFromAuth(req, reply);
+    if (!userId) return;
+
+    const { nickname } = req.body || {};
+
+    if (
+      typeof nickname !== "string" ||
+      nickname.trim().length < 3 ||
+      nickname.trim().length > 20
+    ) {
+      return reply.code(400).send({ message: "INVALID_NICKNAME" });
+    }
+
+    try {
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: { nickname: nickname.trim() },
+        select: { nickname: true },
+      });
+
+      return { nickname: user.nickname };
+    } catch (err) {
+      return reply.code(500).send({ message: "FAILED_TO_UPDATE_NICKNAME" });
+    }
   });
 
   /* ===========================
@@ -559,7 +590,7 @@ async function start() {
     return {
       id: user.id,
       nickname: user.nickname,
-      avatar: user.avatarUrl,
+      avatar: user.avatarUrl || "/images/defaultavatar.png",
       online,
       xp: user.xp,
       success1: user.success1,

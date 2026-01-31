@@ -22,7 +22,7 @@ export function update(delta: number) {
 		return;
 
 	if (game.state === GameState.COIN_TOSS) {
-		updateCoinToss(now);
+		updateCoinToss(now, delta);
 		return;
 	}
 	
