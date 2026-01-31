@@ -64,11 +64,11 @@ export default function GameSetup({ onStart, onClose }) {
     } else {
       setAnimateExtras(false);
       const id = setTimeout(() => {
-        setShow4pLayout(false); // disparaît visuellement
+        setShow4pLayout(false);
         setPlayers((prev) => ({
           ...prev,
           top: null,
-          bot: null, // on supprime top/bot seulement après l'animation
+          bot: null,
         }));
       }, 100);
       return () => clearTimeout(id);
