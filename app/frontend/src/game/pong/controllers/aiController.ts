@@ -1,7 +1,7 @@
 import { game } from "../core/state.js";
 import { Controller } from "./controller.js";
 import { Paddle } from "../entities/paddle.js";
-import { GAME_HEIGHT, GAME_WIDTH, GameState } from "../core/constants.js";
+import { GameState } from "../core/constants.js";
 import { ball } from "../entities/ball.js";
 import { updateAIZone, updateAIAim, updateAIMovement, AIProfile } from "../ai/ai.js";
 
@@ -28,9 +28,9 @@ export class AIController implements Controller {
         this.profile = profile;
         console.log("AI profile set:", this.profile);
         this.state = {
-            zoneCenter: GAME_HEIGHT / 2,
+            zoneCenter: game.height / 2,
             zoneRadius: 200,
-            aimY: GAME_HEIGHT / 2,
+            aimY: game.height / 2,
             nextDecisionTime: 0,
             nextReactionTime: 0,
             wantsSpin: false,
@@ -41,7 +41,7 @@ export class AIController implements Controller {
     update(paddle: Paddle, delta: number) {
         const now = performance.now() / 1000;
 
-        const isRightPaddle = paddle.x > GAME_WIDTH / 2;
+        const isRightPaddle = paddle.x > game.width / 2;
         const isBallComing =
             (isRightPaddle && ball.velX > 0) ||
             (!isRightPaddle && ball.velX < 0);
@@ -54,6 +54,6 @@ export class AIController implements Controller {
 
         updateAIMovement(this, delta);
 
-        paddle.clamp(GAME_HEIGHT);
+        paddle.clampY(game.height);
     }
 }

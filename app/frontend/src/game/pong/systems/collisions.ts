@@ -11,7 +11,7 @@ import { AIController } from "../controllers/aiController.js";
 import { applyAngularBounce } from "../modifiers/angularBounce.js";
 import { applySpeedIncrease } from "../modifiers/speedIncrease.js";
 import { bounce } from "../modifiers/modifiers.js";
-import { ARENA_MARGIN_LEFT, ARENA_MARGIN_RIGHT, GAME_HEIGHT, GAME_WIDTH } from "../core/constants.js";
+import { ARENA_MARGIN_LEFT, ARENA_MARGIN_RIGHT } from "../core/constants.js";
 
 
 export interface CollisionResult {
@@ -79,8 +79,8 @@ export function handleTopBotCollision(modifiers: GameModifiers) {
         spawnParticles("horizontal");
     }
 
-    if (ball.y + ball.radius >= GAME_HEIGHT) {
-        ball.y = GAME_HEIGHT - ball.radius;
+    if (ball.y + ball.radius >= game.height) {
+        ball.y = game.height - ball.radius;
         ball.velY *= -1;
         ball.spin = 0;
         spawnParticles("horizontal");
@@ -105,14 +105,14 @@ export function handleTopBotCollision(modifiers: GameModifiers) {
     }
 
     // right tunnel
-    if (ball.x >= GAME_WIDTH) {
-        if (ball.y - ball.radius <= GOAL_TOP && Math.abs(ball.y - GOAL_TOP) < Math.abs(GAME_WIDTH - ball.x)) {
+    if (ball.x >= game.width) {
+        if (ball.y - ball.radius <= GOAL_TOP && Math.abs(ball.y - GOAL_TOP) < Math.abs(game.width - ball.x)) {
             ball.y = GOAL_TOP + ball.radius;
             ball.velY *= -1;
             ball.spin = 0;
             spawnParticles("horizontal");
         }
-        if (ball.y + ball.radius >= GOAL_BOTTOM && Math.abs(GOAL_BOTTOM - ball.y) < Math.abs(GAME_WIDTH - ball.x)) {
+        if (ball.y + ball.radius >= GOAL_BOTTOM && Math.abs(GOAL_BOTTOM - ball.y) < Math.abs(game.width - ball.x)) {
             ball.y = GOAL_BOTTOM - ball.radius;
             ball.velY *= -1;
             ball.spin = 0;
@@ -142,16 +142,16 @@ export function handleLeftRightCollision(modifiers: GameModifiers) {
         }
     }
 
-    if (ball.x + ball.radius > GAME_WIDTH) { // right side
+    if (ball.x + ball.radius > game.width) { // right side
         if ((modifiers.arena && ball.y >= GOAL_TOP && ball.y <= GOAL_BOTTOM) || !modifiers.arena) {
-            if (ball.x > GAME_WIDTH + ARENA_MARGIN_RIGHT + ball.radius * 2 && !game.isGameOver) {
+            if (ball.x > game.width + ARENA_MARGIN_RIGHT + ball.radius * 2 && !game.isGameOver) {
                 game.scoreLeft++;
                 spawnGoalExplosion("right");
                 resetBall("left");
             }
         } else {
-            if (Math.abs(GAME_WIDTH - ball.x) <= (ball.y < GOAL_TOP ? Math.abs(ball.y - GOAL_TOP) : Math.abs(GOAL_BOTTOM - ball.y))) { //?
-                ball.x = GAME_WIDTH - ball.radius;
+            if (Math.abs(game.width - ball.x) <= (ball.y < GOAL_TOP ? Math.abs(ball.y - GOAL_TOP) : Math.abs(GOAL_BOTTOM - ball.y))) { //?
+                ball.x = game.width - ball.radius;
                 ball.velX *= -1;
                 ball.spin = 0;
                 spawnParticles("vertical");
@@ -207,10 +207,10 @@ export function handlePaddleCollision(now: number, modifiers: GameModifiers) {
                 const opponent = controller.paddle === leftPaddle ? rightController : leftController;
                 if (opponent instanceof AIController) {
                     updateAIZone(opponent, now);
-                    if (!ball.spin && opponent.state.zoneCenter > GAME_HEIGHT / 4 && opponent.state.zoneCenter < GAME_HEIGHT - GAME_HEIGHT / 4)
+                    if (!ball.spin && opponent.state.zoneCenter > game.height / 4 && opponent.state.zoneCenter < game.height - game.height / 4)
                         opponent.state.wantsSpin = Math.random() < opponent.profile.spinChance;
                     if (opponent.state.wantsSpin)
-                        opponent.state.spinDir = (opponent.state.zoneCenter > GAME_HEIGHT / 2) ? (Math.random() < 0.66 ? "up" : "down") : (Math.random() < 0.66 ? "down" : "up");
+                        opponent.state.spinDir = (opponent.state.zoneCenter > game.height / 2) ? (Math.random() < 0.66 ? "up" : "down") : (Math.random() < 0.66 ? "down" : "up");
                     opponent.state.nextReactionTime = now + opponent.profile.reactionTime;
                 }
             } else if (controller instanceof AIController && controller.state.wantsSpin) {

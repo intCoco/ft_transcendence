@@ -1,24 +1,13 @@
 import { AI_HARD, AI_NORMAL } from "../ai/ai";
 import { AIController } from "../controllers/aiController";
-import {
-  ARENA_BOTTOM,
-  ARENA_LEFT,
-  ARENA_MARGIN_LEFT,
-  ARENA_MARGIN_TOP,
-  ARENA_RIGHT,
-  ARENA_TOP,
-  CANVAS_HEIGHT,
-  CANVAS_WIDTH,
-  GAME_HEIGHT,
-  GameState,
-} from "../core/constants";
+import { ARENA_MARGIN_LEFT, ARENA_MARGIN_TOP, GameState } from "../core/constants";
 import { game } from "../core/state";
 import { ball } from "../entities/ball";
 import { leftController, rightController } from "../game";
 import { GOAL_BOTTOM, GOAL_TOP } from "../modifiers/arena";
 import { gameConfig } from "../modifiers/modifiers";
 import { coinToss } from "./coinToss";
-import { Paddle } from "../entities/paddle";
+import { bottomPaddle, leftPaddle, Paddle, rightPaddle, topPaddle } from "../entities/paddle";
 import { particles } from "../entities/particles";
 import i18n from "../../../i18n.jsx";
 
@@ -101,8 +90,8 @@ function drawDash() {
   game.ctx!.shadowBlur = 10;
 
   game.ctx!.beginPath();
-  game.ctx!.moveTo(CANVAS_WIDTH / 2, ARENA_TOP);
-  game.ctx!.lineTo(CANVAS_WIDTH / 2, ARENA_BOTTOM);
+  game.ctx!.moveTo(game.canvasWidth / 2, ARENA_MARGIN_TOP);
+  game.ctx!.lineTo(game.canvasWidth / 2, game.canvasHeight - ARENA_MARGIN_TOP);
   game.ctx!.stroke();
 
   game.ctx!.restore();
@@ -120,12 +109,12 @@ function drawScore() {
   game.ctx!.strokeStyle = "cyan";
   game.ctx!.shadowColor = "cyan";
   game.ctx!.shadowBlur = 15;
-  game.ctx!.strokeText(game.scoreLeft.toString(), CANVAS_WIDTH / 2 - 100, 40);
+  game.ctx!.strokeText(game.scoreLeft.toString(), game.canvasWidth / 2 - 100, 40);
 
   game.ctx!.lineWidth = 2;
   game.ctx!.shadowBlur = 0;
   game.ctx!.strokeStyle = "white";
-  game.ctx!.strokeText(game.scoreLeft.toString(), CANVAS_WIDTH / 2 - 100, 40);
+  game.ctx!.strokeText(game.scoreLeft.toString(), game.canvasWidth / 2 - 100, 40);
 
   // Right score
   game.ctx!.textAlign = "right";
@@ -133,12 +122,12 @@ function drawScore() {
   game.ctx!.strokeStyle = "cyan";
   game.ctx!.shadowColor = "cyan";
   game.ctx!.shadowBlur = 15;
-  game.ctx!.strokeText(game.scoreRight.toString(), CANVAS_WIDTH / 2 + 100, 40);
+  game.ctx!.strokeText(game.scoreRight.toString(), game.canvasWidth / 2 + 100, 40);
 
   game.ctx!.lineWidth = 2;
   game.ctx!.shadowBlur = 0;
   game.ctx!.strokeStyle = "white";
-  game.ctx!.strokeText(game.scoreRight.toString(), CANVAS_WIDTH / 2 + 100, 40);
+  game.ctx!.strokeText(game.scoreRight.toString(), game.canvasWidth / 2 + 100, 40);
 
   game.ctx!.restore();
 }
@@ -153,7 +142,7 @@ function drawTimer() {
   game.ctx!.shadowColor = "cyan";
   game.ctx!.shadowBlur = 10;
 
-  game.ctx!.fillText(`${Math.ceil(game.gameTimer)}`, CANVAS_WIDTH / 2, 10);
+  game.ctx!.fillText(`${Math.ceil(game.gameTimer)}`, game.canvasWidth / 2, 10);
 
   game.ctx!.restore();
 }
@@ -171,12 +160,12 @@ function drawServeTimer() {
   game.ctx!.strokeStyle = "magenta";
   game.ctx!.shadowColor = "magenta";
   game.ctx!.shadowBlur = 35;
-  game.ctx!.strokeText(text, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+  game.ctx!.strokeText(text, game.canvasWidth / 2, game.canvasHeight / 2);
 
   game.ctx!.lineWidth = 5;
   game.ctx!.shadowBlur = 0;
   game.ctx!.strokeStyle = "white";
-  game.ctx!.strokeText(text, CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
+  game.ctx!.strokeText(text, game.canvasWidth / 2, game.canvasHeight / 2);
 
   game.ctx!.restore();
 }
@@ -193,16 +182,16 @@ function drawCoinToss() {
   game.ctx!.shadowBlur = 15;
   game.ctx!.fillText(
     i18n.t(coinToss.current === "left" ? "left" : "right").toUpperCase(),
-    CANVAS_WIDTH / 2,
-    CANVAS_HEIGHT / 2,
+    game.canvasWidth / 2,
+    game.canvasHeight / 2,
   );
 
   game.ctx!.font = "18px monospace";
   if (coinToss.winner && coinToss.elapsed > 0.7) {
     game.ctx!.fillText(
       i18n.t("servesFirst").toUpperCase(),
-      CANVAS_WIDTH / 2,
-      CANVAS_HEIGHT / 2 + 60,
+      game.canvasWidth / 2,
+      game.canvasHeight / 2 + 60,
     );
   }
 
@@ -215,10 +204,10 @@ function drawGoalsArena() {
   const thickness = 4;
   const radius = 6;
 
-  const topY = ARENA_TOP - thickness;
-  const bottomY = ARENA_BOTTOM + thickness;
-  const leftX = ARENA_LEFT - thickness;
-  const rightX = ARENA_RIGHT + thickness;
+  const topY = ARENA_MARGIN_TOP - thickness;
+  const bottomY = game.canvasHeight - ARENA_MARGIN_TOP + thickness;
+  const leftX = ARENA_MARGIN_LEFT - thickness;
+  const rightX = game.canvasWidth - ARENA_MARGIN_LEFT + thickness;
 
   ctx.save();
 
@@ -232,11 +221,11 @@ function drawGoalsArena() {
   // Top wall
   ctx.beginPath();
   ctx.moveTo(leftX + radius, topY);
-  ctx.lineTo(CANVAS_WIDTH / 2 - 40, topY);
+  ctx.lineTo(game.canvasWidth / 2 - 40, topY);
   ctx.stroke();
 
   ctx.beginPath();
-  ctx.moveTo(CANVAS_WIDTH / 2 + 40, topY);
+  ctx.moveTo(game.canvasWidth / 2 + 40, topY);
   ctx.lineTo(rightX - radius, topY);
   ctx.stroke();
 
@@ -338,12 +327,12 @@ function drawGoalsArena() {
   // Right Tunnel
   ctx.beginPath();
   ctx.moveTo(rightX + radius, GOAL_TOP + ARENA_MARGIN_TOP);
-  ctx.lineTo(CANVAS_WIDTH, GOAL_TOP + ARENA_MARGIN_TOP);
+  ctx.lineTo(game.canvasWidth, GOAL_TOP + ARENA_MARGIN_TOP);
   ctx.stroke();
 
   ctx.beginPath();
   ctx.moveTo(rightX + radius, GOAL_BOTTOM + ARENA_MARGIN_TOP);
-  ctx.lineTo(CANVAS_WIDTH, GOAL_BOTTOM + ARENA_MARGIN_TOP);
+  ctx.lineTo(game.canvasWidth, GOAL_BOTTOM + ARENA_MARGIN_TOP);
   ctx.stroke();
 
   ctx.restore();
@@ -359,20 +348,20 @@ function drawArena() {
   // Top wall
   game.ctx!.shadowColor = "magenta";
   game.ctx!.beginPath();
-  game.ctx!.moveTo(0, ARENA_TOP - 4);
-  game.ctx!.lineTo(CANVAS_WIDTH / 2 - 40, ARENA_TOP - 4);
+  game.ctx!.moveTo(0, ARENA_MARGIN_TOP - 4);
+  game.ctx!.lineTo(game.canvasWidth / 2 - 40, ARENA_MARGIN_TOP - 4);
   game.ctx!.stroke();
 
   game.ctx!.beginPath();
-  game.ctx!.moveTo(CANVAS_WIDTH / 2 + 40, ARENA_TOP - 4);
-  game.ctx!.lineTo(CANVAS_WIDTH, ARENA_TOP - 4);
+  game.ctx!.moveTo(game.canvasWidth / 2 + 40, ARENA_MARGIN_TOP - 4);
+  game.ctx!.lineTo(game.canvasWidth, ARENA_MARGIN_TOP - 4);
   game.ctx!.stroke();
 
   // Bottom wall
   game.ctx!.shadowColor = "magenta";
   game.ctx!.beginPath();
-  game.ctx!.moveTo(0, ARENA_BOTTOM + 4);
-  game.ctx!.lineTo(CANVAS_WIDTH, ARENA_BOTTOM + 4);
+  game.ctx!.moveTo(0, game.canvasHeight - ARENA_MARGIN_TOP + 4);
+  game.ctx!.lineTo(game.canvasWidth, game.canvasHeight - ARENA_MARGIN_TOP + 4);
   game.ctx!.stroke();
 
   game.ctx!.restore();
@@ -456,7 +445,7 @@ function drawAIPredictionMirror() {
 
       tX = (controller.paddle.x - x) / vx; // s to reach rightpaddle
       if (vy > 0)
-        tY = (GAME_HEIGHT - ball.radius - y) / vy; // s to reach bot
+        tY = (game.height - ball.radius - y) / vy; // s to reach bot
       else if (vy < 0) tY = (ball.radius - y) / vy; // s to reach top
       const t = tX < tY ? tX : tY; // s to reach next obstacle
 
@@ -556,10 +545,11 @@ function drawParticles() {
   }
 }
 
-export function render(leftPaddle: Paddle, rightPaddle: Paddle) {
+export function render() {
   if (!game.isPaused) {
     game.ctx!.fillStyle = "#0a02147a";
-    game.ctx!.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    game.ctx!.fillRect(0, 0, game.canvasWidth, game.canvasHeight);
+    
     if (game.state === GameState.COIN_TOSS) drawCoinToss();
     else {
       if (gameConfig.modifiers.arena) drawGoalsArena();
@@ -567,6 +557,10 @@ export function render(leftPaddle: Paddle, rightPaddle: Paddle) {
       drawScore();
       drawPaddle(leftPaddle);
       drawPaddle(rightPaddle);
+      if (game.mode === "4P") {
+        drawPaddle(topPaddle);
+        drawPaddle(bottomPaddle);
+      }
       drawDash();
       drawServeTimer();
       drawTimer();

@@ -86,6 +86,9 @@ function GameCanvas({ setupPlayers }) {
   const canvasRef = useRef(null);
   const stopGameRef = useRef(null);
 
+  const is4Players = !!setupPlayers?.top && !!setupPlayers?.bot;
+  const canvasHeight = is4Players ? 860 : 660;
+
   const [, forceUpdate] = useState(0);
 
   const navigate = useNavigate();
@@ -160,7 +163,6 @@ function GameCanvas({ setupPlayers }) {
       if (e.key === "Escape" && !game.isGameOver) {
         game.isPaused = !game.isPaused;
         forceUpdate((v) => v + 1);
-        // setIsPaused(prev => !prev);
       }
     };
 
@@ -169,12 +171,8 @@ function GameCanvas({ setupPlayers }) {
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
 
-    const is4Players = !!setupPlayers.top && !!setupPlayers.bot;
-
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = 860 * dpr;
-    canvas.height = (is4Players ? 860 : 660) * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvas.width = 860;
+    canvas.height = (setupPlayers.top != null ? 860 : 660);
 
     stopGameRef.current = startPongGame(canvas, setupPlayers);
     forceUpdate((v) => v + 1);
@@ -193,7 +191,8 @@ function GameCanvas({ setupPlayers }) {
     <div className="relative">
       <canvas
         ref={canvasRef}
-        className="w-[800px] h-[600px] neon-border rounded-xl"
+        className="w-[860px] neon-border rounded-xl"
+        style={{ height: `${canvasHeight}px` }}
       />
       {game.isPaused && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
@@ -309,6 +308,10 @@ function GameRoute({ setupPlayers }) {
       navigate("/dashboard", { replace: true });
     }
   }, [setupPlayers, navigate]);
+
+  if (!setupPlayers) {
+    return null;
+  }
 
   return (
     <div className="w-full h-full relative">

@@ -18,6 +18,11 @@ export const game = {
     ctx: null as CanvasRenderingContext2D | null,
 
     onGameOver: undefined as (() => void) | undefined,
-    shakeTime: 0,
-    shakeStrength: 0,
+    mode: "2P" as "2P" | "4P",
+
+    width: 800,
+    height: 600,
+
+    canvasWidth: 860,
+    canvasHeight: 660,
 };

@@ -59,10 +59,22 @@ export default function GameSetup({ onStart, onClose }) {
   useEffect(() => {
     if (mode === "4p") {
       setShow4pLayout(true);
+
+      setModifiers((prev) => ({
+        ...prev,
+        arena: true,
+      }));
+
       const id = setTimeout(() => setAnimateExtras(true), 100);
       return () => clearTimeout(id);
     } else {
       setAnimateExtras(false);
+
+      setModifiers((prev) => ({
+        ...prev,
+        arena: false,
+      }));
+
       const id = setTimeout(() => {
         setShow4pLayout(false);
         setPlayers((prev) => ({
@@ -236,15 +248,17 @@ export default function GameSetup({ onStart, onClose }) {
             {Object.keys(modifiers).map((key) => (
               <button
                 key={key}
-                onClick={() =>
-                  setModifiers((prev) => ({ ...prev, [key]: !prev[key] }))
-                }
+                onClick={() => {
+                  if (key === "arena" && mode === "4p") return;
+                  setModifiers((prev) => ({ ...prev, [key]: !prev[key] }));
+                }}
                 onMouseEnter={() => setModifiersHover(key)}
                 onMouseLeave={() => setModifiersHover(null)}
                 className={`w-14 h-14 rounded-lg flex items-center justify-center transition-all duration-150 bg-black
                   ${modifiers[key]
                     ? "border-2 border-cyan-300 shadow-lg shadow-cyan-400/50 scale-105"
                     : "border-2 border-gray-700 opacity-70 hover:bg-black-900 hover:opacity-100"}
+                    ${mode === "4p" && key === "arena" ? "cursor-not-allowed opacity-90" : ""}
                 `}
               >
                 <img
@@ -252,6 +266,13 @@ export default function GameSetup({ onStart, onClose }) {
                   alt={key}
                   className={`w-12 h-12 transition-all duration-150 ${modifiers[key] ? "filter-none" : "grayscale opacity-60"}`}
                 />
+                {mode === "4p" && key === "arena" && (
+                  <div className="absolute inset-0 bg-black/60 rounded-lg flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                  </div>
+                )}
               </button>
             ))}
             <div className="absolute -bottom-6 text-xs w-full text-center">

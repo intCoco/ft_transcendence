@@ -1,8 +1,9 @@
 import { ball } from "../entities/ball.js";
-import { GAME_HEIGHT, GAME_WIDTH, ARENA_MARGIN_TOP, ARENA_MARGIN_LEFT, ARENA_MARGIN_RIGHT } from "../core/constants.js";
-import { GOAL_TOP, GOAL_HEIGHT, GOAL_BOTTOM } from "../modifiers/arena.js";
+import { ARENA_MARGIN_LEFT, ARENA_MARGIN_RIGHT } from "../core/constants.js";
+import { GOAL_TOP, GOAL_BOTTOM } from "../modifiers/arena.js";
 import { gameConfig } from "../modifiers/modifiers.js";
 import { Paddle, leftPaddle, rightPaddle } from "../entities/paddle.js";
+import { game } from "../core/state.js";
 
 
 interface Particle {
@@ -58,8 +59,8 @@ function handleParticleTopBotCollision(p: Particle) {
 		p.velY *= -0.5;
 	}
 
-	if (p.y >= GAME_HEIGHT) {
-		p.y = GAME_HEIGHT;
+	if (p.y >= game.height) {
+		p.y = game.height;
 		p.velY *= -0.5;
 	}
 
@@ -78,12 +79,12 @@ function handleParticleTopBotCollision(p: Particle) {
 	}
 
 	// right tunnel
-	if (p.x >= GAME_WIDTH) {
-		if (p.y <= GOAL_TOP && Math.abs(p.y - GOAL_TOP) < Math.abs(GAME_WIDTH - p.x)) {
+	if (p.x >= game.width) {
+		if (p.y <= GOAL_TOP && Math.abs(p.y - GOAL_TOP) < Math.abs(game.width - p.x)) {
 			p.y = GOAL_TOP;
 			p.velY *= -0.5;
 		}
-		if (p.y >= GOAL_BOTTOM && Math.abs(GOAL_BOTTOM - p.y) < Math.abs(GAME_WIDTH - p.x)) {
+		if (p.y >= GOAL_BOTTOM && Math.abs(GOAL_BOTTOM - p.y) < Math.abs(game.width - p.x)) {
 			p.y = GOAL_BOTTOM;
 			p.velY *= -0.5;
 		}
@@ -104,12 +105,12 @@ function handleParticleLeftRightCollision(p: Particle) {
 	}
 
 	// right side
-	if (p.x > GAME_WIDTH) {
+	if (p.x > game.width) {
 		if ((gameConfig.modifiers.arena && p.y >= GOAL_TOP && p.y <= GOAL_BOTTOM) || !gameConfig.modifiers.arena) { // COLLISION ALORS QUE PAS DARENA
 			return;
 		} else {
-			if (Math.abs(GAME_WIDTH - p.x) <= (p.y < GOAL_TOP ? Math.abs(p.y - GOAL_TOP) : Math.abs(GOAL_BOTTOM - p.y))) {
-				p.x = GAME_WIDTH;
+			if (Math.abs(game.width - p.x) <= (p.y < GOAL_TOP ? Math.abs(p.y - GOAL_TOP) : Math.abs(GOAL_BOTTOM - p.y))) {
+				p.x = game.width;
 				p.velX *= -0.5;
 			}
 		}
@@ -174,9 +175,9 @@ export function updateParticles(delta: number) {
 }
 
 export function spawnGoalExplosion(side: "left" | "right") {
-	const startX = side === "left" ? 0 - ARENA_MARGIN_LEFT : GAME_WIDTH + ARENA_MARGIN_RIGHT;
-	const minY = gameConfig.modifiers.arena ? GOAL_TOP : GAME_HEIGHT * 0.05;
-	const maxY = gameConfig.modifiers.arena ? GOAL_BOTTOM : GAME_HEIGHT * 0.95;
+	const startX = side === "left" ? 0 - ARENA_MARGIN_LEFT : game.width + ARENA_MARGIN_RIGHT;
+	const minY = gameConfig.modifiers.arena ? GOAL_TOP : game.height * 0.05;
+	const maxY = gameConfig.modifiers.arena ? GOAL_BOTTOM : game.height * 0.95;
 
 	for (let i = 0; i < 80 + Math.floor(Math.random() * 40); i++) {
 		const y = minY + Math.random() * (maxY - minY);

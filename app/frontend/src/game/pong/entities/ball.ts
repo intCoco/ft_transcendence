@@ -1,5 +1,5 @@
 import { game } from "../core/state.js";
-import { GAME_HEIGHT, GAME_WIDTH, GameState } from "../core/constants.js";
+import { GameState } from "../core/constants.js";
 import { leftPaddle, rightPaddle } from "./paddle.js";
 import { leftController, rightController } from "../game.js";
 import { AIController } from "../controllers/aiController.js";
@@ -20,8 +20,8 @@ export interface Ball {
 }
 
 export const ball: Ball = {
-    x: GAME_WIDTH / 2,
-    y: GAME_HEIGHT / 2,
+    x: game.width / 2,
+    y: game.height / 2,
     prevX: 0,
     prevY: 0,
     radius: 8,
@@ -59,7 +59,7 @@ export function resetBall(scorer: "left" | "right") {
         rightController.state.spinDir = false;
     }
 
-    ball.y = GAME_HEIGHT / 2;
+    ball.y = game.height / 2;
 
     const direction = scorer === "left" ? -1 : 1;
 

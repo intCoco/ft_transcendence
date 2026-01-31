@@ -18,11 +18,17 @@ export class PlayerController implements Controller {
     }
 
     update(paddle: Paddle, delta: number) {
-        if (isKeyDown(this.upKey)) {
+        if (paddle.height > paddle.width && isKeyDown(this.upKey)) {
             paddle.moveUp(delta);
         }
-        if (isKeyDown(this.downKey)) {
+        if (paddle.height > paddle.width && isKeyDown(this.downKey)) {
             paddle.moveDown(delta);
+        }
+        if (paddle.width > paddle.height && isKeyDown(this.upKey)) {
+            paddle.moveLeft(delta);
+        }
+        if (paddle.width > paddle.height && isKeyDown(this.downKey)) {
+            paddle.moveRight(delta);
         }
     }
     

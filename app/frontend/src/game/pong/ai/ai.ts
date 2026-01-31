@@ -1,5 +1,5 @@
 import { AIController } from "../controllers/aiController.js";
-import { GAME_HEIGHT, GAME_WIDTH } from "../core/constants.js";
+import { game } from "../core/state.js";
 import { ball } from "../entities/ball.js";
 import { Paddle } from "../entities/paddle.js";
 
@@ -44,9 +44,9 @@ export const AI_HARD: AIProfile = {
 
 
 // export const aiState: AIState = {
-//     zoneCenter: GAME_HEIGHT / 2,
+//     zoneCenter: game.height / 2,
 //     zoneRadius: 200,
-//     aimY: GAME_HEIGHT / 2,
+//     aimY: game.height / 2,
 //     nextDecisionTime: 0,
 //     nextReactionTime: 0,
 //     wantsSpin: false,
@@ -60,7 +60,7 @@ export function predictBallY(paddle: Paddle): number {
     let x = ball.x;
     let vx = ball.velX * ball.speedCoef;
 
-    const isRightPaddle = paddle.x > GAME_WIDTH / 2;
+    const isRightPaddle = paddle.x > game.width / 2;
     const isBallComing =
         (isRightPaddle && vx > 0) ||
         (!isRightPaddle && vx < 0);
@@ -71,11 +71,11 @@ export function predictBallY(paddle: Paddle): number {
     const timeToPaddle = (paddle.x - x - ball.radius) / vx;
     let predictedY = y + vy * timeToPaddle;
 
-    while (predictedY - ball.radius < 0 || predictedY + ball.radius > GAME_HEIGHT) {
+    while (predictedY - ball.radius < 0 || predictedY + ball.radius > game.height) {
         if (predictedY - ball.radius < 0)
             predictedY = -predictedY + 2 * ball.radius;
         else
-            predictedY = 2 * (GAME_HEIGHT - ball.radius) - predictedY;
+            predictedY = 2 * (game.height - ball.radius) - predictedY;
     }
 
     return predictedY;
@@ -83,13 +83,13 @@ export function predictBallY(paddle: Paddle): number {
 
 
 export function updateAIZone(controller: AIController, now: number) {
-    const isRightPaddle = controller.paddle.x > GAME_WIDTH / 2;
+    const isRightPaddle = controller.paddle.x > game.width / 2;
     const isBallComing =
         (isRightPaddle && ball.velX > 0) ||
         (!isRightPaddle && ball.velX < 0);
 
-    const distance = isBallComing ? Math.abs(controller.paddle.x - ball.x) : GAME_WIDTH;
-    const t = Math.min(1, distance / GAME_WIDTH);
+    const distance = isBallComing ? Math.abs(controller.paddle.x - ball.x) : game.width;
+    const t = Math.min(1, distance / game.width);
 
     const baseRadius = controller.profile.zoneError;
     const minRadius = controller.paddle.height / 3;
@@ -121,13 +121,13 @@ export function updateAIAim(controller: AIController, now: number) {
 
 
 export function updateAIMovement(controller: AIController, delta: number) {
-    const isRightPaddle = controller.paddle.x > GAME_WIDTH / 2;
+    const isRightPaddle = controller.paddle.x > game.width / 2;
     const isBallComing =
         (isRightPaddle && ball.velX > 0) ||
         (!isRightPaddle && ball.velX < 0);
 
     if (!isBallComing) {
-        controller.state.aimY = GAME_HEIGHT / 2;
+        controller.state.aimY = game.height / 2;
     }
 
     const paddleCenter = controller.paddle.y + controller.paddle.height / 2;
@@ -167,6 +167,6 @@ export function updateAIMovement(controller: AIController, delta: number) {
 
     controller.paddle.y = Math.max(
         0,
-        Math.min(GAME_HEIGHT - controller.paddle.height, controller.paddle.y)
+        Math.min(game.height - controller.paddle.height, controller.paddle.y)
     );
 }
