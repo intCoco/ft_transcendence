@@ -1729,7 +1729,7 @@ export default function App() {
                       onSubmit={handleSubmitSub}
                     >
                       <h1
-                        className="neon-glitch neon-glitch--always absolute left-[95px] px-0 py-0 text-xl text-cyan-300"
+                        className="neon-glitch neon-glitch--always absolute left-1/2 -translate-x-1/2 px-0 py-0 text-xl text-cyan-300"
                         data-text={t("welcome")}
                       >
                         {t("welcome")}
@@ -1757,39 +1757,6 @@ export default function App() {
                         placeholder={t("password")}
                         className="px-3 py-2 rounded bg-gray-900/80 neon-border text-cyan-300"
                       />
-
-                      {/*=====================================================================================
-  ======================================================================================
-  =============================== CHOOSE YOUR GENDER ===================================
-  ======================================================================================
-  ======================================================================================*/}
-
-                      <h1
-                        className="neon-glitch neon-glitch--always absolute px-0 py-0 left-[2px] text-xl text-cyan-300"
-                        data-text={t("chooseyourgender")}
-                      >
-                        {t("chooseyourgender")}
-                      </h1>
-
-                      <div className="flex gap-4 justify-center">
-                        <button
-                          type="button"
-                          className="neon-glitch neon-glitch--hover px-9 py-0 text-1xl bg-gray-900/80 text-black-300
-                        rounded neon-border"
-                          data-text={t("male")}
-                        >
-                          {t("male")}
-                        </button>
-
-                        <button
-                          type="button"
-                          className="neon-glitch neon-glitch--hover px-7 py-0 text-1xl bg-gray-900/80 text-black-300
-                      rounded neon-border"
-                          data-text={t("female")}
-                        >
-                          {t("female")}
-                        </button>
-                      </div>
 
                       <button
                         type="submit"
