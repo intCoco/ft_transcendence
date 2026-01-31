@@ -1,0 +1,11 @@
+# env
+.env
+
+# prisma
+prisma/dev.db
+
+# node
+node_modules/
+
+#backend/
+certs/
