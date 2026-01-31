@@ -75,9 +75,6 @@ function useAuth(setAuthUserId) {
   return { isAuthed, login, signIn, signOut };
 }
 
-function Loading() {
-  return <div className="text-white">Loading...</div>;
-}
 
 /* ================================================================================= */
 /* ================================================================================= */
@@ -172,9 +169,11 @@ function GameCanvas({ setupPlayers }) {
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
 
+    const is4Players = !!setupPlayers.top && !!setupPlayers.bot;
+
     const dpr = window.devicePixelRatio || 1;
     canvas.width = 860 * dpr;
-    canvas.height = 660 * dpr;
+    canvas.height = (is4Players ? 860 : 660) * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     stopGameRef.current = startPongGame(canvas, setupPlayers);
