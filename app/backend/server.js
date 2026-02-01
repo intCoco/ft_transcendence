@@ -24,7 +24,8 @@ async function start() {
   await fastify.register(require("./routes/block.routes"));
   await fastify.register(require("./routes/messages.routes"));
   await fastify.register(require("./routes/ws.routes"));
-
+  await fastify.register(require("./routes/leaderboard.routes"));
+  await fastify.register(require("./routes/game.routes"));
 
   await fastify.listen({ port: 3000, host: "0.0.0.0" });
   console.log("Backend running on https://localhost:3000");

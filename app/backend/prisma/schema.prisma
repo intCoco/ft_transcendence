@@ -93,3 +93,18 @@ model Block {
 
   @@id([blockerId, blockedId])
 }
+
+model Message {
+  id         Int      @id @default(autoincrement())
+
+  fromUserId Int
+  toUserId   Int
+  content    String
+
+  createdAt  DateTime @default(now())
+
+  fromUser User @relation("MessageFromUser", fields: [fromUserId], references: [id])
+  toUser   User @relation("MessageToUser", fields: [toUserId], references: [id])
+
+  @@index([fromUserId, toUserId])
+}
