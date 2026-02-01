@@ -2056,7 +2056,7 @@ export default function App() {
 
                   <button
                     className="neon-glitch neon-glitch--hover mt-6 px-3 py-0 neon-border bg-gray-900/60"
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate("/dashboard")}
                     data-text={t("back")}
                   >
                     {t("back")}
