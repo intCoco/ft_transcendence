@@ -8,4 +8,4 @@ prisma/dev.db
 node_modules/
 
 #backend/
-certs/
+certs/app/backend/prisma/dev.db
