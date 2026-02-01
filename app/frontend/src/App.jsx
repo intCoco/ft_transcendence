@@ -524,6 +524,11 @@ export default function App() {
 
   const DEFAULT_AVATAR = "/images/defaultavatar.png";
 
+  /* is typing... */
+  const typingTimeoutRef = useRef(null);
+  const [typingUsers, setTypingUsers] = useState({});
+
+
   /* ================================================================================= */
   /* ================================================================================= */
   /* ============================ HANDLE BACKGROUND ================================== */
@@ -532,7 +537,7 @@ export default function App() {
 
   const [avatar, setAvatar] = useState(DEFAULT_AVATAR);
   const [authMode, setAuthMode] = useState(null);
-  const DEFAULT_BG = "/images/abstract.png";
+  const DEFAULT_BG = "/images/manwork.png";
   const [bgSrc, setBgSrc] = useState(DEFAULT_BG);
 
   const fetchUserSettings = async () => {
@@ -805,6 +810,39 @@ export default function App() {
     signOut();
     navigate("/");
   };
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ================================ HANDLE TYPING ================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
+  const handleTyping = (e) => {
+    const value = e.target.value;
+    setChatInput(value);
+
+    if (!wsRef.current || !activeChatUser) return;
+    if (!value.trim()) return;
+
+    wsRef.current.send(
+      JSON.stringify({
+        type: "TYPING",
+        toUserId: activeChatUser.id,
+      })
+    );
+
+    clearTimeout(typingTimeoutRef.current);
+
+    typingTimeoutRef.current = setTimeout(() => {
+      wsRef.current?.send(
+        JSON.stringify({
+          type: "STOP_TYPING",
+          toUserId: activeChatUser.id,
+        })
+      );
+    }, 800);
+  };
+
   //
   //
   useEffect(() => {
@@ -889,6 +927,22 @@ export default function App() {
       const msg = JSON.parse(event.data);
 
       switch (msg.type) {
+
+        case "TYPING":
+          setTypingUsers((prev) => ({
+            ...prev,
+            [msg.fromUserId]: true,
+          }));
+          break;
+
+        case "STOP_TYPING":
+          setTypingUsers((prev) => {
+            const copy = { ...prev };
+            delete copy[msg.fromUserId];
+            return copy;
+          });
+          break;
+
         case "USERS_STATUS":
           setUsers((prev) => {
             const meId = Number(localStorage.getItem(USER_ID_KEY));
@@ -1537,6 +1591,12 @@ export default function App() {
                 <div ref={messagesEndRef} />
               </div>
 
+              {typingUsers[activeChatUser.id] && (
+                <div className="text-2 text-cyan-400 italic px-2">
+                  {activeChatUser.nickname} {t("istyping")}
+                </div>
+              )}
+
               <form
                 //"form" to take advantage of native submit functionality
                 className="p-3 border-t border-cyan-500/30 flex gap-2"
@@ -1562,12 +1622,18 @@ export default function App() {
                       text: chatInput,
                     }),
                   );
+                  wsRef.current?.send(
+                    JSON.stringify({
+                      type: "STOP_TYPING",
+                      toUserId: activeChatUser.id,
+                    })
+                  ); 
                   setChatInput("");
                 }}
               >
                 <input
                   value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
+                  onChange={handleTyping}
                   className="flex-1 bg-black/60 text-white px-2 py-1 rounded neon-border"
                 />
                 <button className="text-cyan-300">➤</button>
@@ -1743,7 +1809,7 @@ export default function App() {
                       onSubmit={handleSubmitLogin}
                     >
                       <h1
-                        className="neon-glitch neon-glitch--always absolute left-[14px] px-0 py-0 text-xl text-cyan-300"
+                        className="neon-glitch neon-glitch--always absolute left-1/2 -translate-x-1/2 px-0 py-0 text-xl text-cyan-300"
                         data-text={t("welcomeback")}
                       >
                         {t("welcomeback")}
@@ -1990,7 +2056,7 @@ export default function App() {
 
                   <button
                     className="neon-glitch neon-glitch--hover mt-6 px-3 py-0 neon-border bg-gray-900/60"
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate("/dashboard")}
                     data-text={t("back")}
                   >
                     {t("back")}
