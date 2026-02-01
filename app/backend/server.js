@@ -240,7 +240,7 @@ async function start() {
       update: {},
       create: {
         userId,
-        background: "/images/abstract.png",
+        background: "/images/manwork.png",
       },
       select: { background: true },
     });
