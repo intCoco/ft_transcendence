@@ -177,6 +177,20 @@ async function start() {
         return;
       }
 
+      if (msg.type === "TYPING") {
+        sendToUser(msg.toUserId, {
+          type: "TYPING",
+          fromUserId: userId,
+        });
+      }
+
+      if (msg.type === "STOP_TYPING") {
+        sendToUser(msg.toUserId, {
+          type: "STOP_TYPING",
+          fromUserId: userId,
+        });
+      }
+
       if (msg.type === "DM_SEND") {
         try {
           const { toUserId, text } = msg;
