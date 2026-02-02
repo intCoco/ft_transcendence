@@ -2,6 +2,8 @@ import { game } from "../core/state.js";
 import { GameState } from "../core/constants.js";
 import { resetBall } from "../entities/ball.js";
 
+type PlayerSide = "left" | "right" | "top" | "bottom";
+
 interface CoinTossState {
 	phase: "ROLLING" | "RESULT";
 
@@ -9,10 +11,11 @@ interface CoinTossState {
 	rollDuration: number;
 	resultDuration: number;
 
-	current: "left" | "right";
-	winner: "left" | "right" | null;
+	current: PlayerSide;
+	winner: PlayerSide | null;
 
 	lastSwitchTime: number;
+	sides: PlayerSide[];
 }
 
 export const coinToss: CoinTossState = {
@@ -25,7 +28,8 @@ export const coinToss: CoinTossState = {
 	current: "left",
 	winner: null,
 
-	lastSwitchTime: 0
+	lastSwitchTime: 0,
+	sides: ["left", "right"],
 };
 
 export function startCoinToss(now: number) {
@@ -33,7 +37,9 @@ export function startCoinToss(now: number) {
 	coinToss.elapsed = 0;
 	coinToss.lastSwitchTime = now;
 
-	coinToss.current = "left";
+	coinToss.sides = game.mode === "4P" ? ["left", "right", "top", "bottom"] : ["left", "right"];
+
+	coinToss.current = coinToss.sides[Math.floor(Math.random() * coinToss.sides.length)];
 	coinToss.winner = null;
 }
 
@@ -49,7 +55,8 @@ export function updateCoinToss(now: number, delta: number) {
 		const interval = minInterval + (maxInterval - minInterval) * (progress * progress);
 
 		if (now - coinToss.lastSwitchTime >= interval) {
-			coinToss.current = coinToss.current === "left" ? "right" : "left";
+			const otherSides = coinToss.sides.filter(side => side !== coinToss.current)
+			coinToss.current = otherSides[Math.floor(Math.random() * otherSides.length)];
 			coinToss.lastSwitchTime = now;
 		}
 
@@ -64,7 +71,7 @@ export function updateCoinToss(now: number, delta: number) {
 
 	if (coinToss.phase === "RESULT") {
 		if (coinToss.elapsed >= coinToss.resultDuration) {
-			resetBall(coinToss.winner === "left" ? "right" : "left");
+			resetBall(coinToss.winner === "left" ? "left" : coinToss.winner === "right" ? "right" : coinToss.winner === "top" ? "top" : "bottom");
 			game.state = GameState.SERVE;
 		}
 	}
