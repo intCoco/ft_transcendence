@@ -1,8 +1,8 @@
 import { ball } from "../entities/ball.js";
-import { ARENA_MARGIN_LEFT, ARENA_MARGIN_RIGHT } from "../core/constants.js";
-import { GOAL_TOP, GOAL_BOTTOM } from "../modifiers/arena.js";
+import { ARENA_MARGIN_BOTTOM, ARENA_MARGIN_LEFT, ARENA_MARGIN_RIGHT, ARENA_MARGIN_TOP } from "../core/constants.js";
+import { goal } from "../modifiers/arena.js";
 import { gameConfig } from "../modifiers/modifiers.js";
-import { Paddle, leftPaddle, rightPaddle } from "../entities/paddle.js";
+import { Paddle, bottomPaddle, leftPaddle, rightPaddle, topPaddle } from "../entities/paddle.js";
 import { game } from "../core/state.js";
 
 
@@ -54,38 +54,65 @@ export function spawnParticles(side: "horizontal" | "vertical") {
 }
 
 function handleParticleTopBotCollision(p: Particle) {
-	if (p.y <= 0) {
-		p.y = 0;
-		p.velY *= -0.5;
-	}
+	if (game.mode === "2P") {
+		if (p.y <= 0) {
+			p.y = 0;
+			p.velY *= -0.5;
+		}
 
-	if (p.y >= game.height) {
-		p.y = game.height;
-		p.velY *= -0.5;
+		if (p.y >= game.height) {
+			p.y = game.height;
+			p.velY *= -0.5;
+		}
+	}
+	else {
+		// top side
+		if (p.y < 0) {
+			if (p.x >= goal.left && p.x <= goal.right) {
+				return;
+			} else {
+				if (Math.abs(p.y) <= (p.x < goal.left ? Math.abs(p.x - goal.left) : Math.abs(goal.right - p.x))) {
+					p.y = 0;
+					p.velY *= -0.5;
+				}
+			}
+		}
+
+		// bot side
+		if (p.y > game.height) {
+			if (p.x >= goal.left && p.x <= goal.right) {
+				return;
+			} else {
+				if (Math.abs(game.height - p.y) <= (p.x < goal.left ? Math.abs(p.x - goal.left) : Math.abs(goal.right - p.x))) {
+					p.y = game.height;
+					p.velY *= -0.5;
+				}
+			}
+		}
 	}
 
 	if (!gameConfig.modifiers.arena) return;
 
 	// left tunnel
 	if (p.x <= 0) {
-		if (p.y <= GOAL_TOP && Math.abs(p.y - GOAL_TOP) < Math.abs(p.x)) {
-			p.y = GOAL_TOP;
+		if (p.y <= goal.top && Math.abs(p.y - goal.top) < Math.abs(p.x)) {
+			p.y = goal.top;
 			p.velY *= -0.5;
 		}
-		if (p.y >= GOAL_BOTTOM && Math.abs(GOAL_BOTTOM - p.y) < Math.abs(p.x)) {
-			p.y = GOAL_BOTTOM;
+		if (p.y >= goal.bottom && Math.abs(goal.bottom - p.y) < Math.abs(p.x)) {
+			p.y = goal.bottom;
 			p.velY *= -0.5;
 		}
 	}
 
 	// right tunnel
 	if (p.x >= game.width) {
-		if (p.y <= GOAL_TOP && Math.abs(p.y - GOAL_TOP) < Math.abs(game.width - p.x)) {
-			p.y = GOAL_TOP;
+		if (p.y <= goal.top && Math.abs(p.y - goal.top) < Math.abs(game.width - p.x)) {
+			p.y = goal.top;
 			p.velY *= -0.5;
 		}
-		if (p.y >= GOAL_BOTTOM && Math.abs(GOAL_BOTTOM - p.y) < Math.abs(game.width - p.x)) {
-			p.y = GOAL_BOTTOM;
+		if (p.y >= goal.bottom && Math.abs(goal.bottom - p.y) < Math.abs(game.width - p.x)) {
+			p.y = goal.bottom;
 			p.velY *= -0.5;
 		}
 	}
@@ -94,10 +121,10 @@ function handleParticleTopBotCollision(p: Particle) {
 function handleParticleLeftRightCollision(p: Particle) {
 	// left side
 	if (p.x < 0) {
-		if (gameConfig.modifiers.arena && p.y >= GOAL_TOP && p.y <= GOAL_BOTTOM || !gameConfig.modifiers.arena) {
+		if (gameConfig.modifiers.arena && p.y >= goal.top && p.y <= goal.bottom || !gameConfig.modifiers.arena) {
 			return;
 		} else {
-			if (Math.abs(p.x) <= (p.y < GOAL_TOP ? Math.abs(p.y - GOAL_TOP) : Math.abs(GOAL_BOTTOM - p.y))) {
+			if (Math.abs(p.x) <= (p.y < goal.top ? Math.abs(p.y - goal.top) : Math.abs(goal.bottom - p.y))) {
 				p.x = 0;
 				p.velX *= -0.5;
 			}
@@ -106,13 +133,39 @@ function handleParticleLeftRightCollision(p: Particle) {
 
 	// right side
 	if (p.x > game.width) {
-		if ((gameConfig.modifiers.arena && p.y >= GOAL_TOP && p.y <= GOAL_BOTTOM) || !gameConfig.modifiers.arena) { // COLLISION ALORS QUE PAS DARENA
+		if ((gameConfig.modifiers.arena && p.y >= goal.top && p.y <= goal.bottom) || !gameConfig.modifiers.arena) {
 			return;
 		} else {
-			if (Math.abs(game.width - p.x) <= (p.y < GOAL_TOP ? Math.abs(p.y - GOAL_TOP) : Math.abs(GOAL_BOTTOM - p.y))) {
+			if (Math.abs(game.width - p.x) <= (p.y < goal.top ? Math.abs(p.y - goal.top) : Math.abs(goal.bottom - p.y))) {
 				p.x = game.width;
 				p.velX *= -0.5;
 			}
+		}
+	}
+
+	if (game.mode === "2P") return;
+
+	// top tunnel
+	if (p.y <= 0) {
+		if (p.x <= goal.left && Math.abs(p.x - goal.left) < Math.abs(p.y)) {
+			p.x = goal.left;
+			p.velX *= -0.5;
+		}
+		if (p.x >= goal.right && Math.abs(goal.right - p.x) < Math.abs(p.y)) {
+			p.x = goal.right;
+			p.velX *= -0.5;
+		}
+	}
+
+	// bot tunnel
+	if (p.y >= game.height) {
+		if (p.x <= goal.left && Math.abs(p.x - goal.left) < Math.abs(p.y - game.height)) {
+			p.x = goal.left;
+			p.velX *= -0.5;
+		}
+		if (p.x >= goal.right && Math.abs(goal.right - p.x) < Math.abs(p.y - game.height)) {
+			p.x = goal.right;
+			p.velX *= -0.5;
 		}
 	}
 }
@@ -136,7 +189,7 @@ function testParticlePaddleCollision(p: Particle, paddle: Paddle): { hit: boolea
 }
 
 function handleParticlePaddleCollision(p: Particle) {
-	for (const paddle of [leftPaddle, rightPaddle]) {
+	for (const paddle of [leftPaddle, rightPaddle, topPaddle, bottomPaddle]) {
 		const res = testParticlePaddleCollision(p, paddle);
 		if (!res.hit) continue;
 
@@ -174,20 +227,31 @@ export function updateParticles(delta: number) {
 	}
 }
 
-export function spawnGoalExplosion(side: "left" | "right") {
-	const startX = side === "left" ? 0 - ARENA_MARGIN_LEFT : game.width + ARENA_MARGIN_RIGHT;
-	const minY = gameConfig.modifiers.arena ? GOAL_TOP : game.height * 0.05;
-	const maxY = gameConfig.modifiers.arena ? GOAL_BOTTOM : game.height * 0.95;
+export function spawnGoalExplosion(side: "left" | "right" | "top" | "bottom") {
+	const startX = side === "left" ? -ARENA_MARGIN_LEFT : side === "right" ? game.width + ARENA_MARGIN_RIGHT : undefined;
+	const startY = side === "top" ? -ARENA_MARGIN_TOP : side === "bottom" ? game.height + ARENA_MARGIN_BOTTOM : undefined;
+
+	const min = gameConfig.modifiers.arena ? goal.top : game.height * 0.05;
+	const max = gameConfig.modifiers.arena ? goal.bottom : game.height * 0.95;
 
 	for (let i = 0; i < 80 + Math.floor(Math.random() * 40); i++) {
-		const y = minY + Math.random() * (maxY - minY);
-		const angle = side === "left" ? (Math.random() - 0.5) * Math.PI / 2 : Math.PI + (Math.random() - 0.5) * Math.PI / 2;
+		const x = side === "top" || side === "bottom" ? min + Math.random() * (max - min) : startX!;
+		const y = side === "left" || side === "right" ? min + Math.random() * (max - min) : startY!;
+		const angle =
+			side === "left"
+				? (Math.random() - 0.5) * Math.PI / 2
+				: side === "right"
+					? Math.PI + (Math.random() - 0.5) * Math.PI / 2
+					: side === "top"
+						? Math.PI / 2 + (Math.random() - 0.5) * Math.PI / 2
+						: -Math.PI / 2 + (Math.random() - 0.5) * Math.PI / 2;
+
 		const speed = 600 + Math.random() * 500;
 
 		particles.push({
-			x: startX,
+			x,
 			y,
-			prevX: startX,
+			prevX: x,
 			prevY: y,
 			velX: Math.cos(angle) * speed,
 			velY: Math.sin(angle) * speed,

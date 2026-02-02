@@ -20,17 +20,17 @@ export const gameConfig: GameConfig = {
     }
 };
 
-export function displayActiveModifiers() {
-    const mods: string[] = [];
+// export function displayActiveModifiers() {
+//     const mods: string[] = [];
 
-    if (gameConfig.modifiers.increaseSpeed) mods.push("Speed");
-    if (gameConfig.modifiers.paddleBounceAngle) mods.push("Angle");
-    if (gameConfig.modifiers.spin) mods.push("Spin");
-    if (gameConfig.modifiers.arena) mods.push("Arena");
+//     if (gameConfig.modifiers.increaseSpeed) mods.push("Speed");
+//     if (gameConfig.modifiers.paddleBounceAngle) mods.push("Angle");
+//     if (gameConfig.modifiers.spin) mods.push("Spin");
+//     if (gameConfig.modifiers.arena) mods.push("Arena");
 
-    // document.getElementById("active-mods")!.innerText =
-    //     mods.length ? "Mods: " + mods.join(", ") : "Mods: none";
-}
+//     // document.getElementById("active-mods")!.innerText =
+//     //     mods.length ? "Mods: " + mods.join(", ") : "Mods: none";
+// }
 
 
 /**
@@ -38,10 +38,18 @@ export function displayActiveModifiers() {
  * @param ball
  * @param angle Angle wanted in radians
  */
-export function bounce(ball: Ball, angle: number) {
+export function bounce(ball: Ball, angle: number, axis: "vertical" | "horizontal") {
     const speed = Math.hypot(ball.velX, ball.velY);
-    const dirX = Math.sign(ball.velX);
 
-    ball.velX = Math.cos(angle) * speed * dirX;
-    ball.velY = Math.sin(angle) * speed;
+    if (axis === "vertical") {
+        const dirX = Math.sign(ball.velX);
+
+        ball.velX = Math.cos(angle) * speed * dirX;
+        ball.velY = Math.sin(angle) * speed;
+    } else {
+        const dirY = Math.sign(ball.velY);
+
+        ball.velX = Math.sin(angle) * speed;
+        ball.velY = Math.cos(angle) * speed * dirY;
+    }
 }

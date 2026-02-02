@@ -6,6 +6,7 @@ export class PlayerController implements Controller {
     paddle: Paddle;
     upKey: string;
     downKey: string;
+    score: number = 0;
 
     constructor(
         paddle: Paddle,

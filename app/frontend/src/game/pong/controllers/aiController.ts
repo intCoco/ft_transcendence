@@ -21,6 +21,7 @@ export class AIController implements Controller {
     profile: AIProfile;
     paddle: Paddle;
     state: AIState;
+    score: number = 0;
 
     constructor(paddle: Paddle, profile: AIProfile) {
         console.log("AI profile received:", profile);

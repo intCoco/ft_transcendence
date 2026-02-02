@@ -65,6 +65,12 @@ export default function GameSetup({ onStart, onClose }) {
         arena: true,
       }));
 
+      setPlayers((prev) => ({
+        ...prev,
+        left: { type: "Player", up: "w", down: "s", aiDifficulty: "Normal" },
+        right: { type: "Player", up: "ArrowUp", down: "ArrowDown", aiDifficulty: "Normal" },
+      }));
+
       const id = setTimeout(() => setAnimateExtras(true), 100);
       return () => clearTimeout(id);
     } else {
@@ -109,13 +115,13 @@ export default function GameSetup({ onStart, onClose }) {
           className="px-2 py-1 rounded bg-gray-900/80 text-cyan-300 small-border w-full"
         >
           <option value="Player">{t("player")}</option>
-          <option value="AI">{t("ai")}</option>
+          <option value="AI" disabled={mode === "4p"}>{t("ai")}</option>
         </select>
 
         {p.type === "Player" ? (
           <div className="flex flex-col gap-3 mt-2 w-full">
             <div className="flex items-center justify-between">
-              <span className="text-sm text-cyan-300">{t("up")}:</span>
+              <span className="text-sm text-cyan-300">{ id === "top" || id === "bot" ? t("left") : t("up") }:</span>
               <button
                 onClick={() => setListeningKey(`${id}-up`)}
                 className="key-box bg-gray-900/80 small-border text-cyan-300 rounded hover:bg-gray-700 transition"
@@ -125,7 +131,7 @@ export default function GameSetup({ onStart, onClose }) {
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-sm text-cyan-300">{t("down")}:</span>
+              <span className="text-sm text-cyan-300">{ id === "top" || id === "bot" ? t("right") : t("down") }:</span>
               <button
                 onClick={() => setListeningKey(`${id}-down`)}
                 className="key-box bg-gray-900/80 small-border text-cyan-300 rounded hover:bg-gray-700 transition"
@@ -190,7 +196,7 @@ export default function GameSetup({ onStart, onClose }) {
 
                 setPlayers((prev) => ({
                   ...prev,
-                  top: { type: "Player", up: "z", down: "x", aiDifficulty: "Normal" },
+                  top: { type: "Player", up: "a", down: "d", aiDifficulty: "Normal" },
                   bot: { type: "Player", up: "ArrowLeft", down: "ArrowRight", aiDifficulty: "Normal" },
                 }));
               }}

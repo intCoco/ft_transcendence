@@ -1,12 +1,10 @@
+import { Paddle } from "../entities/paddle.js";
 import { GameState, GAMEDURATION } from "./constants.js";
 
 export const game = {
     state: GameState.COIN_TOSS,
     isPaused: false,
     isGameOver: false,
-
-    scoreLeft: 0,
-    scoreRight: 0,
 
     gameTimer: GAMEDURATION,
     serveTimer: 3,
@@ -23,6 +21,11 @@ export const game = {
     width: 800,
     height: 600,
 
-    canvasWidth: 860,
-    canvasHeight: 660,
+    canvasWidth: 920,
+    canvasHeight: 720,
+
+    lastHitPaddle: undefined as Paddle | undefined,
+    penultimateHitPaddle: undefined as Paddle | undefined,
+
+    winner: undefined as "left" | "right" | "top" | "bottom" | undefined,
 };

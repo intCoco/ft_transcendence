@@ -1,3 +1,7 @@
+import { AIController } from "../controllers/aiController";
+import { Controller } from "../controllers/controller";
+import { PlayerController } from "../controllers/playerController";
+import { game } from "../core/state";
 
 export class Paddle {
     x: number;
@@ -5,10 +9,13 @@ export class Paddle {
     width: number;
     height: number;
     speed: number;
+    orientation: "vertical" | "horizontal";
+    controller: AIController | PlayerController | null = null;
 
     constructor(x: number, y: number, orientation: "vertical" | "horizontal") {
         this.x = x;
         this.y = y;
+        this.orientation = orientation;
         if (orientation === "horizontal") {
             this.width = 80;
             this.height = 15;
@@ -36,17 +43,19 @@ export class Paddle {
     }
 
     clampY(maxHeight: number) {
-        this.y = Math.max(5, Math.min(maxHeight - this.height - 5, this.y));
+        const offset = game.mode === "4P" ? 35 : 5;
+        this.y = Math.max(offset, Math.min(maxHeight - this.height - offset, this.y));
     }
 
     clampX(maxWidth: number) {
-        this.x = Math.max(5, Math.min(maxWidth - this.width - 5, this.x));
+        const offset = game.mode === "4P" ? 35 : 5;
+        this.x = Math.max(offset, Math.min(maxWidth - this.width - offset, this.x));
     }
 }
 
 export const leftPaddle = new Paddle(20, 600 / 2 - 40, "vertical");
 export const rightPaddle = new Paddle(800 - 35, 600 / 2 - 40, "vertical");
 export const topPaddle = new Paddle(800 / 2 - 40, 20, "horizontal");
-export const bottomPaddle = new Paddle(800 / 2 - 40, 600 - 35, "horizontal");
+export const bottomPaddle = new Paddle(800 / 2 - 40, 800 - 20, "horizontal");
 
 

@@ -3,7 +3,7 @@ import { GameState } from "../core/constants.js";
 import { updateBall } from "../entities/ball.js";
 import { bottomPaddle, leftPaddle, rightPaddle, topPaddle } from "../entities/paddle.js";
 import { updateCoinToss } from "../systems/coinToss.js";
-import { bottomController, leftController, rightController, topController } from "../game.js";
+import { bottomController, endGame, leftController, rightController, topController } from "../game.js";
 import { updateParticles } from "../entities/particles.js";
 
 // actual game : function that runs every frame 
@@ -54,12 +54,11 @@ export function update(delta: number) {
 
 	// game timer: handles game timer till game over
 	if (game.state === GameState.PLAY) {
-		game.gameTimer -= delta;
+		if (game.gameTimer > 0)
+			game.gameTimer -= delta;
 		if (game.gameTimer <= 0) {
 			game.gameTimer = 0;
-			game.state = GameState.END;
-			game.isGameOver = true;
-			game.onGameOver?.();
+			endGame();
 		}
 	}
 }
