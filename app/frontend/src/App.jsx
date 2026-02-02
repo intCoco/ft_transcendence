@@ -383,7 +383,7 @@ function PrivacyModal({ onClose }) {
           {t("privacy")}
         </h1>
 
-        <div className="text-sm leading-relaxed space-y-4 text-cyan-100">
+        <div className="text-sm leading-relaxed space-y-4 text-cyan-100 text-center">
           <p>{t("p1")}</p>
           <p>{t("p2")}</p>
           <p>{t("p3")}</p>
@@ -412,7 +412,6 @@ function PrivacyModal({ onClose }) {
   );
 }
 
-
 function TermsModal({ onClose }) {
   const { t } = useTranslation();
 
@@ -431,7 +430,7 @@ function TermsModal({ onClose }) {
           {t("terms")}
         </h1>
 
-        <div className="text-sm leading-relaxed space-y-4 text-cyan-100">
+        <div className="text-sm leading-relaxed space-y-4 text-cyan-100 text-center">
           <p>{t("t1")}</p>
           <p>{t("t2")}</p>
           <p>{t("t3")}</p>
@@ -503,6 +502,14 @@ export default function App() {
   /* Authentication state and helpers */
   const { isAuthed, login, signIn, signOut } = useAuth(setAuthUserId);
 
+  /* Handle login */
+  const [editLogin, setEditLogin] = useState(login);
+  const [isEditingLogin, setIsEditingLogin] = useState(false);
+
+  useEffect(() => {
+    setEditLogin(login);
+  }, [login]);
+
   /* List of all users */
   const [users, setUsers] = useState([]);
 
@@ -560,15 +567,22 @@ export default function App() {
   const meId = Number(localStorage.getItem(USER_ID_KEY));
   const isMe = selectedUser?.id === meId;
 
+  const DEFAULT_AVATAR = "/images/defaultavatar.png";
+
+  /* is typing... */
+  const typingTimeoutRef = useRef(null);
+  const [typingUsers, setTypingUsers] = useState({});
+
+
   /* ================================================================================= */
   /* ================================================================================= */
   /* ============================ HANDLE BACKGROUND ================================== */
   /* ================================================================================= */
   /* ================================================================================= */
 
-  const [avatar, setAvatar] = useState(null);
+  const [avatar, setAvatar] = useState(DEFAULT_AVATAR);
   const [authMode, setAuthMode] = useState(null);
-  const DEFAULT_BG = "/images/abstract.png";
+  const DEFAULT_BG = "/images/manwork.png";
   const [bgSrc, setBgSrc] = useState(DEFAULT_BG);
 
   const fetchUserSettings = async () => {
@@ -640,6 +654,10 @@ export default function App() {
     "/images/abstract3.png",
     "/images/manwork3.png",
     "/images/datacenter2.png",
+    "/images/miner.png",
+    "/images/arcade.png",
+    "/images/purpleplanet.png",
+    "/images/vaisseau.png",
   ];
 
   /* ================================================================================= */
@@ -712,7 +730,7 @@ export default function App() {
         return;
       }
 
-      notify("Compte créé, vous pouvez vous connecter");
+      notify("Account created");
       setLoginInput("");
       setEmailInput("");
       setPasswordInput("");
@@ -761,9 +779,55 @@ export default function App() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setAvatar(data.avatar || null);
+        setAvatar(data.avatar || DEFAULT_AVATAR);
       });
   }, [isAuthed]);
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ================================ HANDLE LOGIN =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
+  const handleLoginChange = async () => {
+    if (!editLogin.trim() || editLogin === login) {
+      setIsEditingLogin(false);
+      return;
+    }
+
+    const token = localStorage.getItem(AUTH_KEY);
+
+    const res = await fetch("/api/user/me/nickname", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ nickname: editLogin }),
+    });
+
+    if (!res.ok) {
+      notify("Nickname update failed");
+      return;
+    }
+
+    const data = await res.json();
+
+    localStorage.setItem(LOGIN_KEY, data.nickname);
+    setIsEditingLogin(false);
+
+    signIn(
+      data.nickname,
+      localStorage.getItem(AUTH_KEY),
+      localStorage.getItem(USER_ID_KEY),
+    );
+
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === authUserId ? { ...u, nickname: data.nickname } : u,
+      ),
+    );
+  };
 
   /* ================================================================================= */
   /* ================================================================================= */
@@ -791,6 +855,39 @@ export default function App() {
     signOut();
     navigate("/");
   };
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ================================ HANDLE TYPING ================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
+  const handleTyping = (e) => {
+    const value = e.target.value;
+    setChatInput(value);
+
+    if (!wsRef.current || !activeChatUser) return;
+    if (!value.trim()) return;
+
+    wsRef.current.send(
+      JSON.stringify({
+        type: "TYPING",
+        toUserId: activeChatUser.id,
+      })
+    );
+
+    clearTimeout(typingTimeoutRef.current);
+
+    typingTimeoutRef.current = setTimeout(() => {
+      wsRef.current?.send(
+        JSON.stringify({
+          type: "STOP_TYPING",
+          toUserId: activeChatUser.id,
+        })
+      );
+    }, 800);
+  };
+
   //
   //
   useEffect(() => {
@@ -875,6 +972,22 @@ export default function App() {
       const msg = JSON.parse(event.data);
 
       switch (msg.type) {
+
+        case "TYPING":
+          setTypingUsers((prev) => ({
+            ...prev,
+            [msg.fromUserId]: true,
+          }));
+          break;
+
+        case "STOP_TYPING":
+          setTypingUsers((prev) => {
+            const copy = { ...prev };
+            delete copy[msg.fromUserId];
+            return copy;
+          });
+          break;
+
         case "USERS_STATUS":
           setUsers((prev) => {
             const meId = Number(localStorage.getItem(USER_ID_KEY));
@@ -1203,7 +1316,7 @@ export default function App() {
         </button>
 
         <img
-          src={user.avatar || "/images/default-avatar.png"}
+          src={user.avatar || DEFAULT_AVATAR}
           className="w-32 h-32 rounded-full neon-border mt-[15vh]"
         />
 
@@ -1523,6 +1636,12 @@ export default function App() {
                 <div ref={messagesEndRef} />
               </div>
 
+              {typingUsers[activeChatUser.id] && (
+                <div className="text-2 text-cyan-400 italic px-2">
+                  {activeChatUser.nickname} {t("istyping")}
+                </div>
+              )}
+
               <form
                 //"form" to take advantage of native submit functionality
                 className="p-3 border-t border-cyan-500/30 flex gap-2"
@@ -1548,12 +1667,18 @@ export default function App() {
                       text: chatInput,
                     }),
                   );
+                  wsRef.current?.send(
+                    JSON.stringify({
+                      type: "STOP_TYPING",
+                      toUserId: activeChatUser.id,
+                    })
+                  ); 
                   setChatInput("");
                 }}
               >
                 <input
                   value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
+                  onChange={handleTyping}
                   className="flex-1 bg-black/60 text-white px-2 py-1 rounded neon-border"
                 />
                 <button className="text-cyan-300">➤</button>
@@ -1729,7 +1854,7 @@ export default function App() {
                       onSubmit={handleSubmitLogin}
                     >
                       <h1
-                        className="neon-glitch neon-glitch--always absolute left-[14px] px-0 py-0 text-xl text-cyan-300"
+                        className="neon-glitch neon-glitch--always absolute left-1/2 -translate-x-1/2 px-0 py-0 text-xl text-cyan-300"
                         data-text={t("welcomeback")}
                       >
                         {t("welcomeback")}
@@ -1774,7 +1899,7 @@ export default function App() {
                       onSubmit={handleSubmitSub}
                     >
                       <h1
-                        className="neon-glitch neon-glitch--always absolute left-[95px] px-0 py-0 text-xl text-cyan-300"
+                        className="neon-glitch neon-glitch--always absolute left-1/2 -translate-x-1/2 px-0 py-0 text-xl text-cyan-300"
                         data-text={t("welcome")}
                       >
                         {t("welcome")}
@@ -1802,39 +1927,6 @@ export default function App() {
                         placeholder={t("password")}
                         className="px-3 py-2 rounded bg-gray-900/80 neon-border text-cyan-300"
                       />
-
-                      {/*=====================================================================================
-  ======================================================================================
-  =============================== CHOOSE YOUR GENDER ===================================
-  ======================================================================================
-  ======================================================================================*/}
-
-                      <h1
-                        className="neon-glitch neon-glitch--always absolute px-0 py-0 left-[2px] text-xl text-cyan-300"
-                        data-text={t("chooseyourgender")}
-                      >
-                        {t("chooseyourgender")}
-                      </h1>
-
-                      <div className="flex gap-4 justify-center">
-                        <button
-                          type="button"
-                          className="neon-glitch neon-glitch--hover px-9 py-0 text-1xl bg-gray-900/80 text-black-300
-                        rounded neon-border"
-                          data-text={t("male")}
-                        >
-                          {t("male")}
-                        </button>
-
-                        <button
-                          type="button"
-                          className="neon-glitch neon-glitch--hover px-7 py-0 text-1xl bg-gray-900/80 text-black-300
-                      rounded neon-border"
-                          data-text={t("female")}
-                        >
-                          {t("female")}
-                        </button>
-                      </div>
 
                       <button
                         type="submit"
@@ -2009,7 +2101,7 @@ export default function App() {
 
                   <button
                     className="neon-glitch neon-glitch--hover mt-6 px-3 py-0 neon-border bg-gray-900/60"
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate("/dashboard")}
                     data-text={t("back")}
                   >
                     {t("back")}
@@ -2063,17 +2155,58 @@ export default function App() {
                         <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
                           <div className="flex items-center gap-6">
                             <img
-                              src={avatar || "/images/default-avatar.png"}
+                              src={avatar || DEFAULT_AVATAR}
                               className="w-28 h-28 rounded-full object-cover neon-border"
                             />
 
                             <div className="flex flex-col">
-                              <div
-                                className="neon-glitch neon-glitch--always text-2xl"
-                                data-text={login}
-                              >
-                                {login}
-                              </div>
+
+                              {isEditingLogin ? (
+                                <div className="flex flex-col gap-2">
+                                  <input
+                                    value={editLogin}
+                                    onChange={(e) => setEditLogin(e.target.value)}
+                                    className="px-2 py-1 rounded bg-black/60 neon-border text-cyan-300"
+                                  />
+
+                                  <div className="flex gap-2 text-sm">
+                                    <button
+                                      onClick={handleLoginChange}
+                                      className="px-2 py-1 neon-border text-green-400"
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setEditLogin(login);
+                                        setIsEditingLogin(false);
+                                      }}
+                                      className="px-2 py-1 neon-border text-red-400"
+                                    >
+                                      Cancel
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  {/* LOGIN DISPLAY */}
+                                  <div
+                                    className="neon-glitch neon-glitch--always text-2xl"
+                                    data-text={login}
+                                  >
+                                    {login}
+                                  </div>
+
+                                  {/* EDIT BUTTON */}
+                                  <button
+                                    onClick={() => setIsEditingLogin(true)}
+                                    title="Edit nickname"
+                                    className="ml-1 cursor-pointer neon-border px-1 py-0.5"
+                                  >
+                                    ✎
+                                  </button>
+                                </div>
+                              )}
 
                               <label className="mt-2 inline-block cursor-pointer neon-border px-2 py-1 text-sm hover:underline">
                                 {t("changeavatar")}

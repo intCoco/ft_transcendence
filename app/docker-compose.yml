@@ -8,8 +8,8 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./certs:/etc/nginx/ssl:ro
     ports:
-      - "80:80"
-      - "443:443"
+      # - "80:80"
+      - "8443:443"
     depends_on:
       - backend
       - frontend
@@ -22,7 +22,7 @@ services:
     image: back
     restart: always
     environment:
-      DATABASE_URL: file:/app/backend/prisma/prisma/dev.db
+      DATABASE_URL: file:/app/backend/prisma/dev.db
     volumes:
       - backend_db:/app/backend/prisma
       - ./certs:/certs:ro

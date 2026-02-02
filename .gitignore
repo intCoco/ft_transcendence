@@ -1,0 +1,9 @@
+# app/backend/
+.env
+certs/
+
+# database in app/backend/prisma/
+prisma/prisma/
+
+# in app/backend/ and app/frontend/
+node_modules/
