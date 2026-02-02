@@ -94,7 +94,7 @@ export function handleTopBotCollision(modifiers: GameModifiers) {
         if (ball.y - ball.radius < 0) { // top side
             if (ball.x >= goal.left && ball.x <= goal.right) {
                 if (ball.y < 0 - ARENA_MARGIN_TOP - ball.radius * 2 && !game.isGameOver) {
-                    if (game.lastHitPaddle !== bottomPaddle) game.lastHitPaddle!.controller!.score++;
+                    if (game.lastHitPaddle !== topPaddle) game.lastHitPaddle!.controller!.score++;
                     else game.penultimateHitPaddle!.controller!.score++;
                     spawnGoalExplosion("top");
                     resetBall("top");
@@ -112,7 +112,7 @@ export function handleTopBotCollision(modifiers: GameModifiers) {
         if (ball.y + ball.radius > game.height) { // bottom side
             if (ball.x >= goal.left && ball.x <= goal.right) {
                 if (ball.y > game.height + ARENA_MARGIN_TOP + ball.radius * 2 && !game.isGameOver) {
-                    if (game.lastHitPaddle !== topPaddle) game.lastHitPaddle!.controller!.score++;
+                    if (game.lastHitPaddle !== bottomPaddle) game.lastHitPaddle!.controller!.score++;
                     else game.penultimateHitPaddle!.controller!.score++;
                     spawnGoalExplosion("bottom");
                     resetBall("bottom");
