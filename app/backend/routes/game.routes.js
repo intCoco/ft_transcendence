@@ -3,6 +3,7 @@ const { getUserIdFromAuth } = require("../utils/auth");
 
 const prisma = new PrismaClient();
 
+
 module.exports = async function (fastify) {
   fastify.post("/game/result", async (req, reply) => {
     const userId = getUserIdFromAuth(req, reply);
