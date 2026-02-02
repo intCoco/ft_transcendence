@@ -2,22 +2,11 @@ This project has been created as part of the 42 curriculum by bboussad, chuchard
 
 Description: 
 
-Instructions:
-
-    For WORK on this project:
-    -> cd /app/backend/
-    -> npm install
-
-    -> cd /app/frontend/
-    -> npm install
-
-    For RUN this project: 
-    -> make
 
 Resources:
 
 
-Team Information:
+# Team Information:
 
     chuchard -> Tech Game Designer, responsible for the game logic, gameplay mechanics, and Pong implementation.
 
@@ -28,9 +17,20 @@ Team Information:
     nihamdan: N/A
 
 
+# Instructions for run this project (only members can do it)
+1. Past the .env in app/backend/
+2. Past certs/ in app/backend/
+3. make
 
-Features list:
+If it dosent work, you may need to try this:
+4. Past keys: sudo cp cert.pem /usr/local/share/ca-certificates/localhost.crt
+5. Install node_modules/: cd /app/backend/ && npm install 
+6. Same here: cd /app/frontend/ && npm install
+7. Allow certs: sudo update-ca-certificates
 
+
+# Features list:
+    WIP
 
 AUTH
     password hashed by bcrypt and salted. For see it, go to "SEE THE DATABASE" bellow in this file.
@@ -49,17 +49,6 @@ if pb with db after that (e.g. impossible to register or login), reboot and upda
     > docker exec -it back sh
     > npx prisma@6 migrate dev
 
-
-# How to run this project (only members can do it)
-1. Past the .env in app/backend/
-2. Past certs/ in app/backend/
-3. make
-
-If it dosent work, you may need to try this:
-4. Past keys: sudo cp cert.pem /usr/local/share/ca-certificates/localhost.crt
-5. Install node_modules/: cd /app/backend/ && npm install 
-6. Same here: cd /app/frontend/ && npm install
-7. Allow certs: sudo update-ca-certificates
 
 # SEE THE DATABASE (2 ways):
 1. From inside the container: 
