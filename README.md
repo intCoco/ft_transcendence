@@ -81,3 +81,16 @@ ETAPE 4 (facultatif) :
 
     autoriser les certs :
     -> sudo update-ca-certificates
+
+
+SEE THE DATABASE (2 ways):
+1. From inside the container: "docker exec -it back sqlite3 /app/backend/prisma/dev.db". If it works, you'll see "sqlite>" prompt.
+
+2. With the prisma UI (Prisma Studio):
+    - a. Into the back's service, in the docker compose: add "ports: "5555:5555".
+    - b. Enter into the back container: "docker exec -it back sh".
+    - c. In the container, start the prisma server: "cd /app/backend && HOST=0.0.0.0 ./node_modules/.bin/prisma studio".
+    - d. Go to "http://localhost:5555".
+    - e. You must see the database without error.
+    - f. Ctrl^D to close the prisma server.
+
