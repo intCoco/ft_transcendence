@@ -23,6 +23,7 @@ Resources:
 3. make
 
 If it dosent work, you may need to try this:
+
 4. Past keys: sudo cp cert.pem /usr/local/share/ca-certificates/localhost.crt
 5. Install node_modules/: cd /app/backend/ && npm install 
 6. Same here: cd /app/frontend/ && npm install
