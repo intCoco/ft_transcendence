@@ -21,9 +21,9 @@ Team Information:
 
     chuchard -> Tech Game Designer, responsible for the game logic, gameplay mechanics, and Pong implementation.
 
-    bboussad -> Frontend developer, responsible for the UI, UX, and client-side interactions.
+    bboussad -> Project Manager & Fullstack developer, responsible for the UI, UX, and client-side interactions and handke some connection with the back.
 
-    aldalmas: Backend & Infrastructure Developer, responsible for authentication, database, API, WebSockets, and Docker infrastructure.
+    aldalmas: Project owner & Backend & Infrastructure Developer, responsible for authentication, database, WebSockets, and Docker infrastructure.
 
     nihamdan: N/A
 
@@ -50,37 +50,18 @@ if pb with db after that (e.g. impossible to register or login), reboot and upda
     > npx prisma@6 migrate dev
 
 
-Apres avoir git clone : 
+# How to run this project (only members can do it)
+1. Past the .env in app/backend/
+2. Past certs/ in app/backend/
+3. make
 
-Step 1 :
-    For WORK on this project:
-    -> cd /app/backend/
-    -> npm install
-    -> cd /app/frontend/
-    -> npm install
+If it dosent work, you may need to try this:
+4. Past keys: sudo cp cert.pem /usr/local/share/ca-certificates/localhost.crt
+5. Install node_modules/: cd /app/backend/ && npm install 
+6. Same here: cd /app/frontend/ && npm install
+7. Allow certs: sudo update-ca-certificates
 
-    For RUN this project: 
-    -> make
-
-Step 2:
-    -> past the .env dans /backend/
-
-Step 3:
-    Past certs/ into backend/
-
-# remove ? 
-Step 4 :
-    past keys :
-    -> sudo cp cert.pem /usr/local/share/ca-certificates/localhost.crt
-# --------
-
-Step 5 (may be requiered) :
-
-    autoriser les certs :
-    -> sudo update-ca-certificates
-
-
-SEE THE DATABASE (2 ways):
+# SEE THE DATABASE (2 ways):
 1. From inside the container: "docker exec -it back sqlite3 /app/backend/prisma/dev.db". If it works, you'll see "sqlite>" prompt.
 
 2. With the prisma UI (Prisma Studio):
