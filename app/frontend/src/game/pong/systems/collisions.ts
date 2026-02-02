@@ -1,17 +1,17 @@
 import { game } from "../core/state.js";
-import { Paddle, leftPaddle, rightPaddle } from "../entities/paddle.js";
+import { Paddle, bottomPaddle, leftPaddle, rightPaddle, topPaddle } from "../entities/paddle.js";
 import { ball, resetBall } from "../entities/ball.js";
 import { GameModifiers } from "../modifiers/modifiers.js";
-import { GOAL_TOP, GOAL_BOTTOM } from "../modifiers/arena.js";
+import { goal } from "../modifiers/arena.js";
 import { updateAIZone } from "../ai/ai.js";
-import { leftController, rightController } from "../game.js";
+import { bottomController, leftController, rightController, topController } from "../game.js";
 import { PlayerController } from "../controllers/playerController.js";
 import { spawnGoalExplosion, spawnParticles } from "../entities/particles.js";
 import { AIController } from "../controllers/aiController.js";
 import { applyAngularBounce } from "../modifiers/angularBounce.js";
 import { applySpeedIncrease } from "../modifiers/speedIncrease.js";
 import { bounce } from "../modifiers/modifiers.js";
-import { ARENA_MARGIN_LEFT, ARENA_MARGIN_RIGHT, GAME_HEIGHT, GAME_WIDTH } from "../core/constants.js";
+import { ARENA_MARGIN_LEFT, ARENA_MARGIN_RIGHT, ARENA_MARGIN_TOP } from "../core/constants.js";
 
 
 export interface CollisionResult {
@@ -51,16 +51,20 @@ export function checkPaddleCollision(paddles: Paddle[], prevX: number, prevY: nu
     let minDist = Infinity;
 
     for (const paddle of paddles) {
-        const paddleCenterX = paddle.x + paddle.width / 2;
-        const dist = Math.abs(currX - paddleCenterX);
+        const cx = paddle.x + paddle.width / 2;
+        const cy = paddle.y + paddle.height / 2;
 
-        if (dist > paddle.width + ball.radius + 20) continue;
+        const dist = paddle.orientation === "vertical" ? Math.abs(currX - cx) : Math.abs(currY - cy);
+
+        if (dist > Math.max(paddle.width, paddle.height) + ball.radius + 20)
+            continue;
 
         if (dist < minDist) {
             minDist = dist;
             nearest = paddle;
         }
     }
+
 
     if (!nearest) return { hit: false, side: "horizontal" };
 
@@ -72,32 +76,70 @@ export function checkPaddleCollision(paddles: Paddle[], prevX: number, prevY: nu
 }
 
 export function handleTopBotCollision(modifiers: GameModifiers) {
-    if (ball.y - ball.radius <= 0) {
-        ball.y = ball.radius;
-        ball.velY *= -1;
-        ball.spin = 0;
-        spawnParticles("horizontal");
-    }
+    if (game.mode === "2P") {
+        if (ball.y - ball.radius <= 0) {
+            ball.y = ball.radius;
+            ball.velY *= -1;
+            ball.spin = 0;
+            spawnParticles("horizontal");
+        }
 
-    if (ball.y + ball.radius >= GAME_HEIGHT) {
-        ball.y = GAME_HEIGHT - ball.radius;
-        ball.velY *= -1;
-        ball.spin = 0;
-        spawnParticles("horizontal");
+        if (ball.y + ball.radius >= game.height) {
+            ball.y = game.height - ball.radius;
+            ball.velY *= -1;
+            ball.spin = 0;
+            spawnParticles("horizontal");
+        }
+    } else {
+        if (ball.y - ball.radius < 0) { // top side
+            if (ball.x >= goal.left && ball.x <= goal.right) {
+                if (ball.y < 0 - ARENA_MARGIN_TOP - ball.radius * 2 && !game.isGameOver) {
+                    if (game.lastHitPaddle !== bottomPaddle) game.lastHitPaddle!.controller!.score++;
+                    else game.penultimateHitPaddle!.controller!.score++;
+                    spawnGoalExplosion("top");
+                    resetBall("top");
+                }
+            } else { // side collisions
+                if (Math.abs(ball.y) <= (ball.x < goal.left ? Math.abs(ball.x - goal.left) : Math.abs(goal.right - ball.x))) {
+                    ball.y = ball.radius;
+                    ball.velY *= -1;
+                    ball.spin = 0;
+                    spawnParticles("horizontal");
+                }
+            }
+        }
+
+        if (ball.y + ball.radius > game.height) { // bottom side
+            if (ball.x >= goal.left && ball.x <= goal.right) {
+                if (ball.y > game.height + ARENA_MARGIN_TOP + ball.radius * 2 && !game.isGameOver) {
+                    if (game.lastHitPaddle !== topPaddle) game.lastHitPaddle!.controller!.score++;
+                    else game.penultimateHitPaddle!.controller!.score++;
+                    spawnGoalExplosion("bottom");
+                    resetBall("bottom");
+                }
+            } else {
+                if (Math.abs(game.height - ball.y) <= (ball.x < goal.left ? Math.abs(ball.x - goal.left) : Math.abs(goal.right - ball.x))) {
+                    ball.y = game.height - ball.radius;
+                    ball.velY *= -1;
+                    ball.spin = 0;
+                    spawnParticles("horizontal");
+                }
+            }
+        }
     }
 
     if (!modifiers.arena) return;
 
     // left tunnel
     if (ball.x <= 0) {
-        if (ball.y - ball.radius <= GOAL_TOP && Math.abs(ball.y - GOAL_TOP) < Math.abs(ball.x)) {
-            ball.y = GOAL_TOP + ball.radius;
+        if (ball.y - ball.radius <= goal.top && Math.abs(ball.y - goal.top) < Math.abs(ball.x)) {
+            ball.y = goal.top + ball.radius;
             ball.velY *= -1;
             ball.spin = 0;
             spawnParticles("horizontal");
         }
-        if (ball.y + ball.radius >= GOAL_BOTTOM && Math.abs(GOAL_BOTTOM - ball.y) < Math.abs(ball.x)) {
-            ball.y = GOAL_BOTTOM - ball.radius;
+        if (ball.y + ball.radius >= goal.bottom && Math.abs(goal.bottom - ball.y) < Math.abs(ball.x)) {
+            ball.y = goal.bottom - ball.radius;
             ball.velY *= -1;
             ball.spin = 0;
             spawnParticles("horizontal");
@@ -105,15 +147,15 @@ export function handleTopBotCollision(modifiers: GameModifiers) {
     }
 
     // right tunnel
-    if (ball.x >= GAME_WIDTH) {
-        if (ball.y - ball.radius <= GOAL_TOP && Math.abs(ball.y - GOAL_TOP) < Math.abs(GAME_WIDTH - ball.x)) {
-            ball.y = GOAL_TOP + ball.radius;
+    if (ball.x >= game.width) {
+        if (ball.y - ball.radius <= goal.top && Math.abs(ball.y - goal.top) < Math.abs(game.width - ball.x)) {
+            ball.y = goal.top + ball.radius;
             ball.velY *= -1;
             ball.spin = 0;
             spawnParticles("horizontal");
         }
-        if (ball.y + ball.radius >= GOAL_BOTTOM && Math.abs(GOAL_BOTTOM - ball.y) < Math.abs(GAME_WIDTH - ball.x)) {
-            ball.y = GOAL_BOTTOM - ball.radius;
+        if (ball.y + ball.radius >= goal.bottom && Math.abs(goal.bottom - ball.y) < Math.abs(game.width - ball.x)) {
+            ball.y = goal.bottom - ball.radius;
             ball.velY *= -1;
             ball.spin = 0;
             spawnParticles("horizontal");
@@ -126,14 +168,15 @@ export function handleLeftRightCollision(modifiers: GameModifiers) {
     // handles scoring (or collision if arena modifier)
     if (ball.x - ball.radius < 0) { // left side
         // if arena modifier AND in the goals limits OR if no arena modifier, same behavior
-        if ((modifiers.arena && ball.y >= GOAL_TOP && ball.y <= GOAL_BOTTOM) || !modifiers.arena) {
+        if ((modifiers.arena && ball.y >= goal.top && ball.y <= goal.bottom) || !modifiers.arena) {
             if (ball.x < 0 - ARENA_MARGIN_LEFT - ball.radius * 2 && !game.isGameOver) {
-                game.scoreRight++;
+                if (game.lastHitPaddle !== leftPaddle) game.lastHitPaddle!.controller!.score++;
+                else game.penultimateHitPaddle!.controller!.score++;
                 spawnGoalExplosion("left");
-                resetBall("right");
+                resetBall("left");
             }
         } else { // if arena modifiers, side collisions
-            if (Math.abs(ball.x) <= (ball.y < GOAL_TOP ? Math.abs(ball.y - GOAL_TOP) : Math.abs(GOAL_BOTTOM - ball.y))) { //?
+            if (Math.abs(ball.x) <= (ball.y < goal.top ? Math.abs(ball.y - goal.top) : Math.abs(goal.bottom - ball.y))) {
                 ball.x = ball.radius;
                 ball.velX *= -1;
                 ball.spin = 0;
@@ -142,88 +185,127 @@ export function handleLeftRightCollision(modifiers: GameModifiers) {
         }
     }
 
-    if (ball.x + ball.radius > GAME_WIDTH) { // right side
-        if ((modifiers.arena && ball.y >= GOAL_TOP && ball.y <= GOAL_BOTTOM) || !modifiers.arena) {
-            if (ball.x > GAME_WIDTH + ARENA_MARGIN_RIGHT + ball.radius * 2 && !game.isGameOver) {
-                game.scoreLeft++;
+    if (ball.x + ball.radius > game.width) { // right side
+        if ((modifiers.arena && ball.y >= goal.top && ball.y <= goal.bottom) || !modifiers.arena) {
+            if (ball.x > game.width + ARENA_MARGIN_RIGHT + ball.radius * 2 && !game.isGameOver) {
+                if (game.lastHitPaddle !== rightPaddle) game.lastHitPaddle!.controller!.score++;
+                else game.penultimateHitPaddle!.controller!.score++;
                 spawnGoalExplosion("right");
-                resetBall("left");
+                resetBall("right");
             }
         } else {
-            if (Math.abs(GAME_WIDTH - ball.x) <= (ball.y < GOAL_TOP ? Math.abs(ball.y - GOAL_TOP) : Math.abs(GOAL_BOTTOM - ball.y))) { //?
-                ball.x = GAME_WIDTH - ball.radius;
+            if (Math.abs(game.width - ball.x) <= (ball.y < goal.top ? Math.abs(ball.y - goal.top) : Math.abs(goal.bottom - ball.y))) {
+                ball.x = game.width - ball.radius;
                 ball.velX *= -1;
                 ball.spin = 0;
                 spawnParticles("vertical");
             }
         }
     }
+
+    if (game.mode !== "4P") return;
+
+    // top tunnel
+    if (ball.y <= 0) {
+        if (ball.x - ball.radius <= goal.left && Math.abs(ball.x - goal.left) < Math.abs(ball.y)) {
+            ball.x = goal.left + ball.radius;
+            ball.velX *= -1;
+            ball.spin = 0;
+            spawnParticles("vertical");
+        }
+        if (ball.x + ball.radius >= goal.right && Math.abs(goal.right - ball.x) < Math.abs(ball.y)) {
+            ball.x = goal.right - ball.radius;
+            ball.velX *= -1;
+            ball.spin = 0;
+            spawnParticles("vertical");
+        }
+    }
+
+    // bottom tunnel
+    if (ball.y >= game.height) {
+        if (ball.x - ball.radius <= goal.left && Math.abs(ball.x - goal.left) < Math.abs(game.height - ball.y)) {
+            ball.x = goal.left + ball.radius;
+            ball.velX *= -1;
+            ball.spin = 0;
+            spawnParticles("vertical");
+        }
+        if (ball.x + ball.radius >= goal.right && Math.abs(goal.right - ball.x) < Math.abs(game.height - ball.y)) {
+            ball.x = goal.right - ball.radius;
+            ball.velX *= -1;
+            ball.spin = 0;
+            spawnParticles("vertical");
+        }
+    }
 }
 
 export function handlePaddleCollision(now: number, modifiers: GameModifiers) {
-    let collision = checkPaddleCollision([leftPaddle, rightPaddle], ball.prevX, ball.prevY, ball.x, ball.y);
-    if (collision.hit) {
-        const paddle = collision.paddle;
-        const controller = paddle === leftPaddle ? leftController : rightController;
-        if (collision.side === "vertical") {
-            ball.velX *= -1;
+    const paddles = game.mode === "4P" ? [leftPaddle, rightPaddle, topPaddle, bottomPaddle] : [leftPaddle, rightPaddle];
+    let collision = checkPaddleCollision(paddles, ball.prevX, ball.prevY, ball.x, ball.y);
 
-            // reposition to avoid unexpected behaviors
-            ball.x = ball.prevX;
+    if (!collision.hit) return;
 
-            if (modifiers.paddleBounceAngle && paddle)
-                applyAngularBounce(paddle, true);
+    const paddle = collision.paddle;
+    game.penultimateHitPaddle = game.lastHitPaddle;
+    game.lastHitPaddle = paddle;
 
-            if (modifiers.increaseSpeed)
-                applySpeedIncrease();
+    let controller;
+    if (paddle === leftPaddle) controller = leftController;
+    else if (game.mode === "4P" && paddle === topPaddle) controller = topController;
+    else if (game.mode === "4P" && paddle === bottomPaddle) controller = bottomController;
+    else controller = rightController;
 
-            spawnParticles("vertical");
+    if (collision.side === "vertical") {
+      ball.velX *= -1;
+      ball.x = ball.prevX;
+      spawnParticles("vertical");
+    } else {
+      ball.velY *= -1;
+      ball.y = ball.prevY;
+      spawnParticles("horizontal");
+    }
 
-        } else {
-            ball.velY *= -1;
-            spawnParticles("horizontal");
+    if (modifiers.paddleBounceAngle && paddle)
+        applyAngularBounce(paddle);
 
-            // reposition to avoid unexpected behaviors
-            ball.y = ball.prevY;
-            return;
+    if (modifiers.increaseSpeed)
+        applySpeedIncrease();
 
-        }
+    // spin management
+    if (modifiers.spin) {
+        if (controller instanceof PlayerController) {
+            if (controller.isUpPressed()) {
+                ball.spin = (controller.paddle === leftPaddle || (game.mode === "4P" && controller.paddle === bottomPaddle)) ? 0.7 : -0.7;
+                if (game.mode === "2P") bounce(ball, -0.6747, "vertical");
+                else bounce(ball, -0.785398, controller.paddle.orientation);
+            }
+            else if (controller.isDownPressed()) {
+                ball.spin = (controller.paddle === leftPaddle || (game.mode === "4P" && controller.paddle === bottomPaddle)) ? -0.7 : 0.7;
+                if (game.mode === "2P") bounce(ball, 0.6747, "vertical");
+                else bounce(ball, 0.785398, controller.paddle.orientation);
+            }
+            else ball.spin = 0;
+            
+            
+            // AI decision making
+            const opponent = controller.paddle === leftPaddle ? rightController : leftController;
+            if (opponent instanceof AIController) {
+                updateAIZone(opponent, now);
+                if (!ball.spin && opponent.state.zoneCenter > game.height / 4 && opponent.state.zoneCenter < game.height - game.height / 4)
+                    opponent.state.wantsSpin = Math.random() < opponent.profile.spinChance;
+                if (opponent.state.wantsSpin)
+                    opponent.state.spinDir = (opponent.state.zoneCenter > game.height / 2) ? (Math.random() < 0.66 ? "up" : "down") : (Math.random() < 0.66 ? "down" : "up");
+                opponent.state.nextReactionTime = now + opponent.profile.reactionTime;
+            }
+        } else if (controller instanceof AIController && controller.state.wantsSpin) {
+                const dir = controller.state.spinDir === "up" ? 1 : -1;
 
-        // spin management
-        if (modifiers.spin) {
-            if (controller instanceof PlayerController) {
-                if (controller.isUpPressed()) {
-                    ball.spin = controller.paddle === leftPaddle ? 0.7 : -0.7;
-                    bounce(ball, -0.6747);
-                }
-                else if (controller.isDownPressed()) {
-                    ball.spin = controller.paddle === leftPaddle ? -0.7 : 0.7;
-                    bounce(ball, 0.6747);
-                }
-                else ball.spin = 0;
-                
-                
-                // AI decision making
-                const opponent = controller.paddle === leftPaddle ? rightController : leftController;
-                if (opponent instanceof AIController) {
-                    updateAIZone(opponent, now);
-                    if (!ball.spin && opponent.state.zoneCenter > GAME_HEIGHT / 4 && opponent.state.zoneCenter < GAME_HEIGHT - GAME_HEIGHT / 4)
-                        opponent.state.wantsSpin = Math.random() < opponent.profile.spinChance;
-                    if (opponent.state.wantsSpin)
-                        opponent.state.spinDir = (opponent.state.zoneCenter > GAME_HEIGHT / 2) ? (Math.random() < 0.66 ? "up" : "down") : (Math.random() < 0.66 ? "down" : "up");
-                    opponent.state.nextReactionTime = now + opponent.profile.reactionTime;
-                }
-            } else if (controller instanceof AIController && controller.state.wantsSpin) {
-                    const dir = controller.state.spinDir === "up" ? 1 : -1;
+                ball.spin = dir * 0.7;
+                const angle = dir * 0.6747;
+                bounce(ball, angle, "vertical");
 
-                    ball.spin = dir * 0.7;
-                    const angle = dir * 0.6747;
-                    bounce(ball, angle);
-
-                    controller.state.wantsSpin = false;
-                    controller.state.spinDir = false;
-            } else
-                    ball.spin = 0;
-        }
+                controller.state.wantsSpin = false;
+                controller.state.spinDir = false;
+        } else
+                ball.spin = 0;
     }
 }
