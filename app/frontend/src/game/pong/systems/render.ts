@@ -201,7 +201,7 @@ function drawCoinToss() {
 	game.ctx!.fillStyle = "white";
 	game.ctx!.shadowColor = "cyan";
 	game.ctx!.shadowBlur = 15;
-	game.ctx!.fillText(i18n.t(coinToss.current === "left" ? "left" : "right").toUpperCase(), game.canvasWidth / 2, game.canvasHeight / 2);
+	game.ctx!.fillText(i18n.t(coinToss.current === "left" ? "left" : coinToss.current === "right" ? "right" : coinToss.current === "top" ? "top" : "bottom").toUpperCase(), game.canvasWidth / 2, game.canvasHeight / 2);
 
 	game.ctx!.font = "18px monospace";
 	if (coinToss.winner && coinToss.elapsed > 0.7)
