@@ -28,8 +28,6 @@ services:
       - ./certs:/certs:ro
     expose:
       - "3000"
-    ports:
-      - "5555:5555"
     networks:
       - transcendence
 
