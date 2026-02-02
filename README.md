@@ -33,16 +33,16 @@ Features list:
 
 
 AUTH
-    password hashed by bcrypt and salted
+    password hashed by bcrypt and salted. For see it, go to "SEE THE DATABASE" bellow in this file.
 
-BDD
+DATABASE
 -> ORM (object-relational mapping): prisma. Why ? Clear errors, good with SQLite, and easy to use. Intermediary between code and a simulated POO database. 
 -> -> schema.prisma : used for create the database structure. 'prisma migrate dev' cmd read the 'schema.prisma' file, generate 'migration.sql' file and apply it in a real base (dev.db file).
 
 if need to change something in the db (in app/backend/prisma/schema.prisma), you must do this to update changes in app/backend/:
-    > rm prisma/dev.db
+    > rm prisma/dev.db (if present)
     > rm -rf prisma/migrations
-    > npx prisma@6 migrate dev --name init
+    > npx prisma@6 migrate dev --name choose_a_migration_name
 
 if pb with db after that (e.g. impossible to register or login), reboot and update the db in container:
     > make re
@@ -52,8 +52,7 @@ if pb with db after that (e.g. impossible to register or login), reboot and upda
 
 Apres avoir git clone : 
 
-ETAPE 1 :
-
+Step 1 :
     For WORK on this project:
     -> cd /app/backend/
     -> npm install
@@ -63,21 +62,19 @@ ETAPE 1 :
     For RUN this project: 
     -> make
 
-ETAPE 2 :
+Step 2:
+    -> past the .env dans /backend/
 
-    .env:
-    ->copier/coller le .env dans /backend/
+Step 3:
+    Past certs/ into backend/
 
-    init la DB 
-    -> npx prisma@6 migrate dev --name init
-
-
-ETAPE 3 :
-
-    copier/coller les key :
+# remove ? 
+Step 4 :
+    past keys :
     -> sudo cp cert.pem /usr/local/share/ca-certificates/localhost.crt
+# --------
 
-ETAPE 4 (facultatif) :
+Step 5 (may be requiered) :
 
     autoriser les certs :
     -> sudo update-ca-certificates
