@@ -49,9 +49,9 @@ export function updateBall(now: number, delta: number) {
 
 export function resetBall(side: "left" | "right" | "top" | "bottom") {
     for (const controller of [leftController, rightController, topController, bottomController]) {
-        if (controller.score >= MAX_POINTS) {
+        if (controller.score >= MAX_POINTS || game.gameTimer <= 0) {
             endGame();
-            return;
+            if (game.isGameOver) return;
         }
     }
     if (side === "top") {
