@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 
+
 const bcrypt = require("bcrypt");
 const prisma = new PrismaClient();
 
@@ -32,20 +33,20 @@ function isValidEmail(str) {
 
 async function registerUser(email, pass, nickname) {
 	if (!isValidEmail(email))
-		return { success: false, reason: "Email : mauvais format (example@email.com)" };
+		return { success: false, reason: "bad_email" };
 
 	if (!isAlphaNum(nickname))
-		return { success: false, reason: "Identifiant : uniquement alphanumériques autorisés" };
+		return { success: false, reason: "bad_id" };
 
 	if (nickname.length > 15)
-		return { success: false, reason: "Identifiant : 15 caractères maximum" };
+		return { success: false, reason: "too_short_id" };
 
 	const existingUser = await prisma.user.findFirst({
 		where: { OR: [{ email }, { nickname }] },
   });
 
   if (existingUser) {
-	return { success: false, reason: "Email déjà utilisé" };
+	return { success: false, reason: "already_used_email" };
   }
 
   const passwordHash = await bcrypt.hash(pass, 10);

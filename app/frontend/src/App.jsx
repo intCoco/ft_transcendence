@@ -726,17 +726,18 @@ export default function App() {
       }
 
       if (!res.ok) {
-        notify(data?.message || "User already exists");
+        const key = data?.message || data?.error || "serv_error";
+        notify(t(key));
         return;
       }
 
-      notify("Account created");
+      notify(t("created_account"));
       setLoginInput("");
       setEmailInput("");
       setPasswordInput("");
       setAuthMode("login");
     } catch (err) {
-      notify("Error Serv");
+      notify(t("serv_error"));
     }
   };
 

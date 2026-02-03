@@ -88,5 +88,11 @@
 	"t5":"ou d’exploiter le service.",
 	"t6":"L’application est fournie « telle quelle »,",
 	"t7":"sans aucune garantie de disponibilité,",
-	"t8":"de sécurité ou de performance."
+	"t8":"de sécurité ou de performance.",
+  "bad_email": "Email : mauvais format (exemple@email.com)",
+  "bad_id": "Identifiant : uniquement alphanumériques autorisés",
+  "too_short_id": "Identifiant : 15 caractères maximum",
+  "already_used_email": "Email déjà utilisé",
+  "created_account": "Compte créé !",
+  "serv_error": "Erreur serveur"
 }

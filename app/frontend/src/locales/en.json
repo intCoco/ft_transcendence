@@ -27,7 +27,7 @@
   "topwins":"𝕋𝕆ℙ 𝕎𝕀ℕ𝕊!",
   "bottomwins":"𝔹𝕆𝕋𝕋𝕆𝕄 𝕎𝕀ℕ𝕊!",
   "draw":"𝔻ℝ𝔸𝕎!",
-  "login": "𝕌𝕊𝔼ℝ",
+  "login": "𝕌𝕊𝔼ℝℕ𝔸𝕄𝔼",
   "password": "ℙ𝔸𝕊𝕊𝕎𝕆ℝ𝔻",
   "users": "𝕌𝕊𝔼ℝ𝕊",
   "friends": "𝔽ℝ𝕀𝔼ℕ𝔻𝕊",
@@ -88,5 +88,11 @@
   "t5":"or exploit the service.",
   "t6":"The application is provided “as is”,",
   "t7":"without any guarantees of availability,",
-  "t8":"security, or performance."
+  "t8":"security, or performance.",
+  "bad_email": "Email : incorrect format (example@email.com)",
+  "bad_id": "Username: only alphanumeric characters allowed",
+  "too_short_id": "Username: maximum 15 characters",
+  "already_used_email": "Email already used",
+  "created_account": "Account created!",
+  "serv_error": "Server error"
 }
