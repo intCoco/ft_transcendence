@@ -8,7 +8,7 @@ COPY package-lock.json .
 COPY prisma ./prisma
 
 RUN npm install
-RUN npx prisma generate
+RUN npx prisma@6 generate
 
 # copy the others files / repos
 COPY . .

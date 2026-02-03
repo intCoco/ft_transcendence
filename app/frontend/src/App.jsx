@@ -22,7 +22,12 @@ const LOGIN_KEY = "auth_login";
 const AUTH_KEY = "auth_token";
 const USER_ID_KEY = "auth_user_id";
 
-import { startGame, startPongGame } from "./game/pong/game";
+import {
+  startGame,
+  startPongGame,
+  leftController,
+  rightController,
+} from "./game/pong/game";
 import { setKey, resetKeys } from "./game/pong/core/input";
 import { game } from "./game/pong/core/state";
 import GameSetup from "./GameSetup";
@@ -167,13 +172,20 @@ function GameCanvas({ setupPlayers }) {
         const token = localStorage.getItem(AUTH_KEY);
 
         if (userId && token) {
-          let didWin = false;
+          const humanWon = (() => {
+            // winner is set in endGame; use it when available
+            if (game.winner === "left" && isLeftPlayerHuman) return true;
+            if (game.winner === "right" && isRightPlayerHuman) return true;
 
-          if (isLeftPlayerHuman && game.scoreLeft > game.scoreRight) {
-            didWin = true;
-          } else if (isRightPlayerHuman && game.scoreRight > game.scoreLeft) {
-            didWin = true;
-          }
+            // fallback to controller scores (in case winner isn't set)
+            if (isLeftPlayerHuman && leftController.score > rightController.score)
+              return true;
+          
+            if (isRightPlayerHuman && rightController.score > leftController.score)
+              return true;
+
+            return false;
+          })();
 
           try {
             await fetch("/api/game/result", {
@@ -183,7 +195,7 @@ function GameCanvas({ setupPlayers }) {
                 Authorization: `Bearer ${token}`,
               },
               body: JSON.stringify({
-                didWin: didWin,
+                didWin: humanWon,
                 isPlayerVsAi: true,
               }),
             });
