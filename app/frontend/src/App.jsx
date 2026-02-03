@@ -75,10 +75,6 @@ function useAuth(setAuthUserId) {
   return { isAuthed, login, signIn, signOut };
 }
 
-function Loading() {
-  return <div className="text-white">Loading...</div>;
-}
-
 /* ================================================================================= */
 /* ================================================================================= */
 /* =================================== GAME CANVAS ================================= */
@@ -528,6 +524,9 @@ export default function App() {
   const typingTimeoutRef = useRef(null);
   const [typingUsers, setTypingUsers] = useState({});
 
+  /* GAME COUNTDOWN */
+  const [showGameCountdown, setShowGameCountdown] = useState(false);
+  const [countdown, setCountdown] = useState(3);
 
   /* ================================================================================= */
   /* ================================================================================= */
@@ -859,6 +858,28 @@ export default function App() {
   }, [isAuthed]);
   //
   //
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ================================ GAME COUNTDOWN ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
+  const startGameCountdown = () => {
+    setCountdown(5);
+    setShowGameCountdown(true);
+
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setShowGameCountdown(false);
+          //navigate("/game");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
 
   //
   //
@@ -914,13 +935,24 @@ export default function App() {
       })
       .catch(() => setUsers([]));
 
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+
     const ws = new WebSocket(
-      `wss://${window.location.host}/api/ws?token=${token}`,
+      `${protocol}://${window.location.host}/api/ws?token=${token}`,
     );
     wsRef.current = ws;
 
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: "WHO_IS_ONLINE" }));
+
+      fetch("/api/users", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem(AUTH_KEY)}`,
+        },
+      })
+      .then((res) => res.json())
+      .then((data) => setUsers(data))
+      .catch(() => setUsers([]));
     };
 
     ws.onmessage = (event) => {
@@ -943,16 +975,26 @@ export default function App() {
           });
           break;
 
-        case "USERS_STATUS":
-          setUsers((prev) => {
-            const meId = Number(localStorage.getItem(USER_ID_KEY));
+          case "USERS_STATUS":
+            setUsers((prev) => {
+              const map = new Map(prev.map((u) => [u.id, u]));
 
-            return prev.map((u) => ({
-              ...u,
-              online: u.id === meId || msg.onlineUsers.includes(u.id),
-            }));
-          });
-          break;
+              msg.onlineUsers.forEach((id) => {
+                if (!map.has(id)) {
+                  map.set(id, {
+                    id,
+                    nickname: "Unknown",
+                    online: true,
+                  });
+                }
+              });
+
+              return [...map.values()].map((u) => ({
+                ...u,
+                online: msg.onlineUsers.includes(u.id),
+              }));
+            });
+            break;
 
         case "FRIEND_REQUEST":
           setFriendRequests((prev) => {
@@ -1150,7 +1192,18 @@ export default function App() {
   };
 
   const handleInvite = () => {
-    console.log("Invite:", selectedUser.nickname);
+    if (!wsRef.current || !selectedUser) return;
+
+    wsRef.current.send(
+      JSON.stringify({
+        type: "DM_SEND",
+        toUserId: selectedUser.id,
+        text: t("gameInvite", { user: login }),
+      })
+    );
+
+    // startGameCountdown();
+    notify(t("inviteSent", { user: selectedUser.nickname }));
     closeUserMenu();
   };
 
@@ -1640,6 +1693,28 @@ export default function App() {
               </form>
             </>
           )}
+
+          {/* =============================================
+                ============== GAME COUNTDOWN =============
+                ============================================= */}
+
+          {showGameCountdown && (
+            <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80">
+              <div className="text-center">
+                <div
+                  className="text-[5rem] font-extrabold neon-glitch neon-glitch--always text-cyan-300"
+                  data-text={countdown}
+                >
+                  {countdown}
+                </div>
+
+                <div className="mt-2 text-sm text-white opacity-80">
+                  {t("gameStarting")}
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       )}
 
@@ -1649,7 +1724,7 @@ export default function App() {
   ======================================================================================
   ======================================================================================*/}
 
-      {selectedUser && !isMe && (
+      {showChat && selectedUser && !isMe && (
         <div
           className="fixed bg-black/90 neon-border rounded p-2
                       text-sm z-[1000]"
@@ -2232,6 +2307,7 @@ export default function App() {
             setSetupPlayers(playersConfig);
             setShowGameSetup(false);
             navigate("/game");
+            startGameCountdown();
           }}
           onClose={() => setShowGameSetup(false)}
         />
