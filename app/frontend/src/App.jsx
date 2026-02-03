@@ -29,6 +29,24 @@ import GameSetup from "./GameSetup";
 import { t } from "i18next";
 import LeaderboardPage from "./LeaderboardPage";
 
+
+
+
+const hasToken = () => {
+  return Boolean(localStorage.getItem(AUTH_KEY));
+};
+
+function ProtectedRoute({ children }) {
+  const location = useLocation();
+
+  const token = localStorage.getItem(AUTH_KEY);
+
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
+
 /* ================================================================================= */
 /* ================================================================================= */
 /* ================================= HANDLE AUTH =================================== */
@@ -1970,7 +1988,7 @@ export default function App() {
                   </div>
                 )}
               </div>
-            }
+              }
           />
 
           {/*=====================================================================================
@@ -1982,6 +2000,7 @@ export default function App() {
           <Route
             path="/dashboard"
             element={
+              <ProtectedRoute>
               <div className="w-full h-full flex flex-col items-center">
                 <div className="mt-[5vh]">
                   <h1
@@ -2043,7 +2062,7 @@ export default function App() {
                   </button>
                 </div>
               </div>
-            }
+            </ProtectedRoute>}
           />
 
 
@@ -2056,6 +2075,7 @@ export default function App() {
           <Route
             path="/customize"
             element={
+              <ProtectedRoute>
               <div className="fixed inset-0 bg-black/80 z-30 flex flex-col items-center p-8">
                 <h1
                   className="neon-glitch neon-glitch--always text-5xl mb-[4vh] mt-[8vh]"
@@ -2088,7 +2108,7 @@ export default function App() {
                   {t("back")}
                 </button>
               </div>
-            }
+            </ProtectedRoute>}
           />
 
           {/*=====================================================================================
@@ -2099,7 +2119,10 @@ export default function App() {
 
           <Route
             path="/game"
-            element={<GameRoute setupPlayers={setupPlayers} />}
+            element={
+            <ProtectedRoute>
+              <GameRoute setupPlayers={setupPlayers} />
+            </ProtectedRoute>}
           />
 
           {/*=====================================================================================
@@ -2111,15 +2134,17 @@ export default function App() {
           <Route
             path="/profile/:id"
             element={
+              <ProtectedRoute>
               <div className="relative w-full h-full z-30">
                 <PublicProfile />
               </div>
-            }
+            </ProtectedRoute>}
           />
 
           <Route
             path="/profile"
             element={
+              <ProtectedRoute>
               <div className="w-full h-full relative overflow-hidden">
                 <div className="mt-[2vh] w-full h-full flex flex-col items-center">
                   <h1
@@ -2272,7 +2297,7 @@ export default function App() {
                   </div>
                 </div>
               </div>
-            }
+            </ProtectedRoute>}
           />
 
           {/*=====================================================================================
@@ -2281,7 +2306,10 @@ export default function App() {
   ======================================================================================
   ======================================================================================*/}
 
-          <Route path="/leaderboard" element={<LeaderboardPage />} />
+          <Route path="/leaderboard" element={
+            <ProtectedRoute>
+            <LeaderboardPage />
+            </ProtectedRoute>} />
 
 
         </Routes>
