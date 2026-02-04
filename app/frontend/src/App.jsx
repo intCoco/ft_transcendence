@@ -8,7 +8,6 @@ import {
   Routes,
   Route,
   useNavigate,
-  Link,
   useLocation,
   useParams,
 } from "react-router-dom";
@@ -30,15 +29,8 @@ import { t } from "i18next";
 import LeaderboardPage from "./LeaderboardPage";
 
 
-
-
-const hasToken = () => {
-  return Boolean(localStorage.getItem(AUTH_KEY));
-};
-
 function ProtectedRoute({ children }) {
   const location = useLocation();
-
   const token = localStorage.getItem(AUTH_KEY);
 
   if (!token) {
@@ -908,8 +900,12 @@ export default function App() {
     }, 800);
   };
 
-  //
-  //
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ============================== CLEAN IF NOT AUTHED ============================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   useEffect(() => {
     if (!isAuthed) {
       setShowChat(false);
@@ -922,8 +918,7 @@ export default function App() {
       setMessages({});
     }
   }, [isAuthed]);
-  //
-  //
+
   /* ================================================================================= */
   /* ================================================================================= */
   /* ================================ GAME COUNTDOWN ================================= */
@@ -947,37 +942,38 @@ export default function App() {
     }, 1000);
   };
 
-  //
-  //
-  //
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== CLOSE WEBSOCKET ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
+  //when they leave with the cross, avoid zombie connections
   useEffect(() => {
-    const handleUnload = () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-    };
+    const handleUnload = () => wsRef.current?.close();
 
-    window.addEventListener("beforeunload", handleUnload);
+    //"unload" is a window event
     window.addEventListener("unload", handleUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleUnload);
-      window.removeEventListener("unload", handleUnload);
-    };
+    return () => window.removeEventListener("unload", handleUnload);
   }, []);
-//
-//
-  //
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== HANDLE SHOWCHAT ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   useEffect(() => {
     if (!showChat || userTab !== "friends") return;
 
+    //retrieve the friends list
     fetch("/api/friends", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
       },
     })
       .then((res) => res.json())
+      //protect react state against invalid data
       .then((data) => {
         setFriends(Array.isArray(data) ? data : []);
       })
@@ -999,8 +995,10 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => {
         const meId = Number(localStorage.getItem(USER_ID_KEY));
+        //copy data in userswithme (with ...)
         const usersWithMe = [...data];
 
+        //sometimes /api/users doesn't include you yet
         if (!usersWithMe.some((u) => u.id === meId)) {
           usersWithMe.push({
             id: meId,
@@ -1009,6 +1007,7 @@ export default function App() {
           });
         }
 
+        //retains the real-time information already received
         setUsers((prev) => {
           const prevMap = new Map(prev.map((u) => [u.id, u]));
 
@@ -1020,13 +1019,15 @@ export default function App() {
       })
       .catch(() => setUsers([]));
 
+    //wss if https, ws if http, just a guard, always https
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-
+    //keep the same socket between renders thanks to useRef
     const ws = new WebSocket(
       `${protocol}://${window.location.host}/api/ws?token=${token}`,
     );
     wsRef.current = ws;
 
+    //sends the current state
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: "WHO_IS_ONLINE" }));
 
@@ -1040,6 +1041,7 @@ export default function App() {
       .catch(() => setUsers([]));
     };
 
+    //each box corresponds to an event
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
 
@@ -1143,23 +1145,24 @@ export default function App() {
       if (wsRef.current === ws) wsRef.current = null;
     };
 
+    //if isAuthed became false
     return () => {
       ws.close();
     };
   }, [isAuthed]);
 
-  //
-  //
-  //
+
+  //user options visible is show chat is true
   useEffect(() => {
     isChatVisibleRef.current = Boolean(showChat && activeChatUser);
   }, [showChat, activeChatUser]);
 
-  //
-  //
+
+  //chat panel open and “Requests” tab selected
   useEffect(() => {
     if (!showChat || userTab !== "requests") return;
 
+    //retrieve pending friend requests
     fetch("/api/friends/requests", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
@@ -1168,9 +1171,12 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => {
         setFriendRequests((prev) => {
+          //fetched = request from server
           const fetched = Array.isArray(data) ? data : [];
+          //prev = requests already known (WS)
           const merged = [...prev];
 
+          //only add the new ones
           fetched.forEach((u) => {
             if (!merged.some((p) => p.id === u.id)) {
               merged.push(u);
@@ -1181,10 +1187,13 @@ export default function App() {
         });
       });
   }, [showChat, userTab]);
-  //
-  //
-  //
-  //BLACKLIST
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== CATCH BLACKLIST ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   useEffect(() => {
     if (!showChat) return;
 
@@ -1199,9 +1208,8 @@ export default function App() {
       })
       .catch(() => setBlockedUsers([]));
   }, [showChat]);
-  //
-  //
-  //
+
+  //scroll until the very last message
   useEffect(() => {
     if (!activeChatUser) return;
 
@@ -1210,8 +1218,7 @@ export default function App() {
     });
   }, [messages, activeChatUser]);
   //
-  //
-  //
+
 
   useEffect(() => {
     if (!isAuthed || !authUserId) return;
