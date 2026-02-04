@@ -245,8 +245,10 @@ export function handlePaddleCollision(now: number, modifiers: GameModifiers) {
     if (!collision.hit) return;
 
     const paddle = collision.paddle;
-    game.penultimateHitPaddle = game.lastHitPaddle;
-    game.lastHitPaddle = paddle;
+    if (game.lastHitPaddle !== paddle) {
+        game.penultimateHitPaddle = game.lastHitPaddle;
+        game.lastHitPaddle = paddle;
+    }
 
     let controller;
     if (paddle === leftPaddle) controller = leftController;
@@ -271,7 +273,7 @@ export function handlePaddleCollision(now: number, modifiers: GameModifiers) {
         applySpeedIncrease();
 
     // spin management
-    if (modifiers.spin) {
+    if (modifiers.spin && collision.side === paddle!.orientation) {
         if (controller instanceof PlayerController) {
             if (controller.isUpPressed()) {
                 ball.spin = (controller.paddle === leftPaddle || (game.mode === "4P" && controller.paddle === bottomPaddle)) ? 0.7 : -0.7;

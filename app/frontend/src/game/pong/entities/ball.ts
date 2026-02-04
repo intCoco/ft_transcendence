@@ -84,19 +84,16 @@ export function resetBall(side: "left" | "right" | "top" | "bottom") {
     }
 
     if (game.mode === "2P" || side === "left" || side === "right") {
-        const direction = side === "left" ? 1 : -1;
-
-        ball.velX = (game.mode === "2P" ? 300 : 255) * direction;
+        ball.velX = (game.mode === "2P" ? 300 : 255) * (side === "left" ? 1 : -1);
         ball.velY = (Math.random() < 0.5 ? -1 : 1) * (game.mode === "2P" ? 210 : 255);
     } else {
-        const direction = side === "top" ? 1 : -1;
-
-        ball.velY = 300 * direction;
+        ball.velY = 300 * (side === "top" ? 1 : -1);
         ball.velX = (Math.random() < 0.5 ? -1 : 1) * 300;
     }
 
     ball.speedCoef = 1;
     ball.spin = 0;
+    game.penultimateHitPaddle = undefined;
 
     game.ctx!.fillStyle = "#0a0214";
     game.ctx!.fillRect(0, 0, game.canvasWidth, game.canvasHeight);

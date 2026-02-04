@@ -567,7 +567,8 @@ function drawParticles() {
 		game.ctx!.arc(p.x + ARENA_MARGIN_LEFT, p.y + ARENA_MARGIN_TOP, 2 + Math.random() * 2, 0, Math.PI * 2);
 		game.ctx!.fill();
 		game.ctx!.restore();
-	}}
+	}
+}
 
 export function render() {
 	if (!game.isPaused) {

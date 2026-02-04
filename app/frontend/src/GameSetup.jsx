@@ -3,6 +3,31 @@ import { useTranslation } from "react-i18next";
 import { gameConfig } from "./game/pong/modifiers/modifiers";
 import "./i18n";
 
+const FORBIDDEN_KEYS = new Set([
+  "Shift",
+  "Control",
+  "Alt",
+  "AltGraph",
+  "Fn",
+  "Meta",
+  "CapsLock",
+  "Tab",
+  "Escape",
+  "Enter",
+  "Backspace",
+]);
+
+function isKeyAlreadyBound(players, key, currentBinding) {
+  for (const side in players) {
+    const p = players[side];
+    if (!p) continue;
+
+    if (`${side}-up` !== currentBinding && p.up === key) return true;
+    if (`${side}-down` !== currentBinding && p.down === key) return true;
+  }
+  return false;
+}
+
 function formatKey(key) {
   if (key === "ArrowUp") return "⇧";
   if (key === "ArrowDown") return "⇩";
@@ -29,19 +54,37 @@ export default function GameSetup({ onStart, onClose }) {
   const [modifiers, setModifiers] = useState({ ...gameConfig.modifiers });
   const [listeningKey, setListeningKey] = useState(null);
   const [modifiersHover, setModifiersHover] = useState(null);
+  const [keyError, setKeyError] = useState(null);
 
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (!listeningKey) return;
+      if (FORBIDDEN_KEYS.has(e.key)) return;
+
+      const key = e.key.toLowerCase();
+
+      if (isKeyAlreadyBound(players, key, listeningKey)) {
+        setKeyError(t("keyAlreadyUsed"));
+        setTimeout(() => setKeyError(null), 2000);
+        return;
+      }
+
       const [side, dir] = listeningKey.split("-");
-      const newPlayers = { ...players };
-      newPlayers[side][dir] = e.key;
-      setPlayers(newPlayers);
+      setPlayers((prev) => ({
+        ...prev,
+        [side]: {
+          ...prev[side],
+          [dir]: key,
+        },
+      }));
+
       setListeningKey(null);
+      setKeyError(null);
     };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [listeningKey]);
+  }, [listeningKey, players, t]);
 
   const handleStart = () => {
     for (let key in modifiers) gameConfig.modifiers[key] = modifiers[key];
@@ -241,6 +284,14 @@ export default function GameSetup({ onStart, onClose }) {
             >
               <div className="w-px h-full bg-cyan-300/40" />
               {renderPlayer("bot", t("bottomPlayer"))}
+            </div>
+          )}
+        </div>
+
+        <div className="h-8 flex items-center justify-center mb-6">
+          {keyError && (
+            <div className="text-red-400 text-sm animate-pulse">
+              {keyError}
             </div>
           )}
         </div>
