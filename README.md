@@ -1,30 +1,32 @@
 This project has been created as part of the 42 curriculum by bboussad, chuchard, nihamdan and aldalmas.
 
-# Description from the subject
-Transcendence is a group project (4-5 people), which is intended to boost your creativity, self-confidence, adaptability to new technologies, and teamwork skills. You’ll create a real-world web application as a team that can move in many directions, depending on the modules you choose and the choices you make. Make sure to think things through together as a team before you start.
-The project is divided into two parts:
-• The mandatory part, which is the fixed core of the project to which every team member must contribute.
-• A set of modules, which you can choose and which count toward the final grade.
-
-Resources:
-
 
 # Team Information:
+    chuchard (Tech Game Designer)
+        Responsible for the game logic, gameplay mechanics, level design and Pong implementation (1v1 and 1v1v1v1 versions). Added an AI Opponent and some game settings for more fun and difficulty.
 
-    chuchard
-        Tech Game Designer, responsible for the game logic, gameplay mechanics, and Pong implementation.
+    bboussad (Project Manager, Fullstack developer, Q & A tester)
+        Responsible for the UI, UX, client-side interactions and handle some connection with the back. Set deadlines, meetings and somes quality tests.
 
-    bboussad
-        Project Manager & Fullstack developer, responsible for the UI, UX, and client-side interactions and handke some connection with the back. Set deadlines and meetings.
+    aldalmas (Project Owner, Backend and Infrastructure Developer, Q & A tester)
+        Responsible for authentication, database, WebSockets, Docker infrastructure and Readme update. Realized a lot of quality tests and design proposition.
 
-    aldalmas
-        Project Owner & Backend & Infrastructure Developer, responsible for authentication, database, WebSockets, and Docker infrastructure.
+    nihamdan (Fullstack Developer)
+        Reponsive of the user experience outside the game, achievement, xp, leaderboard and handled the app traduction in italian, english and french.
+    
 
-    nihamdan
-        Fullstack Developer, reponsive of the user experience outside the game, achievement, xp, leaderboard and handled traductions in two additional langages (italian and french).
+# Description from the subject
+    Transcendence is a group project (4-5 people), which is intended to boost your creativity, self-confidence, adaptability to new technologies, and teamwork skills. You’ll create a real-world web application as a team that can move in many directions, depending on the modules you choose and the choices you make. Make sure to think things through together as a team before you start.
+    The project is divided into two parts:
+    • The mandatory part, which is the fixed core of the project to which every team member must contribute.
+    • A set of modules, which you can choose and which count toward the final grade.
 
 
-# Instructions for run this project (only members can do it)
+# Resources
+    
+
+
+# Instructions for run this project (only Team can do it)
 1. Past the .env in app/backend/
 2. Past certs/ in app/backend/
 3. make
