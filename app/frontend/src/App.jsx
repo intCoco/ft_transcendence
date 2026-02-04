@@ -951,6 +951,25 @@ export default function App() {
   //
   //
   useEffect(() => {
+    const handleUnload = () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleUnload);
+    window.addEventListener("unload", handleUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+      window.removeEventListener("unload", handleUnload);
+    };
+  }, []);
+//
+//
+  //
+  useEffect(() => {
     if (!showChat || userTab !== "friends") return;
 
     fetch("/api/friends", {
