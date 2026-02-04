@@ -4,10 +4,10 @@ import { gameConfig } from "./game/pong/modifiers/modifiers";
 import "./i18n";
 
 function formatKey(key) {
-  if (key === "ArrowUp") return "🠕";
-  if (key === "ArrowDown") return "🠗";
-  if (key === "ArrowLeft") return "🠔";
-  if (key === "ArrowRight") return "🠖";
+  if (key === "ArrowUp") return "⇧";
+  if (key === "ArrowDown") return "⇩";
+  if (key === "ArrowLeft") return "⇦";
+  if (key === "ArrowRight") return "⇨";
   if (key === " ") return "␣";
   return key.length > 4 ? key.slice(0, 4) + "…" : key.toUpperCase();
 }
