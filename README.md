@@ -1,7 +1,10 @@
 This project has been created as part of the 42 curriculum by bboussad, chuchard, nihamdan and aldalmas.
 
-Description: 
-
+# Description from the subject
+Transcendence is a group project (4-5 people), which is intended to boost your creativity, self-confidence, adaptability to new technologies, and teamwork skills. You’ll create a real-world web application as a team that can move in many directions, depending on the modules you choose and the choices you make. Make sure to think things through together as a team before you start.
+The project is divided into two parts:
+• The mandatory part, which is the fixed core of the project to which every team member must contribute.
+• A set of modules, which you can choose and which count toward the final grade.
 
 Resources:
 
@@ -64,7 +67,7 @@ If it dosent work, you may need to try this:
 
 # Features list (Major = 2 points, Minor = 1 point)
     - WEB 
-        Major = Frakework front (React, Tailwind) + back (Fastify)
+        Major = Framework front (React, Tailwind) + back (Fastify)
         Major = Websocket
         Major = Allow users to interact with others users
         Minor = Use an ORM (object-relational mapping) (Prisma)
