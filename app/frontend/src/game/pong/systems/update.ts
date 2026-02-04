@@ -1,9 +1,9 @@
 import { game } from "../core/state.js";
-import { GameState, GAME_HEIGHT } from "../core/constants.js";
+import { GameState } from "../core/constants.js";
 import { updateBall } from "../entities/ball.js";
-import { leftPaddle, rightPaddle } from "../entities/paddle.js";
+import { bottomPaddle, leftPaddle, rightPaddle, topPaddle } from "../entities/paddle.js";
 import { updateCoinToss } from "../systems/coinToss.js";
-import { leftController, rightController } from "../game.js";
+import { bottomController, endGame, leftController, rightController, topController } from "../game.js";
 import { updateParticles } from "../entities/particles.js";
 
 // actual game : function that runs every frame 
@@ -26,12 +26,23 @@ export function update(delta: number) {
 		return;
 	}
 	
+	// paddle controls: updates paddles positions based on player inputs or AI
 	leftController.update(leftPaddle, delta);
 	rightController.update(rightPaddle, delta);
 
+	if (game.mode === "4P") {
+		topController.update(topPaddle, delta);
+		bottomController.update(bottomPaddle, delta);
+	}
+
 	// clamping: limits the paddles movements from all the way up to all the way down the canvas. Stops it from going OOB
-	leftPaddle.clamp(GAME_HEIGHT);
-	rightPaddle.clamp(GAME_HEIGHT);
+	leftPaddle.clampY(game.height);
+	rightPaddle.clampY(game.height);
+
+	if (game.mode === "4P") {
+		topPaddle.clampX(game.width);
+		bottomPaddle.clampX(game.width);
+	}
 
 	// serve timer: countdown from 3s when serving to let players time to replace
 	if (game.state === GameState.SERVE) {
@@ -43,12 +54,11 @@ export function update(delta: number) {
 
 	// game timer: handles game timer till game over
 	if (game.state === GameState.PLAY) {
-		game.gameTimer -= delta;
+		if (game.gameTimer > 0)
+			game.gameTimer -= delta;
 		if (game.gameTimer <= 0) {
 			game.gameTimer = 0;
-			game.state = GameState.END;
-			game.isGameOver = true;
-			game.onGameOver?.();
+			endGame();
 		}
 	}
 }

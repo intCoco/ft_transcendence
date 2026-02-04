@@ -103,9 +103,37 @@ function GameCanvas({ setupPlayers }) {
   const canvasRef = useRef(null);
   const stopGameRef = useRef(null);
 
-  const [, forceUpdate] = useState(0);
+  const is4Players = !!setupPlayers?.top && !!setupPlayers?.bot;
+  const canvasHeight = is4Players ? 920 : 720;
+  const BASE_WIDTH = 920;
+  const BASE_HEIGHT_2P = 720;
+  const BASE_HEIGHT_4P = 920;
 
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const baseHeight = is4Players ? BASE_HEIGHT_4P : BASE_HEIGHT_2P;
+
+      const maxWidth = window.innerWidth * 0.95;
+      const maxHeight = (window.innerHeight - 120) * 0.95;
+
+      const scaleX = maxWidth / BASE_WIDTH;
+      const scaleY = maxHeight / baseHeight;
+
+      setScale(Math.min(scaleX, scaleY));
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [is4Players]);
+
+
+
+  const [, forceUpdate] = useState(0);
   const navigate = useNavigate();
+
   const restartGame = () => {
     startGame();
 
@@ -177,7 +205,6 @@ function GameCanvas({ setupPlayers }) {
       if (e.key === "Escape" && !game.isGameOver) {
         game.isPaused = !game.isPaused;
         forceUpdate((v) => v + 1);
-        // setIsPaused(prev => !prev);
       }
     };
 
@@ -186,10 +213,8 @@ function GameCanvas({ setupPlayers }) {
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
 
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = 860 * dpr;
-    canvas.height = 660 * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvas.width = 920;
+    canvas.height = canvasHeight;
 
     stopGameRef.current = startPongGame(canvas, setupPlayers);
     forceUpdate((v) => v + 1);
@@ -205,113 +230,134 @@ function GameCanvas({ setupPlayers }) {
   }, [setupPlayers]);
 
   return (
-    <div className="relative">
-      <canvas
-        ref={canvasRef}
-        className="w-[800px] h-[600px] neon-border rounded-xl"
-      />
-      {game.isPaused && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
-          <div className="bg-[#0a0446]/70 neon-border rounded-xl px-10 py-8 text-white text-center w-[420px]">
-            {/* TITLE */}
-            <h1
-              className="text-4xl mb-8 neon-glitch neon-glitch--always tracking-widest"
-              data-text="ℙ𝔸𝕌𝕊𝔼"
-            >
-              ℙ𝔸𝕌𝕊𝔼
-            </h1>
-
-            {/* BUTTONS */}
-            <div className="flex flex-col gap-4">
-              <button
-                className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-gray-700"
-                onClick={() => {
-                  // setIsPaused(false);
-                  game.isPaused = false;
-                  forceUpdate((v) => v + 1);
-                }}
+    <div className="w-full flex justify-center">
+      <div
+        style={{
+          width: BASE_WIDTH * scale,
+          height: canvasHeight * scale,
+        }}
+      >
+        <canvas
+          ref={canvasRef}
+          width={BASE_WIDTH}
+          height={canvasHeight}
+          className="neon-border rounded-xl block"
+          style={{
+            width: "100%",
+            height: "100%",
+          }}
+        />
+        {game.isPaused && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
+            <div className="bg-[#0a0446]/70 neon-border rounded-xl px-10 py-8 text-white text-center w-[420px]">
+              {/* TITLE */}
+              <h1
+                className="text-4xl mb-8 neon-glitch neon-glitch--always tracking-widest"
+                data-text="ℙ𝔸𝕌𝕊𝔼"
               >
-                <span
-                  data-text={t("resume")}
-                  className="neon-glitch neon-glitch--hover inline-block"
-                >
-                  {t("resume")}
-                </span>
-              </button>
+                ℙ𝔸𝕌𝕊𝔼
+              </h1>
 
-              <button
-                className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-gray-700"
-                onClick={restartGame}
-              >
-                <span
-                  data-text={t("restart")}
-                  className="neon-glitch neon-glitch--hover inline-block"
+              {/* BUTTONS */}
+              <div className="flex flex-col gap-4">
+                <button
+                  className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-gray-700"
+                  onClick={() => {
+                    // setIsPaused(false);
+                    game.isPaused = false;
+                    forceUpdate((v) => v + 1);
+                  }}
                 >
-                  {t("restart")}
-                </span>
-              </button>
+                  <span
+                    data-text={t("resume")}
+                    className="neon-glitch neon-glitch--hover inline-block"
+                  >
+                    {t("resume")}
+                  </span>
+                </button>
 
-              <button
-                className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-red-600/40"
-                onClick={goToMenu}
-              >
-                <span
-                  data-text="𝕄𝔼ℕ𝕌"
-                  className="neon-glitch neon-glitch--hover inline-block"
+                <button
+                  className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-gray-700"
+                  onClick={restartGame}
                 >
-                  𝕄𝔼ℕ𝕌
-                </span>
-              </button>
+                  <span
+                    data-text={t("restart")}
+                    className="neon-glitch neon-glitch--hover inline-block"
+                  >
+                    {t("restart")}
+                  </span>
+                </button>
+
+                <button
+                  className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-red-600/40"
+                  onClick={goToMenu}
+                >
+                  <span
+                    data-text="𝕄𝔼ℕ𝕌"
+                    className="neon-glitch neon-glitch--hover inline-block"
+                  >
+                    𝕄𝔼ℕ𝕌
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      {game.isGameOver && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
-          <div className="bg-[#0a0446]/70 neon-border rounded-xl px-10 py-8 text-white text-center w-[420px]">
-            <h1
-              className="text-4xl mb-6 neon-glitch neon-glitch--always tracking-widest"
-              data-text={
-                game.scoreLeft > game.scoreRight
+        )}
+        {game.isGameOver && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
+            <div className="bg-[#0a0446]/70 neon-border rounded-xl px-10 py-8 text-white text-center w-[420px]">
+              <h1
+                className="text-4xl mb-6 neon-glitch neon-glitch--always tracking-widest"
+                data-text={
+                  game.winner === "left"
+                    ? t("leftwins")
+                    : game.winner === "right"
+                      ? t("rightwins")
+                      : game.winner === "top"
+                        ? t("topwins")
+                        : game.winner === "bottom"
+                          ? t("bottomwins")
+                          : t("draw")
+                }
+              >
+                {game.winner === "left"
                   ? t("leftwins")
-                  : game.scoreRight > game.scoreLeft
+                  : game.winner === "right"
                     ? t("rightwins")
-                    : t("draw")
-              }
-            >
-              {game.scoreLeft > game.scoreRight
-                ? t("leftwins")
-                : game.scoreRight > game.scoreLeft
-                  ? t("rightwins")
-                  : t("draw")}
-            </h1>
-            <div className="flex flex-col gap-4">
-              <button
-                className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-gray-700"
-                onClick={restartGame}
-              >
-                <span
-                  data-text={t("restart")}
-                  className="neon-glitch neon-glitch--hover inline-block"
+                    : game.winner === "top"
+                      ? t("topwins")
+                      : game.winner === "bottom"
+                        ? t("bottomwins")
+                        : t("draw")}
+              </h1>
+              <div className="flex flex-col gap-4">
+                <button
+                  className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-gray-700"
+                  onClick={restartGame}
                 >
-                  {t("restart")}
-                </span>
-              </button>
-              <button
-                className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-red-600/40"
-                onClick={goToMenu}
-              >
-                <span
-                  data-text="𝕄𝔼ℕ𝕌"
-                  className="neon-glitch neon-glitch--hover inline-block"
+                  <span
+                    data-text={t("restart")}
+                    className="neon-glitch neon-glitch--hover inline-block"
+                  >
+                    {t("restart")}
+                  </span>
+                </button>
+                <button
+                  className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-red-600/40"
+                  onClick={goToMenu}
                 >
-                  𝕄𝔼ℕ𝕌
-                </span>
-              </button>
+                  <span
+                    data-text="𝕄𝔼ℕ𝕌"
+                    className="neon-glitch neon-glitch--hover inline-block"
+                  >
+                    𝕄𝔼ℕ𝕌
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -325,11 +371,13 @@ function GameRoute({ setupPlayers }) {
     }
   }, [setupPlayers, navigate]);
 
+  if (!setupPlayers) {
+    return null;
+  }
+
   return (
-    <div className="w-full h-full relative">
-      <div className="w-full h-full flex items-center justify-center">
-        <GameCanvas setupPlayers={setupPlayers} />
-      </div>
+    <div className="flex-1 flex items-center justify-center pt-20 px-4">
+      <GameCanvas setupPlayers={setupPlayers} />
     </div>
   );
 }

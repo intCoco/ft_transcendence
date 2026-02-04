@@ -77,25 +77,23 @@ module.exports = async function (fastify) {
 
 
 
-
-
-     /* ===========================
-     USER DATA
-     =========================== */
-    fastify.post("/user/me/avatar", async (req, reply) => {
-      const auth = req.headers.authorization;
-      if (!auth?.startsWith("Bearer DEV_TOKEN_")) {
-        return reply.status(401).send();
+    /* ===========================
+    USER DATA
+    =========================== */
+  fastify.post("/user/me/avatar", async (req, reply) => {
+    const auth = req.headers.authorization;
+    if (!auth?.startsWith("Bearer DEV_TOKEN_")) {
+      return reply.status(401).send();
     }
 
-    const userId = Number(auth.replace("Bearer DEV_TOKEN_", ""));
+  const userId = Number(auth.replace("Bearer DEV_TOKEN_", ""));
 
-    await prisma.user.update({
-      where: { id: userId },
-      data: { avatarUrl: req.body.avatar },
-    });
+  await prisma.user.update({
+    where: { id: userId },
+    data: { avatarUrl: req.body.avatar },
+  });
 
-    return { ok: true };
+  return { ok: true };
   });
 
   fastify.get("/user/me/avatar", async (req, reply) => {
@@ -138,7 +136,7 @@ module.exports = async function (fastify) {
     if (
       typeof nickname !== "string" ||
       nickname.trim().length < 3 ||
-      nickname.trim().length > 20
+      nickname.trim().length > 15
     ) {
       return reply.code(400).send({ message: "INVALID_NICKNAME" });
     }
@@ -155,8 +153,6 @@ module.exports = async function (fastify) {
       return reply.code(500).send({ message: "FAILED_TO_UPDATE_NICKNAME" });
     }
   });
-
-
 
 
   /* ===========================

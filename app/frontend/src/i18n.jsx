@@ -17,8 +17,8 @@ i18n
   .use(initReactI18next) // Lie i18next à React
   .init({
     resources,
-    lng: "fr",
-    fallbackLng: "fr", // Langue par défaut
+    lng: "en",
+    fallbackLng: "en", // Langue par défaut
     interpolation: {
       escapeValue: false, // React protège déjà contre les attaques XSS
     },
