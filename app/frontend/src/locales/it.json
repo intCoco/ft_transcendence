@@ -58,6 +58,7 @@
   "easy": "Facile",
   "normal": "Normale",
   "hard": "Difficile",
+  "keyAlreadyUsed": "Questo tasto è già in uso",
   "modifiers": "Modificatori",
   "increaseSpeedDescription": "La velocità della palla aumenta dopo ogni rimbalzo sulla racchetta.",
   "spinDescription": "Colpire la palla in movimento applica un effetto di spin.",

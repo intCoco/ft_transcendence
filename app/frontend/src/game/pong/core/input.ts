@@ -19,5 +19,5 @@ export function resetKeys() {
 
 window.addEventListener("keydown", (e) => {
     // if (e.key === "Escape") togglePause();
-    if (e.key === "q") game.aiDebug = !game.aiDebug;
+    if (e.key === "Q") game.aiDebug = !game.aiDebug;
 });
