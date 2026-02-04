@@ -62,23 +62,33 @@ Each member indicated which module they were interested in and then began workin
 
 # Technical Stack
     Frontend
-        - React: used to build a component-based, responsive user interface.
-        - Tailwind CSS: utility-first CSS framework used for fast styling and consistent UI.
+    - React: builds a component-based user interface and manages application state.
+    - React Router DOM: handles client-side routing, navigation, and protected routes.
+    - Tailwind CSS: utility-first CSS framework used for responsive and consistent styling.
+    - i18next / react-i18next: manages internationalization and dynamic language switching.
+    - HTML5 Canvas API: renders the Pong game directly in the browser.
+    - WebSocket API: enables real-time communication with the backend.
+    - Fetch API: performs HTTP requests to the backend REST API.
+    - LocalStorage API: stores authentication tokens and user session data on the client.
     
     Backend
-        - Fastify: backend framework used to handle HTTP requests, authentication, and WebSocket connections.
-        - bcrypt: used to securely hash and salt user passwords.
-    
-    Real-time communication
-        - WebSockets: used for real-time features such as live Pong gameplay and direct message between users.
+    - Node.js: JavaScript runtime environment used to run the backend server.
+    - Fastify: web framework used to handle HTTP requests, routing, and middleware.
+    - @fastify/websocket: adds WebSocket support to Fastify for real-time features.
+    - @fastify/cors: manages Cross-Origin Resource Sharing configuration.
+    - Prisma ORM: defines the database schema and provides structured database access.
+    - bcrypt: hashes and verifies user passwords securely.
+    - REST API (JSON): exposes backend endpoints for authentication, users, game results, and social features.
+    - WebSockets: handles real-time events such as chat, user presence, and game interactions.
     
     Database
-        - SQLite: lightweight database used for local persistence.
-        - Prisma ORM: used to define the database schema, manage relations, and interact with the database in a structured way.
+    - SQLite: lightweight relational database used for data persistence during development.
+    - Prisma Client: generates type-safe database queries based on the Prisma schema.
     
     Infrastructure
-        - Docker & Docker Compose: used to containerize the frontend, backend, and database, allowing the project to run with a single command.
-        - HTTPS: enabled on the backend to ensure secure communication.
+    - Docker & Docker Compose: containerizes frontend, backend, and services to run the project with a single command.
+    - Nginx: acts as a reverse proxy and HTTPS entry point.
+    - HTTPS: ensures secure communication between client and server.
 
 
 # Database Schema
