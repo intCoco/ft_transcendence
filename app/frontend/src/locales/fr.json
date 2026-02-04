@@ -55,6 +55,7 @@
   "easy": "Facile",
   "normal": "Normal",
   "hard": "Difficile",
+  "keyAlreadyUsed": "Cette touche est déjà utilisée",
   "modifiers": "Modificateurs",
   "increaseSpeedDescription": "La vitesse de la balle augmente après chaque rebond sur la raquette.",
   "spinDescription": "Frapper la balle en mouvement applique un effet de spin.",

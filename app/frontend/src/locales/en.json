@@ -55,6 +55,7 @@
   "easy": "Easy",
   "normal": "Normal",
   "hard": "Hard",
+  "keyAlreadyUsed": "This key is already used",
   "modifiers": "Modifiers",
   "increaseSpeedDescription": "Ball speed increases after each paddle bounce.",
   "spinDescription": "Hitting the ball while moving applies a spin effect.",
