@@ -9,13 +9,13 @@ This project has been created as part of the 42 curriculum by bboussad, chuchard
         Responsible for the UI, UX, client-side interactions and handle some connection with the back. Set deadlines, meetings and somes quality tests.
 
     aldalmas (Project Owner, Backend and Infrastructure Developer, Q & A tester)
-        Responsible for authentication, database, WebSockets, Docker infrastructure and Readme update. Realized a lot of quality tests and design proposition.
+        Responsible for authentication, database, WebSockets, Docker infrastructure and Readme update. Realized design proposition and a lot of quality tests.
 
     nihamdan (Fullstack Developer)
         Reponsive of the user experience outside the game, achievement, xp, leaderboard and handled the app traduction in italian, english and french.
     
 
-# Description from the subject
+# Description of ft_transcendence project
     Transcendence is a group project (4-5 people), which is intended to boost your creativity, self-confidence, adaptability to new technologies, and teamwork skills. You’ll create a real-world web application as a team that can move in many directions, depending on the modules you choose and the choices you make. Make sure to think things through together as a team before you start.
     The project is divided into two parts:
     • The mandatory part, which is the fixed core of the project to which every team member must contribute.
@@ -26,7 +26,7 @@ This project has been created as part of the 42 curriculum by bboussad, chuchard
     
 
 
-# Instructions for run this project (only Team can do it)
+# Instructions for run this project
 1. Past the .env in app/backend/
 2. Past certs/ in app/backend/
 3. make
@@ -54,7 +54,7 @@ If it dosent work, you may need to try this:
         • Concurrent actions by different users are handled properly.
         • Real-time updates are reflected across all connected users when applicable.
         • No data corruption or race conditions occur with simultaneous user actions.
-
+    
 # Technical requirement
     This section, like the previous one, is mandatory. You will then be able to choose the modules you want to use in the next chapter.
         • A frontend that is clear, responsive, and accessible across all devices.
@@ -67,35 +67,22 @@ If it dosent work, you may need to try this:
         • All forms and user inputs must be properly validated in both the frontend and backend.
         • For the backend, HTTPS must be used everywhere.
 
-# Features list (Major = 2 points, Minor = 1 point)
-    - WEB 
-        Major = Framework front (React, Tailwind) + back (Fastify)
-        Major = Websocket
-        Major = Allow users to interact with others users
-        Minor = Use an ORM (object-relational mapping) (Prisma)
+# Project Management
+Each member indicated which module they were interested in and then began working semi-independently, providing regular updates and sharing current issues that we resolved together. We all used GitHub, Trello and Discord for communication.
 
-    - Accessibility and Internationalization
-        Minor = Support for multiple language (italian, french and english)
 
-    - User management
-        Major = Standard user management and authentication
-        Minor = Game statistics and match history
+# Technical stack (WIP)
+    Frontend
+        -> Tailwind CSS:
+        -> React: 
+    Backend
+        -> bcrypt: for hash and salt the password for maximum security.
+        -> fastify:  
+    Database system
+        -> Prisma (ORM): clear errors, good with SQlite and easy to use because it's a simulated POO database. 
 
-    - Artificial Intelligence
-        Major = Introduce an AI Opponent for games
-        
-    - Gaming and user experience
-        Major = Implement a complete web-based game where users can play against each other (Pong Game)
-        Major = Multiplayer game (Pong can be playing up to 4 players)
-        Minor = Advanced chat features (invit to play, block, view profile)
-        Minor = Game customization (choose some settings before launching the game)
-        
 
-AUTH
-    password hashed by bcrypt and salted. For see it, go to "SEE THE DATABASE" bellow in this file.
-
-# Backend informations
--> ORM (object-relational mapping): prisma. Why ? Clear errors, good with SQLite, and easy to use. Intermediary between code and a simulated POO database. 
+# Database Schema (WIP)
 -> -> schema.prisma : used for create the database structure. 'prisma migrate dev' cmd read the 'schema.prisma' file, generate 'migration.sql' file and apply it in a real base (dev.db file).
 
 if need to change something in the db (in app/backend/prisma/schema.prisma), you must do this to update changes in app/backend/:
@@ -107,6 +94,31 @@ if pb with db after that (e.g. impossible to register or login), reboot and upda
     > make re
     > docker exec -it back sh
     > npx prisma@6 migrate dev
+
+
+# Features list / Modules (total of 19 points, Major = 2 points, Minor = 1 point)
+    - WEB 
+        Major = Framework front (React, Tailwind) + back (Fastify) (bbousaad, chuchard, nihamdan, aldalmas) 
+        Major = Websocket (bbousaad, aldalmas)
+        Major = Allow users to interact with others users (bbousaad, aldalmas)
+        Minor = Use an ORM (object-relational mapping) (Prisma) (aldalmas)
+
+    - Accessibility and Internationalization
+        Minor = Support for multiple language: italian, french and english (nihamdan)
+
+    - User management
+        Major = Standard user management and authentication (bbousaad, aldamas)
+        Minor = Game statistics and match history (chuchard, nihamdan)
+
+    - Artificial Intelligence
+        Major = Introduce an AI Opponent for games (chuchard)
+        
+    - Gaming and user experience
+        Major = Implement a complete web-based game where users can play against each other: Pong Game (chuchard)
+        Major = Multiplayer game: Pong can be playing up to 4 players (chuchard)
+        Minor = Advanced chat features: invite to play, block, view profile (bbousaad, aldalmas)
+        Minor = Game customization: choose some settings before launching the game (chuchard)
+        
 
 
 # SEE THE DATABASE (2 ways):
