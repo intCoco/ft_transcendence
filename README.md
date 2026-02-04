@@ -60,15 +60,25 @@ If it dosent work, you may need to try this:
 Each member indicated which module they were interested in and then began working semi-independently, providing regular updates and sharing current issues that we resolved together. We all used GitHub, Trello and Discord for communication.
 
 
-# Technical stack (WIP)
+# Technical Stack
     Frontend
-        -> Tailwind CSS:
-        -> React: 
+        - React: used to build a component-based, responsive user interface.
+        - Tailwind CSS: utility-first CSS framework used for fast styling and consistent UI.
+    
     Backend
-        -> bcrypt: for hash and salt the password for maximum security.
-        -> fastify:  
-    Database system
-        -> Prisma (ORM): clear errors, good with SQlite and easy to use because it's a simulated POO database. 
+        - Fastify: backend framework used to handle HTTP requests, authentication, and WebSocket connections.
+        - bcrypt: used to securely hash and salt user passwords.
+    
+    Real-time communication
+        - WebSockets: used for real-time features such as live Pong gameplay and direct message between users.
+    
+    Database
+        - SQLite: lightweight database used for local persistence.
+        - Prisma ORM: used to define the database schema, manage relations, and interact with the database in a structured way.
+    
+    Infrastructure
+        - Docker & Docker Compose: used to containerize the frontend, backend, and database, allowing the project to run with a single command.
+        - HTTPS: enabled on the backend to ensure secure communication.
 
 
 # Database Schema
