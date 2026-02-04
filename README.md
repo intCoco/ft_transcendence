@@ -1,4 +1,4 @@
-This project has been created as part of the 42 curriculum by bboussad, chuchard, nihamdan and aldalmas.
+*This project has been created as part of the 42 curriculum by bboussad, chuchard, nihamdan, aldalmas.*
 
 
 # Team Information:
@@ -6,20 +6,26 @@ This project has been created as part of the 42 curriculum by bboussad, chuchard
         Responsible for the game logic, gameplay mechanics, level design and Pong implementation (1v1 and 1v1v1v1 versions). Added an AI Opponent and some game settings for more fun and difficulty.
 
     bboussad (Project Manager, Fullstack developer, Q & A tester)
-        Responsible for the UI, UX, client-side interactions and handle some connection with the back. Set deadlines, meetings and somes quality tests.
+        Responsible for the UI, UX, client-side interactions and handle some connection with the back. Set deadlines, meetings and some quality tests.
 
     aldalmas (Project Owner, Backend and Infrastructure Developer, Q & A tester)
         Responsible for authentication, database, WebSockets, Docker infrastructure and Readme update. Realized design proposition and a lot of quality tests.
 
     nihamdan (Fullstack Developer)
-        Reponsive of the user experience outside the game, achievement, xp, leaderboard and handled the app traduction in italian, english and french.
+        Responsive for the user experience outside the game, achievements, XP, leaderboard and handled the app translation in Italian, English and French.
     
 
 # Description of ft_transcendence project
-    Transcendence is a group project (4-5 people), which is intended to boost your creativity, self-confidence, adaptability to new technologies, and teamwork skills. You’ll create a real-world web application as a team that can move in many directions, depending on the modules you choose and the choices you make. Make sure to think things through together as a team before you start.
-    The project is divided into two parts:
-    • The mandatory part, which is the fixed core of the project to which every team member must contribute.
-    • A set of modules, which you can choose and which count toward the final grade.
+    ft_transcendence is a real-time web application centered around a multiplayer Pong game.
+    Users can register, manage their profile, add friends, and interact through a live chat system.
+    The platform supports local matches in 1v1 and multiplayer modes (up to 4 players), as well as games against an AI opponent.
+    The application includes matchmaking through chat invitations, game customization options,
+    a progression system with XP, achievements, and leaderboards, and real-time synchronization
+    using WebSockets.
+    The project is designed to run locally using Docker containers and is not deployed online.
+    All services are accessible through localhost and secured with HTTPS.
+     
+
 
 
 # Resources
@@ -44,13 +50,13 @@ This project has been created as part of the 42 curriculum by bboussad, chuchard
 
 
 # Instructions for run this project
-1. Past the .env in app/backend/
-2. Past certs/ in app/backend/
+1. Paste the .env in app/backend/
+2. Paste certs/ in app/backend/
 3. make
 
-If it dosent work, you may need to try this:
+If it doesn't work, you may need to try this:
 
-4. Past keys: sudo cp cert.pem /usr/local/share/ca-certificates/localhost.crt
+4. Paste keys: sudo cp cert.pem /usr/local/share/ca-certificates/localhost.crt
 5. Install node_modules/: cd /app/backend/ && npm install 
 6. Same here: cd /app/frontend/ && npm install
 7. Allow certs: sudo update-ca-certificates
@@ -138,14 +144,14 @@ Each member indicated which module they were interested in and then began workin
     - WEB 
         Major = Framework front (React, Tailwind) + back (Fastify) (bbousaad, chuchard, nihamdan, aldalmas) 
         Major = Websocket (bbousaad, aldalmas)
-        Major = Allow users to interact with others users (bbousaad, aldalmas)
+        Major = Allow users to interact with other users (bbousaad, aldalmas)
         Minor = Use an ORM (object-relational mapping) (Prisma) (aldalmas)
 
     - Accessibility and Internationalization
         Minor = Support for multiple language: italian, french and english (nihamdan)
 
     - User management
-        Major = Standard user management and authentication (bbousaad, aldamas)
+        Major = Standard user management and authentication (bbousaad, aldalmas)
         Minor = Game statistics and match history (chuchard, nihamdan)
 
     - Artificial Intelligence
@@ -156,7 +162,6 @@ Each member indicated which module they were interested in and then began workin
         Major = Multiplayer game: Pong can be playing up to 4 players (chuchard)
         Minor = Advanced chat features: invite to play, block, view profile (bbousaad, aldalmas)
         Minor = Game customization: choose some settings before launching the game (chuchard)
-        
 
 
 # SEE THE DATABASE (2 ways):
