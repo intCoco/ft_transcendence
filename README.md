@@ -99,18 +99,23 @@ Each member indicated which module they were interested in and then began workin
         -> Prisma (ORM): clear errors, good with SQlite and easy to use because it's a simulated POO database. 
 
 
-# Database Schema (WIP)
--> -> schema.prisma : used for create the database structure. 'prisma migrate dev' cmd read the 'schema.prisma' file, generate 'migration.sql' file and apply it in a real base (dev.db file).
+# Database Schema
+    The database is managed using Prisma ORM with an SQLite backend.
+    
+    Main entities:
+        - User: authentication, profile and game statistics.
+        - Friendship: friend requests and relationships between users.
+        - Block: blocked user relationships.
+        - Message: private messages exchanged between users.
+        - UserSettings: user interface preferences.
+    
+    Relations:
+        - Users can have multiple friends, blocks and private messages.
+        - Each user has at most one settings entry.
 
-if need to change something in the db (in app/backend/prisma/schema.prisma), you must do this to update changes in app/backend/:
-    > rm prisma/dev.db (if present)
-    > rm -rf prisma/migrations
-    > npx prisma@6 migrate dev --name choose_a_migration_name
+    Note:
+        After add a model or modifying existing model, use "npx prisma@6 migrate dev"
 
-if pb with db after that (e.g. impossible to register or login), reboot and update the db in container:
-    > make re
-    > docker exec -it back sh
-    > npx prisma@6 migrate dev
 
 # Features list
     Core
