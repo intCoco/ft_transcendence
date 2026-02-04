@@ -22,6 +22,20 @@ function broadcastUsers() {
   }
 }
 
+setInterval(() => {
+  for (const socket of onlineSockets.keys()) {
+    if (!socket.isAlive) {
+      socket.terminate();
+      onlineSockets.delete(socket);
+      broadcastUsers();
+      continue;
+    }
+
+    socket.isAlive = false;
+    socket.ping();
+  }
+}, 30000);
+
 module.exports = {
   onlineSockets,
   sendToUser,
