@@ -261,3 +261,35 @@ export function spawnGoalExplosion(side: "left" | "right" | "top" | "bottom") {
 	}
 }
 
+let spinParticleAngle = 0;
+
+export function spawnSpinParticles(delta: number) {
+	if (!ball.spin) return;
+
+	spinParticleAngle += 16 * delta * Math.sign(ball.spin);
+
+	for (let i = 0; i < 2; i++) {
+		const angle = spinParticleAngle + i * Math.PI;
+
+		const rx = Math.cos(angle);
+		const ry = Math.sin(angle);
+
+		let vx = rx;
+		let vy = ry;
+
+		const len = Math.hypot(vx, vy) || 1;
+		vx /= len;
+		vy /= len;
+
+		particles.push({
+			x: ball.x + rx * 8,
+			y: ball.y + ry * 8,
+			prevX: ball.x,
+			prevY: ball.y,
+			velX: vx * 150 + 100 * Math.random(),
+			velY: vy * 200,
+			life: 0.3,
+			alpha: 0.9
+		});
+	}
+}

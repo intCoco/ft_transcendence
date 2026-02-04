@@ -1,10 +1,13 @@
 import { game } from "../core/state.js";
 import { ball } from "../entities/ball.js";
+import { spawnSpinParticles } from "../entities/particles.js";
 
 
 
 export function applySpin(delta: number) {
     if (!ball.spin) return;
+
+    spawnSpinParticles(delta);
 
     const MAX_ANGLE = game.mode === "4P" ? 0.786 : 0.728;
 
