@@ -23,7 +23,24 @@ This project has been created as part of the 42 curriculum by bboussad, chuchard
 
 
 # Resources
-    
+    - HTML doc: https://developer.mozilla.org/fr/docs/Web/HTML
+    - CSS doc: https://developer.mozilla.org/fr/docs/Web/CSS
+    - JavaScript doc: https://devdocs.io/javascript/ and https://developer.mozilla.org/fr/docs/Web/JavaScript
+    - Fastify doc: https://fastify.dev/
+    - React doc: https://react.dev/learn
+    - Prisma doc: https://www.prisma.io/docs
+    - Tailwind CSS doc: https://tailwindcss.com/docs
+    - bcrypt doc: https://www.npmjs.com/package/bcryptjs
+    - Websocket doc: https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API
+    - Previous 42 project "Inception" for Docker, Nginx, and containerization concepts
+    - Stack Overflow (for specific technical issues)
+    - YouTube tutorials (for general understanding of some technologies)
+
+    - AI usage:
+        - used for documentation
+        - clarification of the project requirements
+        - structuring the README
+        - help understand and debug certain code-related issues
 
 
 # Instructions for run this project
@@ -95,8 +112,32 @@ if pb with db after that (e.g. impossible to register or login), reboot and upda
     > docker exec -it back sh
     > npx prisma@6 migrate dev
 
+# Features list
+    Core
+        User registration and authentication
+        User profile pages
+        Friends system (add / remove / online status)
 
-# Features list / Modules (total of 19 points, Major = 2 points, Minor = 1 point)
+    Real-time & social
+        Real-time chat between users (direct message)
+        Game invitations in chat
+        User blocking
+    
+    Game
+        Web-based Pong game
+        1v1 and multiplayer (up to 4 players)
+        AI opponent
+        Game customization before match
+    
+    Progression
+        Leaderboard and ranking
+        Achievements / XP system
+    
+    Accessibility
+        Multi-language support (EN / FR / IT)
+
+
+# Modules (total of 19 points, Major = 2 points, Minor = 1 point)
     - WEB 
         Major = Framework front (React, Tailwind) + back (Fastify) (bbousaad, chuchard, nihamdan, aldalmas) 
         Major = Websocket (bbousaad, aldalmas)
