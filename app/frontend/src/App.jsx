@@ -1217,8 +1217,12 @@ export default function App() {
       behavior: "smooth",
     });
   }, [messages, activeChatUser]);
-  //
 
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== HANDLE SUCCESS ================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   useEffect(() => {
     if (!isAuthed || !authUserId) return;
@@ -1246,7 +1250,11 @@ export default function App() {
     fetchCurrentUserProfile();
   }, [isAuthed, authUserId, location.pathname]); // Added location.pathname to dependencies
 
+
+  //some = return boleean
+  //isFriend(id) → Is this user already your friend?
   const isFriend = (id) => friends.some((f) => f.id === id);
+  //isPending(id) → Is a request pending?
   const isPending = (id) => friendRequests.some((r) => r.id === id);
 
   const openUserMenu = (e, user) => {
@@ -1257,9 +1265,16 @@ export default function App() {
 
   const closeUserMenu = () => setSelectedUser(null);
 
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== PRIVATE MESSAGE ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   const handleDM = async () => {
     const token = localStorage.getItem(AUTH_KEY);
 
+    //fetch historical
     const res = await fetch(`/api/messages/${selectedUser.id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -1283,6 +1298,12 @@ export default function App() {
     closeUserMenu();
   };
 
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== INVITE TO PLAY ================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   const handleInvite = () => {
     if (!wsRef.current || !selectedUser) return;
 
@@ -1294,10 +1315,16 @@ export default function App() {
       })
     );
 
-    // startGameCountdown();
+    // startGameCountdown(); optionnal
     notify(t("inviteSent", { user: selectedUser.nickname }));
     closeUserMenu();
   };
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== REQUEST FRIEND ================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   const handleSendFriendRequest = async () => {
     await fetch(`/api/friends/request/${selectedUser.id}`, {
@@ -1307,9 +1334,14 @@ export default function App() {
       },
     });
 
-    //notify("Friend request sent");
     closeUserMenu();
   };
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== ACCEPT FRIEND =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   const handleAcceptFriend = async (userId) => {
     await fetch(`/api/friends/accept/${userId}`, {
@@ -1319,9 +1351,15 @@ export default function App() {
       },
     });
 
-    // enlève la notif localement
+    //clean UI
     setFriendRequests((prev) => prev.filter((req) => req.id !== userId));
   };
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== REFUSE FRIEND =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   const handleRefuseFriend = async (userId) => {
     await fetch(`/api/friends/refuse/${userId}`, {
@@ -1334,6 +1372,12 @@ export default function App() {
     setFriendRequests((prev) => prev.filter((u) => u.id !== userId));
   };
 
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== REMOVE FRIEND =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   const handleRemoveFriend = async () => {
     await fetch(`/api/friends/${selectedUser.id}`, {
       method: "DELETE",
@@ -1345,15 +1389,11 @@ export default function App() {
     closeUserMenu();
   };
 
-  const handleBlock = async () => {
-    await fetch(`/api/user/${selectedUser.id}/block`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-      },
-    });
-    closeUserMenu();
-  };
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ===============================  HANDLE BADGE =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   const handleBackFromChat = () => {
     setUnread((prev) => {
@@ -1381,7 +1421,7 @@ export default function App() {
       return null;
     }
 
-    // FETCH PROFIL UNIQUEMENT SI PAS MOI
+    // FETCH only when is not me
     useEffect(() => {
       fetch(`/api/users/${id}/profile`, {
         headers: {
@@ -1913,6 +1953,7 @@ export default function App() {
                 setBlockedUsers((prev) =>
                   prev.filter((u) => u.id !== selectedUser.id),
                 );
+                wsRef.current?.send(JSON.stringify({ type: "WHO_IS_ONLINE" }));
                 closeUserMenu();
               }}
               className="block w-full px-2 py-1 hover:bg-green-600/30 text-left text-green-400"
