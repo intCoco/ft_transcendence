@@ -494,7 +494,16 @@ export default function App() {
   // Fonction pour changer de langue
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
+    localStorage.setItem("lang", lng);
   };
+
+  // restore language saved (anti refresh)
+  useEffect(() => {
+    const savedLang = localStorage.getItem("lang");
+    if (savedLang) {
+      i18n.changeLanguage(savedLang);
+    }
+  }, []);
 
   /* UI states / interaction :
         context menu management, side chat, tabs, notifications*/
@@ -1592,7 +1601,7 @@ export default function App() {
         <button
           className="neon-glitch neon-glitch--hover text-2xl px-2 py-0 bg-transparent rounded neon-border"
           data-text="🇮🇹"
-          onClick={() => i18n.changeLanguage("it")}
+          onClick={() => changeLanguage("it")}
         >
           🇮🇹
         </button>
@@ -1600,7 +1609,7 @@ export default function App() {
         <button
           className="neon-glitch neon-glitch--hover text-2xl px-2 py-0 bg-transparent rounded neon-border"
           data-text="🇬🇧"
-          onClick={() => i18n.changeLanguage("en")}
+          onClick={() => changeLanguage("en")}
         >
           🇬🇧
         </button>
@@ -1609,11 +1618,12 @@ export default function App() {
           className="neon-glitch neon-glitch--hover text-2xl px-2 py-0 bg-transparent rounded neon-border"
           data-text="🇫🇷"
           onClick={() => {
-            i18n.changeLanguage("fr");
+            changeLanguage("fr");
           }}
         >
           🇫🇷
         </button>
+
         {showConnectedUI && (
           <button
             className="neon-glitch neon-glitch--hover text-2xl px-2 py-0 bg-transparent rounded neon-border"

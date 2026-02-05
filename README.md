@@ -157,7 +157,7 @@ Each member indicated which module they were interested in and then began workin
                         React shouldn't re-render every frame.
                      We also have "React Router" which allows for smooth navigation,
                         automatic redirects, and protected routes.
-            
+
             - Tailwind css:
                     Tailwind allows you to write the style directly where the component is defined
                     (<div className="">).
