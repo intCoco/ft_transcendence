@@ -98,5 +98,6 @@
   "too_short_id": "Identificativo: massimo 15 caratteri",
   "already_used_email": "Email già utilizzata",
   "created_account": "Account creato !",
-  "serv_error": "Errore del server"
+  "serv_error": "Errore del server",
+  "customAvatar": "🔒 Avatar personalizzabile al livello 5"
 }
