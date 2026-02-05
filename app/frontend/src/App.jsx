@@ -1983,7 +1983,8 @@ export default function App() {
   ======================================================================================
   ======================================================================================*/}
 
-      <main className="flex-1 flex flex-col">
+      <main className={`flex-1 flex flex-col transition-all duration-200
+                  ${showChat ? "ml-[300px]" : ""}`}>
         <Routes>
           <Route
             path="/"
