@@ -145,12 +145,41 @@ Each member indicated which module they were interested in and then began workin
 # Modules (total of 19 points, Major = 2 points, Minor = 1 point)
     - WEB 
         Major = Framework front (React, Tailwind) + back (Fastify) (bbousaad, chuchard, nihamdan, aldalmas)
-            - React: L'utilisation des "state" est utile dans ce contexte avec des infos qui evoluent souvent, on peut stocker des infos directement dans le composant, des qu'il evolue, react met a jour automatiquement l'iterface,
-            sans chargement de page.
+            
+            - React: Using "state" is useful in this context with information that often changes.
+                        Information can be stored directly in the component, and as soon as it changes,
+                        React automatically updates the interface without reloading the page.
+                     "UseEffect" is also essential for the proper functioning of the site.
+                        It manages what happens around the component (opening/closing WebSockets,
+                        listening for events, synchronizing the front and back end).
+                     On the WebSocket side, we use "useRef" and not "useState" because changing a socket shouldn't
+                        re-render the entire UI, just like with the canvas running at 60 FPS.
+                        React shouldn't re-render every frame.
+                     We also have "React Router" which allows for smooth navigation,
+                        automatic redirects, and protected routes.
             
             - Tailwind css:
+                    Tailwind allows you to write the style directly where the component is defined
+                    (<div className="">).
+                    Readable immediately
+                    Local to the component
+                    No dependency on a global CSS file
+                    Avoids class conflicts
+                    No CSS breaking elsewhere for no reason
+                    Easier to maintain in a large project
+
         Major = Websocket (bbousaad, aldalmas)
-            - Websocket:
+            - Websocket: REAL TIME
+                    The client sends events
+                    The server pushes events
+                    A user sends a message → the server broadcasts it instantly
+                    A player connects → friends are notified
+                    A game invitation is accepted → the game starts immediately
+                    To send player input
+                    To synchronize the game state
+                    To manage latency
+                    To prevent desynchronization
+                    
         Major = Allow users to interact with other users (bbousaad, aldalmas)
         Minor = Use an ORM (object-relational mapping) (Prisma) (aldalmas)
             - Prisma: 
