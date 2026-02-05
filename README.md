@@ -2,17 +2,18 @@
 
 
 # Team Information:
-    chuchard (Tech Game Designer)
-        Responsible for the game logic, gameplay mechanics, level design and Pong implementation (1v1 and 1v1v1v1 versions). Added an AI Opponent and some game settings for more fun and difficulty.
+    chuchard - Game Director & Solo Game Developer, Gameplay Programmer, QA Tester
+        Responsible for designing and developing the entire Pong game, including gameplay mechanics, rules, AI opponent, 1v1 and 1v1v1v1 multiplayer modes, and defining the visual design and overall player experience.
 
-    bboussad (Project Manager, Fullstack developer, Q & A tester)
+
+    bboussad - Project Manager, Fullstack developer, QA Tester
         Responsible for the UI, UX, client-side interactions and handle some connection with the back. Set deadlines, meetings and some quality tests.
 
-    aldalmas (Project Owner, Backend and Infrastructure Developer, Q & A tester)
+    aldalmas - Project Owner, Backend and Infrastructure Developer, QA Tester
         Responsible for authentication, database, WebSockets, Docker infrastructure and Readme update. Realized design proposition and a lot of quality tests.
 
-    nihamdan (Fullstack Developer)
-        Responsive for the user experience outside the game, achievements, XP, leaderboard and handled the app translation in Italian, English and French.
+    nihamdan - Fullstack Developer
+        Responsible for the user experience outside the game, achievements, XP, leaderboard and handled the app translation in Italian, English and French.
     
 
 # Description of ft_transcendence project
@@ -43,23 +44,25 @@
     - YouTube tutorials (for general understanding of some technologies)
 
     - AI usage:
-        - used for documentation
+        - documentation
         - clarification of the project requirements
         - structuring the README
+        - translation
         - help understand and debug certain code-related issues
 
 
-# Instructions for run this project
+# Instructions to run this project
 1. Paste the .env in app/backend/
 2. Paste certs/ in app/backend/
 3. make
+4. Go to https://127.0.0.1:8443/ on any browser
 
 If it doesn't work, you may need to try this:
 
-4. Paste keys: sudo cp cert.pem /usr/local/share/ca-certificates/localhost.crt
-5. Install node_modules/: cd /app/backend/ && npm install 
-6. Same here: cd /app/frontend/ && npm install
-7. Allow certs: sudo update-ca-certificates
+5. Paste keys: sudo cp cert.pem /usr/local/share/ca-certificates/localhost.crt
+6. Install node_modules/: cd /app/backend/ && npm install 
+7. Same here: cd /app/frontend/ && npm install
+8. Allow certs: sudo update-ca-certificates
     
 
 # Project Management
@@ -128,7 +131,7 @@ Each member indicated which module they were interested in and then began workin
     
     Game
         Web-based Pong game
-        1v1 and multiplayer (up to 4 players)
+        1v1 and multiplayer (1v1v1v1)
         AI opponent
         Game customization before match
     
