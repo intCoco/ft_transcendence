@@ -5,7 +5,6 @@
     chuchard - Game Director & Solo Game Developer, Gameplay Programmer, QA Tester
         Responsible for designing and developing the entire Pong game, including gameplay mechanics, rules, AI opponent, 1v1 and 1v1v1v1 multiplayer modes, and defining the visual design and overall player experience.
 
-
     bboussad - Project Manager, Fullstack developer, QA Tester
         Responsible for the UI, UX, client-side interactions and handle some connection with the back. Set deadlines, meetings and some quality tests.
 
