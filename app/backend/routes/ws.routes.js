@@ -9,6 +9,12 @@ module.exports = async function (fastify) {
   function handleWs(connection, req) {
     const token = new URL(req.url, "http://localhost").searchParams.get("token");
 
+    connection.socket.isAlive = true;
+    
+    connection.socket.on("pong", () => {
+      connection.socket.isAlive = true;
+    });
+
     if (!token || !token.startsWith("DEV_TOKEN_")) {
       connection.socket.close();
       return;
@@ -26,6 +32,16 @@ module.exports = async function (fastify) {
         onlineSockets.delete(socket);
       }
     }
+
+    connection.socket.on("close", () => {
+      onlineSockets.delete(connection.socket);
+      broadcastUsers();
+    });
+
+    connection.socket.on("error", () => {
+      onlineSockets.delete(connection.socket);
+      broadcastUsers();
+    });
 
     onlineSockets.set(connection.socket, userId);
 
