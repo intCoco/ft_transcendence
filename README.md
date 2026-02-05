@@ -144,10 +144,16 @@ Each member indicated which module they were interested in and then began workin
 
 # Modules (total of 19 points, Major = 2 points, Minor = 1 point)
     - WEB 
-        Major = Framework front (React, Tailwind) + back (Fastify) (bbousaad, chuchard, nihamdan, aldalmas) 
+        Major = Framework front (React, Tailwind) + back (Fastify) (bbousaad, chuchard, nihamdan, aldalmas)
+            - React: L'utilisation des "state" est utile dans ce contexte avec des infos qui evoluent souvent, on peut stocker des infos directement dans le composant, des qu'il evolue, react met a jour automatiquement l'iterface,
+            sans chargement de page.
+            
+            - Tailwind css:
         Major = Websocket (bbousaad, aldalmas)
+            - Websocket:
         Major = Allow users to interact with other users (bbousaad, aldalmas)
         Minor = Use an ORM (object-relational mapping) (Prisma) (aldalmas)
+            - Prisma: 
 
     - Accessibility and Internationalization
         Minor = Support for multiple language: italian, french and english (nihamdan)
