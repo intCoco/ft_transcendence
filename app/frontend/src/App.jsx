@@ -691,6 +691,18 @@ export default function App() {
     "/images/arcade.png",
     "/images/purpleplanet.png",
     "/images/vaisseau.png",
+    "/images/neon1.png",
+    "/images/neon2.png",
+    "/images/neon3.png",
+    "/images/neon4.png",
+    "/images/neon5.png",
+    "/images/neon6.png",
+    "/images/neon7.png",
+    "/images/neon8.png",
+    "/images/neon9.png",
+    "/images/neon10.png",
+    "/images/neon11.png",
+    "/images/neon12.png"
   ];
 
   /* ================================================================================= */
@@ -2223,7 +2235,7 @@ export default function App() {
                   {t("background")}
                 </h1>
 
-                <div className="grid grid-cols-6 gap-6 mt-[8vh]">
+                <div className="grid grid-cols-7 gap-6 mt-[8vh]">
                   {BACKGROUNDS.map((bg) => (
                     <button
                       key={bg}
