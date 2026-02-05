@@ -1808,7 +1808,7 @@ export default function App() {
               <form
                 //"form" to take advantage of native submit functionality
                 className="p-3 border-t border-cyan-500/30 flex gap-2"
-                //e = l’événement de soumission du formulaire
+                //e = the form submission event
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!chatInput.trim()) return;
@@ -2447,9 +2447,8 @@ export default function App() {
 
           <Route path="/leaderboard" element={
             <ProtectedRoute>
-            <LeaderboardPage />
+              <LeaderboardPage />
             </ProtectedRoute>} />
-
 
         </Routes>
       </main>
