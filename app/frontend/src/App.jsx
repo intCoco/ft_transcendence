@@ -7,6 +7,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Routes,
   Route,
+  Navigate,
   useNavigate,
   useLocation,
   useParams,
@@ -593,6 +594,9 @@ export default function App() {
   const [currentUserSuccess2, setCurrentUserSuccess2] = useState(false);
   const [currentUserSuccess3, setCurrentUserSuccess3] = useState(false);
 
+  //handle avatar for level
+  const level = Math.floor(currentUserXp / 100);
+
   /* Check if this is you */
   const meId = Number(localStorage.getItem(USER_ID_KEY));
   const isMe = selectedUser?.id === meId;
@@ -794,7 +798,7 @@ export default function App() {
     reader.onload = async () => {
       const avatarBase64 = reader.result;
 
-      await fetch("/api/user/me/avatar", {
+      const res = await fetch("/api/user/me/avatar", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -802,6 +806,11 @@ export default function App() {
         },
         body: JSON.stringify({ avatar: avatarBase64 }),
       });
+
+      if (!res.ok) {
+        notify(t("avatar_locked"));
+        return;
+      }
 
       setAvatar(avatarBase64);
     };
@@ -2407,16 +2416,21 @@ export default function App() {
                                   </button>
                                 </div>
                               )}
-
-                              <label className="mt-2 inline-block cursor-pointer neon-border px-2 py-1 text-sm hover:underline">
-                                {t("changeavatar")}
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={handleAvatarChange}
-                                  className="hidden"
-                                />
-                              </label>
+                              {level >= 5 ? (
+                                <label className="mt-2 inline-block cursor-pointer neon-border px-2 py-1 text-sm hover:underline">
+                                  {t("changeavatar")}
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleAvatarChange}
+                                    className="hidden"
+                                  />
+                                </label>
+                                ) : (
+                                <p className="mt-2 text-xs text-red-400">
+                                  🔒 Avatar personnalisable au niveau 5
+                                </p>
+                                )}
                             </div>
                           </div>
                         </div>

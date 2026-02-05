@@ -5,6 +5,13 @@ const { getUserIdFromAuth } = require("../utils/auth");
 const prisma = new PrismaClient();
 
 
+function getDefaultAvatarByLevel(level) {
+  if (level >= 3) return "/images/avatar3.png";
+  if (level >= 2) return "/images/avatar2.png";
+  return "/images/defaultavatar.png";
+}
+
+
 module.exports = async function (fastify) {
 
   /* ===========================
@@ -87,6 +94,7 @@ module.exports = async function (fastify) {
 
 
 
+
     /* ===========================
     USER DATA
     =========================== */
@@ -96,14 +104,32 @@ module.exports = async function (fastify) {
       return reply.status(401).send();
     }
 
-  const userId = Number(auth.replace("Bearer DEV_TOKEN_", ""));
+    const userId = Number(auth.replace("Bearer DEV_TOKEN_", ""));
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { avatarUrl: req.body.avatar },
-  });
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { xp: true },
+    });
 
-  return { ok: true };
+    if (!user) {
+      return reply.code(404).send({ message: "USER_NOT_FOUND" });
+    }
+
+    const level = Math.floor(user.xp / 100);
+
+    if (level < 5) {
+      return reply.code(403).send({
+        error: "AVATAR_LOCKED",
+        requiredLevel: 5,
+      });
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: req.body.avatar },
+    });
+
+    return { ok: true };
   });
 
   fastify.get("/user/me/avatar", async (req, reply) => {
@@ -116,10 +142,29 @@ module.exports = async function (fastify) {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { avatarUrl: true },
+      select: {
+        avatarUrl: true,
+        xp: true,
+      },
     });
 
-    return { avatar: user?.avatarUrl ?? null };
+    if (!user) {
+      return reply.code(404).send({ message: "USER_NOT_FOUND" });
+    }
+
+    const level = Math.floor(user.xp / 100);
+
+    let avatar;
+    if (level >= 5 && user.avatarUrl) {
+      avatar = user.avatarUrl;
+    } else {
+      avatar = getDefaultAvatarByLevel(level);
+    }
+
+    return {
+      avatar,
+      level,
+    };
   });
 
   fastify.get("/users", async () => {
@@ -193,10 +238,18 @@ module.exports = async function (fastify) {
 
     const online = [...onlineSockets.values()].includes(userId);
 
+    const level = Math.floor(user.xp / 100);
+
+    const avatar =
+      level >= 5 && user.avatarUrl
+        ? user.avatarUrl
+        : getDefaultAvatarByLevel(level);
+
     return {
       id: user.id,
       nickname: user.nickname,
       avatar: user.avatarUrl || "/images/defaultavatar.png",
+      avatar,
       online,
       xp: user.xp,
       success1: user.success1,
