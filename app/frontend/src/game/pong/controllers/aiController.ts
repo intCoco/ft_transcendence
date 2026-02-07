@@ -11,7 +11,6 @@ export interface AIState {
     zoneRadius: number;
     aimY: number;
     nextDecisionTime: number;
-    nextReactionTime: number;
     wantsSpin: boolean;
     spinDir: "up" | "down" | false;
 }
@@ -33,7 +32,6 @@ export class AIController implements Controller {
             zoneRadius: 200,
             aimY: game.height / 2,
             nextDecisionTime: 0,
-            nextReactionTime: 0,
             wantsSpin: false,
             spinDir: false
         }
@@ -43,9 +41,7 @@ export class AIController implements Controller {
         const now = performance.now() / 1000;
 
         const isRightPaddle = paddle.x > game.width / 2;
-        const isBallComing =
-            (isRightPaddle && ball.velX > 0) ||
-            (!isRightPaddle && ball.velX < 0);
+        const isBallComing = (isRightPaddle && ball.velX > 0) || (!isRightPaddle && ball.velX < 0);
 
         if (isBallComing && game.state === GameState.PLAY) {
             updateAIZone(this, now);

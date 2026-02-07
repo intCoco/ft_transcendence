@@ -43,46 +43,59 @@ function drawAITarget() {
 
 function drawAIPredictionMirror() {
 	const controller = ball.velX > 0 ? rightController : leftController;
+	if (!(controller instanceof AIController)) return;
 
-	if (controller instanceof AIController) {
-		let x = ball.x;
-		let y = ball.y;
+	let x = ball.x;
+	let y = ball.y;
+	let vx = ball.velX * ball.speedCoef;
+	let vy = ball.velY * ball.speedCoef;
 
-		let vx = ball.velX;
-		let vy = ball.velY;
+	const isRight = vx > 0;
 
-		game.ctx!.save();
-		game.ctx!.strokeStyle = "rgba(255, 0, 0, 0.8)";
-		game.ctx!.lineWidth = 2;
-		game.ctx!.setLineDash([8, 8]);
+	const MAX_ANGLE = game.mode === "4P" ? 0.786 : 0.728;
+	let angle = Math.abs(Math.atan2(vy, vx));
 
-		game.ctx!.beginPath();
-		game.ctx!.moveTo(x + ARENA_MARGIN_LEFT, y + ARENA_MARGIN_TOP);
+	const dt = 1 / 120;
 
-		while (1) {
-			let tX = 10;
-			let tY = 10;
+	const ctx = game.ctx!;
+	ctx.save();
+	ctx.strokeStyle = "rgba(255, 0, 0, 0.8)";
+	ctx.lineWidth = 2;
+	ctx.setLineDash([8, 8]);
 
-			tX = (controller.paddle.x - x) / vx; // s to reach rightpaddle
-			if (vy > 0)
-				tY = (game.height - ball.radius - y) / vy; // s to reach bot
-			else if (vy < 0) tY = (ball.radius - y) / vy; // s to reach top
-			const t = tX < tY ? tX : tY; // s to reach next obstacle
+	ctx.beginPath();
+	ctx.moveTo(x + ARENA_MARGIN_LEFT, y + ARENA_MARGIN_TOP);
 
-			x += vx * t; // speed * time = distance
-			y += vy * t;
+	while ((isRight && x < controller.paddle.x) || (!isRight && x > controller.paddle.x)) {
+		// spin
+		if (ball.spin && angle < MAX_ANGLE) {
+			const nvx = vx * Math.cos(ball.spin * dt) - vy * Math.sin(ball.spin * dt);
+			const nvy = vx * Math.sin(ball.spin * dt) + vy * Math.cos(ball.spin * dt);
 
-			game.ctx!.lineTo(x - ball.radius + ARENA_MARGIN_LEFT, y + ARENA_MARGIN_TOP);
+			vx = nvx;
+			vy = nvy;
 
-			if (t === tY)
-				vy *= -1; // if next obstacle top/bot -> vertical reflect
-			else break; // stops when hit paddle
+			angle = Math.abs(Math.atan2(vy, vx));
+		}
+		x += vx * dt;
+		y += vy * dt;
+
+		// wall bounce
+		if (y - ball.radius < 0) {
+			y = ball.radius * 2 - y;
+			vy *= -1;
+		} else if (y + ball.radius > game.height) {
+			y = 2 * (game.height - ball.radius) - y;
+			vy *= -1;
 		}
 
-		game.ctx!.stroke();
-		game.ctx!.restore();
+		ctx.lineTo(x - ball.radius + ARENA_MARGIN_LEFT, y + ARENA_MARGIN_TOP);
 	}
+
+	ctx.stroke();
+	ctx.restore();
 }
+
 
 function drawAIInfos() {
 	const controller = ball.velX > 0 ? rightController : leftController;
@@ -107,9 +120,10 @@ function drawAIInfos() {
 		game.ctx!.fillText(`spin direction: ${controller instanceof AIController ? controller.state.spinDir : "N/A"}`, x, y);
 		y += 16;
 	}
-	// game.ctx!.fillText(`spin: ${game.state}`, x, y); y += 16;
-	game.ctx!.fillText(`spin: ${ball.velX}`, x, y);
-	y += 16;
+	// game.ctx!.fillText(`game state: ${game.state}`, x, y);
+	// y += 16;
+	// game.ctx!.fillText(`ball velX: ${ball.velX}`, x, y);
+	// y += 16;
 
 	game.ctx!.restore();
 }
