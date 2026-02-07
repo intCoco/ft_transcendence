@@ -5,6 +5,8 @@ import { bottomPaddle, leftPaddle, rightPaddle, topPaddle } from "../entities/pa
 import { updateCoinToss } from "../systems/coinToss.js";
 import { bottomController, endGame, leftController, rightController, topController } from "../game.js";
 import { updateParticles } from "../entities/particles.js";
+import { updateControlsHint } from "./controlsHint.js";
+import { handleServe } from "./serve.js";
 
 // actual game : function that runs every frame 
 // handles movements, maths, behaviors
@@ -44,13 +46,11 @@ export function update(delta: number) {
 		bottomPaddle.clampX(game.width);
 	}
 
+	updateControlsHint(delta);
+
 	// serve timer: countdown from 3s when serving to let players time to replace
-	if (game.state === GameState.SERVE) {
-		game.serveTimer -= delta;
-		if (game.serveTimer <= 0)
-			game.state = GameState.PLAY;
-		return;
-	}
+	if (game.state === GameState.SERVE)
+		handleServe(delta);
 
 	// game timer: handles game timer till game over
 	if (game.state === GameState.PLAY) {

@@ -5,9 +5,10 @@ import { PlayerController } from "./controllers/playerController.js";
 import { AIController } from "./controllers/aiController.js";
 import { AI_EASY, AI_HARD, AI_NORMAL } from "./ai/ai.js";
 import { startCoinToss } from "./systems/coinToss.js";
-import { render } from "./systems/render.js";
+import { render } from "./systems/rendering/render.js";
 import { update } from "./systems/update.js";
 import { goal } from "./modifiers/arena.js";
+import { showControlsHint } from "./systems/controlsHint.js";
 
 
 export let leftController: PlayerController | AIController =
@@ -95,6 +96,7 @@ export function startGame(playersConfig?: any)  {
     goal.left = (game.width - goal.width) / 2;
     goal.right = goal.left + goal.width;
 
+    showControlsHint();
     startCoinToss(performance.now() / 1000);
 }
 
