@@ -8,10 +8,13 @@ COPY package-lock.json .
 COPY prisma ./prisma
 
 RUN npm install
-RUN npx prisma generate
+RUN npx prisma@6 generate
 
 # copy the others files / repos
 COPY . .
+
+# used for access db into the container back
+RUN apt-get update && apt-get install -y sqlite3 
 
 EXPOSE 3000
 

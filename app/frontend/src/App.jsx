@@ -8,7 +8,6 @@ import {
   Routes,
   Route,
   useNavigate,
-  Link,
   useLocation,
   useParams,
 } from "react-router-dom";
@@ -22,12 +21,27 @@ const LOGIN_KEY = "auth_login";
 const AUTH_KEY = "auth_token";
 const USER_ID_KEY = "auth_user_id";
 
-import { startGame, startPongGame } from "./game/pong/game";
+import {
+  startGame,
+  startPongGame,
+  leftController,
+  rightController,
+} from "./game/pong/game";
 import { setKey, resetKeys } from "./game/pong/core/input";
 import { game } from "./game/pong/core/state";
 import GameSetup from "./GameSetup";
 import { t } from "i18next";
 import LeaderboardPage from "./LeaderboardPage";
+
+function ProtectedRoute({ children }) {
+  const location = useLocation();
+  const token = localStorage.getItem(AUTH_KEY);
+
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+}
 
 /* ================================================================================= */
 /* ================================================================================= */
@@ -75,10 +89,6 @@ function useAuth(setAuthUserId) {
   return { isAuthed, login, signIn, signOut };
 }
 
-function Loading() {
-  return <div className="text-white">Loading...</div>;
-}
-
 /* ================================================================================= */
 /* ================================================================================= */
 /* =================================== GAME CANVAS ================================= */
@@ -89,9 +99,35 @@ function GameCanvas({ setupPlayers }) {
   const canvasRef = useRef(null);
   const stopGameRef = useRef(null);
 
-  const [, forceUpdate] = useState(0);
+  const is4Players = !!setupPlayers?.top && !!setupPlayers?.bot;
+  const canvasHeight = is4Players ? 920 : 720;
+  const BASE_WIDTH = 920;
+  const BASE_HEIGHT_2P = 720;
+  const BASE_HEIGHT_4P = 920;
 
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const baseHeight = is4Players ? BASE_HEIGHT_4P : BASE_HEIGHT_2P;
+
+      const maxWidth = window.innerWidth * 0.95;
+      const maxHeight = (window.innerHeight - 120) * 0.95;
+
+      const scaleX = maxWidth / BASE_WIDTH;
+      const scaleY = maxHeight / baseHeight;
+
+      setScale(Math.min(scaleX, scaleY));
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [is4Players]);
+
+  const [, forceUpdate] = useState(0);
   const navigate = useNavigate();
+
   const restartGame = () => {
     startGame();
 
@@ -125,13 +161,33 @@ function GameCanvas({ setupPlayers }) {
         const token = localStorage.getItem(AUTH_KEY);
 
         if (userId && token) {
-          let didWin = false;
+          const humanWon = (() => {
+            // winner is set in endGame; use it when available
+            if (game.winner === "left" && isLeftPlayerHuman) return true;
+            if (game.winner === "right" && isRightPlayerHuman) return true;
 
-          if (isLeftPlayerHuman && game.scoreLeft > game.scoreRight) {
-            didWin = true;
-          } else if (isRightPlayerHuman && game.scoreRight > game.scoreLeft) {
-            didWin = true;
-          }
+            // fallback to controller scores (in case winner isn't set)
+            if (
+              isLeftPlayerHuman &&
+              leftController.score > rightController.score
+            )
+              return true;
+
+            if (
+              isRightPlayerHuman &&
+              rightController.score > leftController.score
+            )
+              return true;
+
+            return false;
+          })();
+
+          const playerScore = isLeftPlayerHuman
+            ? leftController.score
+            : rightController.score;
+          const iaScore = isLeftPlayerAI
+            ? leftController.score
+            : rightController.score;
 
           try {
             await fetch("/api/game/result", {
@@ -141,8 +197,10 @@ function GameCanvas({ setupPlayers }) {
                 Authorization: `Bearer ${token}`,
               },
               body: JSON.stringify({
-                didWin: didWin,
+                didWin: humanWon,
                 isPlayerVsAi: true,
+                playerScore,
+                iaScore,
               }),
             });
           } catch (error) {
@@ -163,7 +221,6 @@ function GameCanvas({ setupPlayers }) {
       if (e.key === "Escape" && !game.isGameOver) {
         game.isPaused = !game.isPaused;
         forceUpdate((v) => v + 1);
-        // setIsPaused(prev => !prev);
       }
     };
 
@@ -172,10 +229,8 @@ function GameCanvas({ setupPlayers }) {
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
 
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = 860 * dpr;
-    canvas.height = 660 * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    canvas.width = 920;
+    canvas.height = canvasHeight;
 
     stopGameRef.current = startPongGame(canvas, setupPlayers);
     forceUpdate((v) => v + 1);
@@ -191,113 +246,246 @@ function GameCanvas({ setupPlayers }) {
   }, [setupPlayers]);
 
   return (
-    <div className="relative">
-      <canvas
-        ref={canvasRef}
-        className="w-[800px] h-[600px] neon-border rounded-xl"
-      />
-      {game.isPaused && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
-          <div className="bg-[#0a0446]/70 neon-border rounded-xl px-10 py-8 text-white text-center w-[420px]">
-            {/* TITLE */}
-            <h1
-              className="text-4xl mb-8 neon-glitch neon-glitch--always tracking-widest"
-              data-text="ℙ𝔸𝕌𝕊𝔼"
-            >
-              ℙ𝔸𝕌𝕊𝔼
-            </h1>
-
-            {/* BUTTONS */}
-            <div className="flex flex-col gap-4">
-              <button
-                className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-gray-700"
-                onClick={() => {
-                  // setIsPaused(false);
-                  game.isPaused = false;
-                  forceUpdate((v) => v + 1);
-                }}
+    <div className="w-full flex justify-center">
+      <div
+        style={{
+          width: BASE_WIDTH * scale,
+          height: canvasHeight * scale,
+        }}
+      >
+        <canvas
+          ref={canvasRef}
+          width={BASE_WIDTH}
+          height={canvasHeight}
+          className="neon-border rounded-xl block"
+          style={{
+            width: "100%",
+            height: "100%",
+          }}
+        />
+        {game.isPaused && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
+            <div className="bg-[#0a0446]/70 neon-border rounded-xl px-10 py-8 text-white text-center w-[420px]">
+              {/* TITLE */}
+              <h1
+                className="text-4xl mb-8 neon-glitch neon-glitch--always tracking-widest"
+                data-text="ℙ𝔸𝕌𝕊𝔼"
               >
-                <span
-                  data-text={t("resume")}
-                  className="neon-glitch neon-glitch--hover inline-block"
-                >
-                  {t("resume")}
-                </span>
-              </button>
+                ℙ𝔸𝕌𝕊𝔼
+              </h1>
 
-              <button
-                className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-gray-700"
-                onClick={restartGame}
-              >
-                <span
-                  data-text={t("restart")}
-                  className="neon-glitch neon-glitch--hover inline-block"
+              {/* BUTTONS */}
+              <div className="flex flex-col gap-4">
+                <button
+                  className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-gray-700"
+                  onClick={() => {
+                    // setIsPaused(false);
+                    game.isPaused = false;
+                    forceUpdate((v) => v + 1);
+                  }}
                 >
-                  {t("restart")}
-                </span>
-              </button>
+                  <span
+                    data-text={t("resume")}
+                    className="neon-glitch neon-glitch--hover inline-block"
+                  >
+                    {t("resume")}
+                  </span>
+                </button>
 
-              <button
-                className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-red-600/40"
-                onClick={goToMenu}
-              >
-                <span
-                  data-text="𝕄𝔼ℕ𝕌"
-                  className="neon-glitch neon-glitch--hover inline-block"
+                <button
+                  className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-gray-700"
+                  onClick={restartGame}
                 >
-                  𝕄𝔼ℕ𝕌
-                </span>
-              </button>
+                  <span
+                    data-text={t("restart")}
+                    className="neon-glitch neon-glitch--hover inline-block"
+                  >
+                    {t("restart")}
+                  </span>
+                </button>
+
+                <button
+                  className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-red-600/40"
+                  onClick={goToMenu}
+                >
+                  <span
+                    data-text="𝕄𝔼ℕ𝕌"
+                    className="neon-glitch neon-glitch--hover inline-block"
+                  >
+                    𝕄𝔼ℕ𝕌
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-      {game.isGameOver && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
-          <div className="bg-[#0a0446]/70 neon-border rounded-xl px-10 py-8 text-white text-center w-[420px]">
-            <h1
-              className="text-4xl mb-6 neon-glitch neon-glitch--always tracking-widest"
-              data-text={
-                game.scoreLeft > game.scoreRight
+        )}
+        {game.isGameOver && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/70 z-50">
+            <div className="bg-[#0a0446]/70 neon-border rounded-xl px-10 py-8 text-white text-center w-[420px]">
+              <h1
+                className="text-4xl mb-6 neon-glitch neon-glitch--always tracking-widest"
+                data-text={
+                  game.winner === "left"
+                    ? t("leftwins")
+                    : game.winner === "right"
+                      ? t("rightwins")
+                      : game.winner === "top"
+                        ? t("topwins")
+                        : game.winner === "bottom"
+                          ? t("bottomwins")
+                          : t("draw")
+                }
+              >
+                {game.winner === "left"
                   ? t("leftwins")
-                  : game.scoreRight > game.scoreLeft
+                  : game.winner === "right"
                     ? t("rightwins")
-                    : t("draw")
-              }
-            >
-              {game.scoreLeft > game.scoreRight
-                ? t("leftwins")
-                : game.scoreRight > game.scoreLeft
-                  ? t("rightwins")
-                  : t("draw")}
-            </h1>
-            <div className="flex flex-col gap-4">
-              <button
-                className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-gray-700"
-                onClick={restartGame}
-              >
-                <span
-                  data-text={t("restart")}
-                  className="neon-glitch neon-glitch--hover inline-block"
+                    : game.winner === "top"
+                      ? t("topwins")
+                      : game.winner === "bottom"
+                        ? t("bottomwins")
+                        : t("draw")}
+              </h1>
+              <div className="flex flex-col gap-4">
+                <button
+                  className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-gray-700"
+                  onClick={restartGame}
                 >
-                  {t("restart")}
-                </span>
-              </button>
-              <button
-                className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-red-600/40"
-                onClick={goToMenu}
-              >
-                <span
-                  data-text="𝕄𝔼ℕ𝕌"
-                  className="neon-glitch neon-glitch--hover inline-block"
+                  <span
+                    data-text={t("restart")}
+                    className="neon-glitch neon-glitch--hover inline-block"
+                  >
+                    {t("restart")}
+                  </span>
+                </button>
+                <button
+                  className="neon-glitch-parent px-6 py-3 neon-border rounded transition hover:bg-red-600/40"
+                  onClick={goToMenu}
                 >
-                  𝕄𝔼ℕ𝕌
-                </span>
-              </button>
+                  <span
+                    data-text="𝕄𝔼ℕ𝕌"
+                    className="neon-glitch neon-glitch--hover inline-block"
+                  >
+                    𝕄𝔼ℕ𝕌
+                  </span>
+                </button>
+              </div>
             </div>
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GameRoute({ setupPlayers }) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!setupPlayers) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [setupPlayers, navigate]);
+
+  if (!setupPlayers) {
+    return null;
+  }
+
+  return (
+    <div className="flex-1 flex items-center justify-center pt-20 px-4">
+      <GameCanvas setupPlayers={setupPlayers} />
+    </div>
+  );
+}
+
+function PrivacyModal({ onClose }) {
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    game.isPaused = true;
+  });
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-50">
+      <div className="bg-[#0a0446]/60 neon-border rounded-xl px-8 py-6 w-[600px] max-h-[80vh] overflow-y-auto text-white">
+        <h1
+          className="text-4xl mb-8 neon-glitch neon-glitch--always text-center tracking-widest"
+          data-text={t("privacy")}
+        >
+          {t("privacy")}
+        </h1>
+
+        <div className="text-sm leading-relaxed space-y-4 text-cyan-100 text-center">
+          <p>{t("p1")}</p>
+          <p>{t("p2")}</p>
+          <p>{t("p3")}</p>
+          <p>{t("p4")}</p>
+          <p>{t("p5")}</p>
+          <p>{t("p6")}</p>
+          <p>{t("p7")}</p>
+          <p>{t("p8")}</p>
         </div>
-      )}
+
+        <div className="flex justify-center mt-10">
+          <button
+            onClick={onClose}
+            className="neon-glitch-parent px-6 py-2 neon-border rounded hover:bg-gray-700 transition"
+          >
+            <span
+              data-text={t("back")}
+              className="neon-glitch neon-glitch--hover inline-block"
+            >
+              {t("back")}
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TermsModal({ onClose }) {
+  const { t } = useTranslation();
+
+  useEffect(() => {
+    game.isPaused = true;
+  });
+
+  return (
+    <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-50">
+      <div className="bg-[#0a0446]/60 neon-border rounded-xl px-8 py-6 w-[600px] max-h-[80vh] overflow-y-auto text-white">
+        <h1
+          className="text-4xl mb-8 neon-glitch neon-glitch--always text-center tracking-widest"
+          data-text={t("terms")}
+        >
+          {t("terms")}
+        </h1>
+
+        <div className="text-sm leading-relaxed space-y-4 text-cyan-100 text-center">
+          <p>{t("t1")}</p>
+          <p>{t("t2")}</p>
+          <p>{t("t3")}</p>
+          <p>{t("t4")}</p>
+          <p>{t("t5")}</p>
+          <p>{t("t6")}</p>
+          <p>{t("t7")}</p>
+          <p>{t("t8")}</p>
+        </div>
+
+        <div className="flex justify-center mt-10">
+          <button
+            onClick={onClose}
+            className="neon-glitch-parent px-6 py-2 neon-border rounded hover:bg-gray-700 transition"
+          >
+            <span
+              data-text={t("back")}
+              className="neon-glitch neon-glitch--hover inline-block"
+            >
+              {t("back")}
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -314,7 +502,16 @@ export default function App() {
   // Fonction pour changer de langue
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
+    localStorage.setItem("lang", lng);
   };
+
+  // restore language saved (anti refresh)
+  useEffect(() => {
+    const savedLang = localStorage.getItem("lang");
+    if (savedLang) {
+      i18n.changeLanguage(savedLang);
+    }
+  }, []);
 
   /* UI states / interaction :
         context menu management, side chat, tabs, notifications*/
@@ -342,6 +539,14 @@ export default function App() {
 
   /* Authentication state and helpers */
   const { isAuthed, login, signIn, signOut } = useAuth(setAuthUserId);
+
+  /* Handle login */
+  const [editLogin, setEditLogin] = useState(login);
+  const [isEditingLogin, setIsEditingLogin] = useState(false);
+
+  useEffect(() => {
+    setEditLogin(login);
+  }, [login]);
 
   /* List of all users */
   const [users, setUsers] = useState([]);
@@ -380,6 +585,8 @@ export default function App() {
 
   const [setupPlayers, setSetupPlayers] = useState(null);
   const [showGameSetup, setShowGameSetup] = useState(false);
+  const [showPrivacy, setShowPrivacy] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   /* For message unread */
   const [unread, setUnread] = useState({});
@@ -389,6 +596,7 @@ export default function App() {
 
   /* Current user XP */
   const [currentUserXp, setCurrentUserXp] = useState(0);
+  const [myMatches, setMyMatches] = useState([]);
   const [currentUserSuccess1, setCurrentUserSuccess1] = useState(false);
   const [currentUserSuccess2, setCurrentUserSuccess2] = useState(false);
   const [currentUserSuccess3, setCurrentUserSuccess3] = useState(false);
@@ -397,15 +605,25 @@ export default function App() {
   const meId = Number(localStorage.getItem(USER_ID_KEY));
   const isMe = selectedUser?.id === meId;
 
+  const DEFAULT_AVATAR = "/images/defaultavatar.png";
+
+  /* is typing... */
+  const typingTimeoutRef = useRef(null);
+  const [typingUsers, setTypingUsers] = useState({});
+
+  /* GAME COUNTDOWN */
+  const [showGameCountdown, setShowGameCountdown] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+
   /* ================================================================================= */
   /* ================================================================================= */
   /* ============================ HANDLE BACKGROUND ================================== */
   /* ================================================================================= */
   /* ================================================================================= */
 
-  const [avatar, setAvatar] = useState(null);
+  const [avatar, setAvatar] = useState(DEFAULT_AVATAR);
   const [authMode, setAuthMode] = useState(null);
-  const DEFAULT_BG = "/images/abstract.png";
+  const DEFAULT_BG = "/images/manwork.png";
   const [bgSrc, setBgSrc] = useState(DEFAULT_BG);
 
   const fetchUserSettings = async () => {
@@ -477,6 +695,22 @@ export default function App() {
     "/images/abstract3.png",
     "/images/manwork3.png",
     "/images/datacenter2.png",
+    "/images/miner.png",
+    "/images/arcade.png",
+    "/images/purpleplanet.png",
+    "/images/vaisseau.png",
+    "/images/neon1.png",
+    "/images/neon2.png",
+    "/images/neon3.png",
+    "/images/neon4.png",
+    "/images/neon5.png",
+    "/images/neon6.png",
+    "/images/neon7.png",
+    "/images/neon8.png",
+    "/images/neon9.png",
+    "/images/neon10.png",
+    "/images/neon11.png",
+    "/images/neon12.png",
   ];
 
   /* ================================================================================= */
@@ -545,17 +779,18 @@ export default function App() {
       }
 
       if (!res.ok) {
-        notify(data?.message || "User already exists");
+        const key = data?.message || data?.error || "serv_error";
+        notify(t(key));
         return;
       }
 
-      notify("Compte créé, vous pouvez vous connecter");
+      notify(t("created_account"));
       setLoginInput("");
       setEmailInput("");
       setPasswordInput("");
       setAuthMode("login");
     } catch (err) {
-      notify("Error Serv");
+      notify(t("serv_error"));
     }
   };
 
@@ -598,9 +833,55 @@ export default function App() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setAvatar(data.avatar || null);
+        setAvatar(data.avatar || DEFAULT_AVATAR);
       });
   }, [isAuthed]);
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ================================ HANDLE LOGIN =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
+  const handleLoginChange = async () => {
+    if (!editLogin.trim() || editLogin === login) {
+      setIsEditingLogin(false);
+      return;
+    }
+
+    const token = localStorage.getItem(AUTH_KEY);
+
+    const res = await fetch("/api/user/me/nickname", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ nickname: editLogin }),
+    });
+
+    if (!res.ok) {
+      notify("Nickname update failed");
+      return;
+    }
+
+    const data = await res.json();
+
+    localStorage.setItem(LOGIN_KEY, data.nickname);
+    setIsEditingLogin(false);
+
+    signIn(
+      data.nickname,
+      localStorage.getItem(AUTH_KEY),
+      localStorage.getItem(USER_ID_KEY),
+    );
+
+    setUsers((prev) =>
+      prev.map((u) =>
+        u.id === authUserId ? { ...u, nickname: data.nickname } : u,
+      ),
+    );
+  };
 
   /* ================================================================================= */
   /* ================================================================================= */
@@ -628,8 +909,45 @@ export default function App() {
     signOut();
     navigate("/");
   };
-  //
-  //
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ================================ HANDLE TYPING ================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
+  const handleTyping = (e) => {
+    const value = e.target.value;
+    setChatInput(value);
+
+    if (!wsRef.current || !activeChatUser) return;
+    if (!value.trim()) return;
+
+    wsRef.current.send(
+      JSON.stringify({
+        type: "TYPING",
+        toUserId: activeChatUser.id,
+      }),
+    );
+
+    clearTimeout(typingTimeoutRef.current);
+
+    typingTimeoutRef.current = setTimeout(() => {
+      wsRef.current?.send(
+        JSON.stringify({
+          type: "STOP_TYPING",
+          toUserId: activeChatUser.id,
+        }),
+      );
+    }, 800);
+  };
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ============================== CLEAN IF NOT AUTHED ============================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   useEffect(() => {
     if (!isAuthed) {
       setShowChat(false);
@@ -642,21 +960,62 @@ export default function App() {
       setMessages({});
     }
   }, [isAuthed]);
-  //
-  //
 
-  //
-  //
-  //
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ================================ GAME COUNTDOWN ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
+  const startGameCountdown = () => {
+    setCountdown(5);
+    setShowGameCountdown(true);
+
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          setShowGameCountdown(false);
+          //navigate("/game");
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== CLOSE WEBSOCKET ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
+  //when they leave with the cross, avoid zombie connections
+  useEffect(() => {
+    const handleUnload = () => wsRef.current?.close();
+
+    //"unload" is a window event
+    window.addEventListener("unload", handleUnload);
+    return () => window.removeEventListener("unload", handleUnload);
+  }, []);
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== HANDLE SHOWCHAT ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   useEffect(() => {
     if (!showChat || userTab !== "friends") return;
 
+    //retrieve the friends list
     fetch("/api/friends", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
       },
     })
       .then((res) => res.json())
+      //protect react state against invalid data
       .then((data) => {
         setFriends(Array.isArray(data) ? data : []);
       })
@@ -678,8 +1037,10 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => {
         const meId = Number(localStorage.getItem(USER_ID_KEY));
+        //copy data in userswithme (with ...)
         const usersWithMe = [...data];
 
+        //sometimes /api/users doesn't include you yet
         if (!usersWithMe.some((u) => u.id === meId)) {
           usersWithMe.push({
             id: meId,
@@ -688,6 +1049,7 @@ export default function App() {
           });
         }
 
+        //retains the real-time information already received
         setUsers((prev) => {
           const prevMap = new Map(prev.map((u) => [u.id, u]));
 
@@ -699,26 +1061,65 @@ export default function App() {
       })
       .catch(() => setUsers([]));
 
+    //wss if https, ws if http, just a guard, always https
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    //keep the same socket between renders thanks to useRef
     const ws = new WebSocket(
-      `wss://${window.location.host}/api/ws?token=${token}`,
+      `${protocol}://${window.location.host}/api/ws?token=${token}`,
     );
     wsRef.current = ws;
 
+    //sends the current state
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: "WHO_IS_ONLINE" }));
+
+      fetch("/api/users", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem(AUTH_KEY)}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => setUsers(data))
+        .catch(() => setUsers([]));
     };
 
+    //each box corresponds to an event
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
 
       switch (msg.type) {
+        case "TYPING":
+          setTypingUsers((prev) => ({
+            ...prev,
+            [msg.fromUserId]: true,
+          }));
+          break;
+
+        case "STOP_TYPING":
+          setTypingUsers((prev) => {
+            const copy = { ...prev };
+            delete copy[msg.fromUserId];
+            return copy;
+          });
+          break;
+
         case "USERS_STATUS":
           setUsers((prev) => {
-            const meId = Number(localStorage.getItem(USER_ID_KEY));
+            const map = new Map(prev.map((u) => [u.id, u]));
 
-            return prev.map((u) => ({
+            msg.onlineUsers.forEach((id) => {
+              if (!map.has(id)) {
+                map.set(id, {
+                  id,
+                  nickname: "Unknown",
+                  online: true,
+                });
+              }
+            });
+
+            return [...map.values()].map((u) => ({
               ...u,
-              online: u.id === meId || msg.onlineUsers.includes(u.id),
+              online: msg.onlineUsers.includes(u.id),
             }));
           });
           break;
@@ -785,23 +1186,22 @@ export default function App() {
       if (wsRef.current === ws) wsRef.current = null;
     };
 
+    //if isAuthed became false
     return () => {
       ws.close();
     };
   }, [isAuthed]);
 
-  //
-  //
-  //
+  //user options visible is show chat is true
   useEffect(() => {
     isChatVisibleRef.current = Boolean(showChat && activeChatUser);
   }, [showChat, activeChatUser]);
 
-  //
-  //
+  //chat panel open and “Requests” tab selected
   useEffect(() => {
     if (!showChat || userTab !== "requests") return;
 
+    //retrieve pending friend requests
     fetch("/api/friends/requests", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
@@ -810,9 +1210,12 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => {
         setFriendRequests((prev) => {
+          //fetched = request from server
           const fetched = Array.isArray(data) ? data : [];
+          //prev = requests already known (WS)
           const merged = [...prev];
 
+          //only add the new ones
           fetched.forEach((u) => {
             if (!merged.some((p) => p.id === u.id)) {
               merged.push(u);
@@ -823,10 +1226,13 @@ export default function App() {
         });
       });
   }, [showChat, userTab]);
-  //
-  //
-  //
-  //BLACKLIST
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== CATCH BLACKLIST ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   useEffect(() => {
     if (!showChat) return;
 
@@ -841,9 +1247,8 @@ export default function App() {
       })
       .catch(() => setBlockedUsers([]));
   }, [showChat]);
-  //
-  //
-  //
+
+  //scroll until the very last message
   useEffect(() => {
     if (!activeChatUser) return;
 
@@ -851,9 +1256,12 @@ export default function App() {
       behavior: "smooth",
     });
   }, [messages, activeChatUser]);
-  //
-  //
-  //
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== HANDLE SUCCESS ================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   useEffect(() => {
     if (!isAuthed || !authUserId) return;
@@ -881,7 +1289,34 @@ export default function App() {
     fetchCurrentUserProfile();
   }, [isAuthed, authUserId, location.pathname]); // Added location.pathname to dependencies
 
+  useEffect(() => {
+    if (!isAuthed) {
+      setMyMatches([]);
+      return;
+    }
+
+    const token = localStorage.getItem(AUTH_KEY);
+    const myId = localStorage.getItem(USER_ID_KEY);
+
+    if (!token || !myId) {
+      setMyMatches([]);
+      return;
+    }
+
+    fetch(`/api/users/${myId}/matches`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => setMyMatches(Array.isArray(data) ? data : []))
+      .catch(() => setMyMatches([]));
+  }, [isAuthed, location.pathname]);
+
+  //some = return boleean
+  //isFriend(id) → Is this user already your friend?
   const isFriend = (id) => friends.some((f) => f.id === id);
+  //isPending(id) → Is a request pending?
   const isPending = (id) => friendRequests.some((r) => r.id === id);
 
   const openUserMenu = (e, user) => {
@@ -892,9 +1327,16 @@ export default function App() {
 
   const closeUserMenu = () => setSelectedUser(null);
 
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== PRIVATE MESSAGE ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   const handleDM = async () => {
     const token = localStorage.getItem(AUTH_KEY);
 
+    //fetch historical
     const res = await fetch(`/api/messages/${selectedUser.id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -918,10 +1360,33 @@ export default function App() {
     closeUserMenu();
   };
 
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== INVITE TO PLAY ================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   const handleInvite = () => {
-    console.log("Invite:", selectedUser.nickname);
+    if (!wsRef.current || !selectedUser) return;
+
+    wsRef.current.send(
+      JSON.stringify({
+        type: "DM_SEND",
+        toUserId: selectedUser.id,
+        text: t("gameInvite", { user: login }),
+      }),
+    );
+
+    // startGameCountdown(); optionnal
+    notify(t("inviteSent", { user: selectedUser.nickname }));
     closeUserMenu();
   };
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== REQUEST FRIEND ================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   const handleSendFriendRequest = async () => {
     await fetch(`/api/friends/request/${selectedUser.id}`, {
@@ -931,9 +1396,14 @@ export default function App() {
       },
     });
 
-    //notify("Friend request sent");
     closeUserMenu();
   };
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== ACCEPT FRIEND =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   const handleAcceptFriend = async (userId) => {
     await fetch(`/api/friends/accept/${userId}`, {
@@ -943,9 +1413,15 @@ export default function App() {
       },
     });
 
-    // enlève la notif localement
+    //clean UI
     setFriendRequests((prev) => prev.filter((req) => req.id !== userId));
   };
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== REFUSE FRIEND =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   const handleRefuseFriend = async (userId) => {
     await fetch(`/api/friends/refuse/${userId}`, {
@@ -958,6 +1434,12 @@ export default function App() {
     setFriendRequests((prev) => prev.filter((u) => u.id !== userId));
   };
 
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== REMOVE FRIEND =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   const handleRemoveFriend = async () => {
     await fetch(`/api/friends/${selectedUser.id}`, {
       method: "DELETE",
@@ -969,15 +1451,11 @@ export default function App() {
     closeUserMenu();
   };
 
-  const handleBlock = async () => {
-    await fetch(`/api/user/${selectedUser.id}/block`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-      },
-    });
-    closeUserMenu();
-  };
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ===============================  HANDLE BADGE =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   const handleBackFromChat = () => {
     setUnread((prev) => {
@@ -988,13 +1466,76 @@ export default function App() {
     setActiveChatUser(null);
   };
 
+  function GameHistory({ matches })
+  {
+    if (!matches || !matches.length)
+    {
+      return <p className="mt-6 text-white">{t("no_matches_played")}</p>;
+    }
+
+    return (
+      <div className="mt-8 w-full max-w-4xl">
+        <div className="bg-[#0a0446]/70 neon-border rounded-xl p-6 shadow-xl min-h-0">
+          <h2
+            className="text-2xl mb-4 neon-glitch neon-glitch--always"
+            data-text={t("match_history")}
+          >
+            {t("match_history")}
+          </h2>
+
+          {/* pour scroll */}
+          <div className="overflow-x-auto overflow-y-auto max-h-64 min-h-0 pr-2">
+            <table className="w-full text-left border-collapse text-white">
+              <thead className="sticky top-0 bg-[#0a0446]">
+                <tr>
+                  <th className="p-3 border-b border-cyan-400">{t("opponent")}</th>
+                  <th className="p-3 border-b border-cyan-400">{t("result")}</th>
+                  <th className="p-3 border-b border-cyan-400">{t("score")}</th>
+                  <th className="p-3 border-b border-cyan-400">{t("date")}</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {matches.map((match, i) => (
+                  <tr
+                    key={match.id ?? `${match.createdAt}-${i}`}
+                    className="hover:bg-cyan-900/40"
+                  >
+                    <td className="p-3 border-b border-cyan-700">IA</td>
+                    <td
+                      className={`p-3 border-b border-cyan-700 ${
+                        match.result === 1 ? "text-green-400" : "text-red-400"
+                      }`}
+                    >
+                      {match.result === 1 ? t("victory") : t("defeat")}
+                    </td>
+                    <td className="p-3 border-b border-cyan-700">
+                      {match.playerScore} - {match.iaScore}
+                    </td>
+                    <td className="p-3 border-b border-cyan-700">
+                      {new Date(match.createdAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
+
   function PublicProfile() {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation();
     const from = location.state?.from || "/dashboard";
 
     const [user, setUser] = useState(undefined);
+    const [matches, setMatches] = useState([]);
     const isMe = String(id) === String(localStorage.getItem(USER_ID_KEY));
 
     const liveUser = users.find((u) => String(u.id) === String(id));
@@ -1005,11 +1546,12 @@ export default function App() {
       return null;
     }
 
-    // FETCH PROFIL UNIQUEMENT SI PAS MOI
+    // FETCH only when is not me
     useEffect(() => {
+      const token = localStorage.getItem("auth_token");
       fetch(`/api/users/${id}/profile`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+          Authorization: `Bearer ${token}`,
         },
       })
         .then((res) => {
@@ -1018,6 +1560,15 @@ export default function App() {
         })
         .then(setUser)
         .catch(() => setUser(null));
+
+      fetch(`/api/users/${id}/matches`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => setMatches(Array.isArray(data) ? data : []))
+        .catch(() => setMatches([]));
     }, [id, location.pathname]); // Added location.pathname to dependencies
 
     // ===== RENDER =====
@@ -1031,88 +1582,103 @@ export default function App() {
     }
 
     return (
-      <div className="w-full h-full flex flex-col items-center text-white">
+      <div className="w-full h-screen relative overflow-y-auto overflow-x-hidden text-white">
         <button
-          className="absolute top-5 left-1/2 -translate-x-1/2 neon-border px-2 py-1"
+          className="absolute top-5 left-1/2 -translate-x-1/2 neon-border px-2 py-1 z-10"
           onClick={() => navigate(from)}
         >
           {t("back")}
         </button>
 
-        <img
-          src={user.avatar || "/images/default-avatar.png"}
-          className="w-32 h-32 rounded-full neon-border mt-[15vh]"
-        />
+        <div className="w-full flex flex-col items-center pt-[12vh] pb-10 px-6 gap-6">
+          {/* Profil (avatar + pseudo + online) */}
+          <div className="w-full max-w-4xl bg-[#0a0446]/70 neon-border rounded-xl p-6 shadow-xl flex flex-col items-center">
+            <img
+              src={user.avatar || DEFAULT_AVATAR}
+              className="w-32 h-32 rounded-full neon-border"
+              alt=""
+            />
 
-        <h1 className="neon-glitch neon-glitch--always text-3xl mt-6">
-          {user.nickname}
-        </h1>
+            <h1 className="neon-glitch neon-glitch--always text-3xl mt-4">
+              {user.nickname}
+            </h1>
 
-        <p className="text-cyan-300 mt-2 flex items-center gap-2">
-          {user.online ? (
-            <>
-              <span className="w-2 h-2 rounded-full bg-green-400" />
-              Online
-            </>
-          ) : (
-            <>
-              <span className="w-2 h-2 rounded-full bg-gray-400" />
-              Offline
-            </>
+            <p className="text-cyan-300 mt-2 flex items-center gap-2">
+              {online ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-green-400" />
+                  {t("online")}
+                </>
+              ) : (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-gray-400" />
+                  {t("offline")}
+                </>
+              )}
+            </p>
+          </div>
+
+          {/* XP / Level */}
+          {user.xp !== undefined && (
+            <div className="w-full max-w-4xl bg-[#0a0446]/70 neon-border rounded-xl p-6 shadow-xl">
+              <p className="text-xl">
+                {t("level")}: {Math.floor(user.xp / 100)}
+              </p>
+              <p className="text-sm">
+                {t("xp")}: {user.xp % 100} / 100
+              </p>
+
+              <div className="w-full h-3 bg-black/40 rounded-full mt-3">
+                <div
+                  className="h-full bg-cyan-400 rounded-full"
+                  style={{ width: `${user.xp % 100}%` }}
+                />
+              </div>
+            </div>
           )}
-        </p>
 
-        {/* XP and Level Display for Public Profile */}
-        {user.xp !== undefined && (
-          <div className="mt-4 text-white flex flex-col items-center">
-            <p className="text-xl">
-              {t("level")}: {Math.floor(user.xp / 100)}
-            </p>
-            <p className="text-sm">
-              {t("xp")}: {user.xp % 100} / 100
-            </p>
-            <div className="w-40 h-3 bg-gray-700 rounded-full mt-2">
-              <div
-                className="h-full bg-cyan-400 rounded-full"
-                style={{ width: `${user.xp % 100}%` }}
-              ></div>
+          {/* Achievements */}
+          <div className="w-full max-w-4xl bg-[#0a0446]/70 neon-border rounded-xl p-6 shadow-xl">
+            <h2
+              className="text-2xl mb-4 neon-glitch neon-glitch--always"
+              data-text={t("achievements")}
+            >
+              {t("achievements")}
+            </h2>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-lg">
+                {t("played_ai_game")}:{" "}
+                {user.success1 ? (
+                  <span className="text-green-400">✓</span>
+                ) : (
+                  <span className="text-red-400">✗</span>
+                )}
+              </p>
+
+              <p className="text-lg">
+                {t("won_ai_game")}:{" "}
+                {user.success2 ? (
+                  <span className="text-green-400">✓</span>
+                ) : (
+                  <span className="text-red-400">✗</span>
+                )}
+              </p>
+
+              <p className="text-lg">
+                {t("lost_ai_game")}:{" "}
+                {user.success3 ? (
+                  <span className="text-green-400">✓</span>
+                ) : (
+                  <span className="text-red-400">✗</span>
+                )}
+              </p>
             </div>
           </div>
-        )}
 
-        {/* Achievements Display for Public Profile */}
-        <div className="mt-6 text-white flex flex-col items-center">
-          <h2
-            className="text-2xl mb-4 neon-glitch neon-glitch--always"
-            data-text={t("achievements")}
-          >
-            {t("achievements")}
-          </h2>
-          <div className="flex flex-col gap-2">
-            <p className="text-lg">
-              {t("played_ai_game")}:{" "}
-              {user.success1 ? (
-                <span className="text-green-400">✓</span>
-              ) : (
-                <span className="text-red-400">✗</span>
-              )}
-            </p>
-            <p className="text-lg">
-              {t("won_ai_game")}:{" "}
-              {user.success2 ? (
-                <span className="text-green-400">✓</span>
-              ) : (
-                <span className="text-red-400">✗</span>
-              )}
-            </p>
-            <p className="text-lg">
-              {t("lost_ai_game")}:{" "}
-              {user.success3 ? (
-                <span className="text-green-400">✓</span>
-              ) : (
-                <span className="text-red-400">✗</span>
-              )}
-            </p>
+          {/* Match History */}
+          <div className="w-full max-w-4xl">
+            <GameHistory matches={matches} />
           </div>
         </div>
       </div>
@@ -1163,7 +1729,7 @@ export default function App() {
         <button
           className="neon-glitch neon-glitch--hover text-2xl px-2 py-0 bg-transparent rounded neon-border"
           data-text="🇮🇹"
-          onClick={() => i18n.changeLanguage("it")}
+          onClick={() => changeLanguage("it")}
         >
           🇮🇹
         </button>
@@ -1171,7 +1737,7 @@ export default function App() {
         <button
           className="neon-glitch neon-glitch--hover text-2xl px-2 py-0 bg-transparent rounded neon-border"
           data-text="🇬🇧"
-          onClick={() => i18n.changeLanguage("en")}
+          onClick={() => changeLanguage("en")}
         >
           🇬🇧
         </button>
@@ -1180,11 +1746,12 @@ export default function App() {
           className="neon-glitch neon-glitch--hover text-2xl px-2 py-0 bg-transparent rounded neon-border"
           data-text="🇫🇷"
           onClick={() => {
-            i18n.changeLanguage("fr");
+            changeLanguage("fr");
           }}
         >
           🇫🇷
         </button>
+
         {showConnectedUI && (
           <button
             className="neon-glitch neon-glitch--hover text-2xl px-2 py-0 bg-transparent rounded neon-border"
@@ -1360,10 +1927,16 @@ export default function App() {
                 <div ref={messagesEndRef} />
               </div>
 
+              {typingUsers[activeChatUser.id] && (
+                <div className="text-2 text-cyan-400 italic px-2">
+                  {activeChatUser.nickname} {t("istyping")}
+                </div>
+              )}
+
               <form
                 //"form" to take advantage of native submit functionality
                 className="p-3 border-t border-cyan-500/30 flex gap-2"
-                //e = l’événement de soumission du formulaire
+                //e = the form submission event
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!chatInput.trim()) return;
@@ -1385,17 +1958,44 @@ export default function App() {
                       text: chatInput,
                     }),
                   );
+                  wsRef.current?.send(
+                    JSON.stringify({
+                      type: "STOP_TYPING",
+                      toUserId: activeChatUser.id,
+                    }),
+                  );
                   setChatInput("");
                 }}
               >
                 <input
                   value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
+                  onChange={handleTyping}
                   className="flex-1 bg-black/60 text-white px-2 py-1 rounded neon-border"
                 />
                 <button className="text-cyan-300">➤</button>
               </form>
             </>
+          )}
+
+          {/* =============================================
+                ============== GAME COUNTDOWN =============
+                ============================================= */}
+
+          {showGameCountdown && (
+            <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80">
+              <div className="text-center">
+                <div
+                  className="text-[5rem] font-extrabold neon-glitch neon-glitch--always text-cyan-300"
+                  data-text={countdown}
+                >
+                  {countdown}
+                </div>
+
+                <div className="mt-2 text-sm text-white opacity-80">
+                  {t("gameStarting")}
+                </div>
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -1406,7 +2006,7 @@ export default function App() {
   ======================================================================================
   ======================================================================================*/}
 
-      {selectedUser && !isMe && (
+      {showChat && selectedUser && !isMe && (
         <div
           className="fixed bg-black/90 neon-border rounded p-2
                       text-sm z-[1000]"
@@ -1503,6 +2103,7 @@ export default function App() {
                 setBlockedUsers((prev) =>
                   prev.filter((u) => u.id !== selectedUser.id),
                 );
+                wsRef.current?.send(JSON.stringify({ type: "WHO_IS_ONLINE" }));
                 closeUserMenu();
               }}
               className="block w-full px-2 py-1 hover:bg-green-600/30 text-left text-green-400"
@@ -1519,7 +2120,10 @@ export default function App() {
   ======================================================================================
   ======================================================================================*/}
 
-      <main className="flex-1 flex flex-col">
+      <main
+        className={`flex-1 flex flex-col transition-all duration-200
+                  ${showChat ? "ml-[300px]" : ""}`}
+      >
         <Routes>
           <Route
             path="/"
@@ -1566,7 +2170,7 @@ export default function App() {
                       onSubmit={handleSubmitLogin}
                     >
                       <h1
-                        className="neon-glitch neon-glitch--always absolute left-[14px] px-0 py-0 text-xl text-cyan-300"
+                        className="neon-glitch neon-glitch--always absolute left-1/2 -translate-x-1/2 px-0 py-0 text-xl text-cyan-300"
                         data-text={t("welcomeback")}
                       >
                         {t("welcomeback")}
@@ -1611,7 +2215,7 @@ export default function App() {
                       onSubmit={handleSubmitSub}
                     >
                       <h1
-                        className="neon-glitch neon-glitch--always absolute left-[95px] px-0 py-0 text-xl text-cyan-300"
+                        className="neon-glitch neon-glitch--always absolute left-1/2 -translate-x-1/2 px-0 py-0 text-xl text-cyan-300"
                         data-text={t("welcome")}
                       >
                         {t("welcome")}
@@ -1640,39 +2244,6 @@ export default function App() {
                         className="px-3 py-2 rounded bg-gray-900/80 neon-border text-cyan-300"
                       />
 
-                      {/*=====================================================================================
-  ======================================================================================
-  =============================== CHOOSE YOUR GENDER ===================================
-  ======================================================================================
-  ======================================================================================*/}
-
-                      <h1
-                        className="neon-glitch neon-glitch--always absolute px-0 py-0 left-[2px] text-xl text-cyan-300"
-                        data-text={t("chooseyourgender")}
-                      >
-                        {t("chooseyourgender")}
-                      </h1>
-
-                      <div className="flex gap-4 justify-center">
-                        <button
-                          type="button"
-                          className="neon-glitch neon-glitch--hover px-9 py-0 text-1xl bg-gray-900/80 text-black-300
-                        rounded neon-border"
-                          data-text={t("male")}
-                        >
-                          {t("male")}
-                        </button>
-
-                        <button
-                          type="button"
-                          className="neon-glitch neon-glitch--hover px-7 py-0 text-1xl bg-gray-900/80 text-black-300
-                      rounded neon-border"
-                          data-text={t("female")}
-                        >
-                          {t("female")}
-                        </button>
-                      </div>
-
                       <button
                         type="submit"
                         className="neon-glitch neon-glitch--hover px-0 py-0 text-xl
@@ -1697,114 +2268,69 @@ export default function App() {
           <Route
             path="/dashboard"
             element={
-              <div className="w-full h-full flex flex-col items-center">
-                <div className="mt-[5vh]">
-                  <h1
-                    className="neon-glitch neon-glitch--always absolute left-1/2 -translate-x-1/2 bg-transparent
+              <ProtectedRoute>
+                <div className="w-full h-full flex flex-col items-center">
+                  <div className="mt-[5vh]">
+                    <h1
+                      className="neon-glitch neon-glitch--always absolute left-1/2 -translate-x-1/2 bg-transparent
                   border-0 text-7xl"
-                    data-text="𝕋ℝ𝔸ℕ𝕊ℂ𝔼ℕ𝔻𝔼ℕℂ𝔼"
-                  >
-                    𝕋ℝ𝔸ℕ𝕊ℂ𝔼ℕ𝔻𝔼ℕℂ𝔼
-                  </h1>
+                      data-text="𝕋ℝ𝔸ℕ𝕊ℂ𝔼ℕ𝔻𝔼ℕℂ𝔼"
+                    >
+                      𝕋ℝ𝔸ℕ𝕊ℂ𝔼ℕ𝔻𝔼ℕℂ𝔼
+                    </h1>
+                  </div>
+
+                  <div className="text-3xl mt-[10vh] text-white z-30">
+                    <span className="font-mono tracking-[-0.035em] text-cyan-300">
+                      {login}
+                    </span>
+                  </div>
+
+                  <div className="text-white mt-[2vh]">
+                    <button
+                      className="neon-glitch neon-glitch--hover ml-1 px-3 py-0 neon-border bg-gray-900/60"
+                      onClick={() => {
+                        handleLogout();
+                      }}
+                      data-text={t("logout")}
+                    >
+                      {t("logout")}
+                    </button>
+                  </div>
+
+                  <div className="mt-[5vh] flex flex-col gap-6 items-center">
+                    <button
+                      className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
+                      data-text={t("play")}
+                      onClick={() => setShowGameSetup(true)}
+                    >
+                      {t("play")}
+                    </button>
+                    <button
+                      className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
+                      data-text={t("profile")}
+                      onClick={() => navigate("/profile")}
+                    >
+                      {t("profile")}
+                    </button>
+                    <button
+                      className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
+                      data-text={t("customize")}
+                      onClick={() => navigate("/customize")}
+                    >
+                      {t("customize")}
+                    </button>
+                    {/* New Leaderboard Button */}
+                    <button
+                      className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
+                      data-text={t("leaderboard")}
+                      onClick={() => navigate("/leaderboard")}
+                    >
+                      {t("leaderboard")}
+                    </button>
+                  </div>
                 </div>
-
-                <div className="text-3xl mt-[10vh] text-white z-30">
-                  <span className="font-mono tracking-[-0.035em] text-cyan-300">
-                    {login}
-                  </span>
-                </div>
-
-                <div className="text-white mt-[2vh]">
-                  <button
-                    className="neon-glitch neon-glitch--hover ml-1 px-3 py-0 neon-border bg-gray-900/60"
-                    onClick={() => {
-                      handleLogout();
-                    }}
-                    data-text={t("logout")}
-                  >
-                    {t("logout")}
-                  </button>
-                </div>
-
-                <div className="mt-[5vh] flex flex-col gap-6 items-center">
-                  <button
-                    className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
-                    data-text={t("play")}
-                    onClick={() => navigate("/play")}
-                  >
-                    {t("play")}
-                  </button>
-                  <button
-                    className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
-                    data-text={t("profile")}
-                    onClick={() => navigate("/profile")}
-                  >
-                    {t("profile")}
-                  </button>
-                  <button
-                    className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
-                    data-text={t("customize")}
-                    onClick={() => navigate("/customize")}
-                  >
-                    {t("customize")}
-                  </button>
-                  {/* New Leaderboard Button */}
-                  <button
-                    className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
-                    data-text={t("leaderboard")}
-                    onClick={() => navigate("/leaderboard")}
-                  >
-                    {t("leaderboard")}
-                  </button>
-                </div>
-              </div>
-            }
-          />
-
-          {/*=====================================================================================
-  ======================================================================================
-  ===================================== CHOOSE GAME ====================================
-  ======================================================================================
-  ======================================================================================*/}
-
-          <Route
-            path="/play"
-            element={
-              <div className="relative w-screen h-screen">
-                <h1
-                  className="absolute top-4 left-1/2 -translate-x-1/2 neon-glitch neon-glitch--always text-5xl"
-                  data-text={t("choosegame")}
-                >
-                  {t("choosegame")}
-                </h1>
-
-                <div className="absolute left-1/2 top-[260px] -translate-x-1/2">
-                  <button
-                    className="neon-glitch neon-glitch--hover text-4xl"
-                    onClick={() => setShowGameSetup(true)}
-                    data-text="◐ ℙ𝕆ℕ𝔾 ◑"
-                  >
-                    ◐ ℙ𝕆ℕ𝔾 ◑
-                  </button>
-                </div>
-
-                <div className="absolute left-1/2 top-[400px] -translate-x-1/2">
-                  <button
-                    className="neon-glitch neon-glitch--hover text-4xl"
-                    onClick={() => navigate("/game/bonus")}
-                    data-text="◐ 𝔹𝕆ℕ𝕌𝕊 ◑"
-                  >
-                    ◐ 𝔹𝕆ℕ𝕌𝕊 ◑
-                  </button>
-                </div>
-
-                <button
-                  className="absolute top-4 left-4 px-1 py-1 neon-border bg-gray-900/60 text-cyan-300"
-                  onClick={() => navigate(-1)}
-                >
-                  {t("back")}
-                </button>
-              </div>
+              </ProtectedRoute>
             }
           />
 
@@ -1817,38 +2343,40 @@ export default function App() {
           <Route
             path="/customize"
             element={
-              <div className="fixed inset-0 bg-black/80 z-30 flex flex-col items-center p-8">
-                <h1
-                  className="neon-glitch neon-glitch--always text-5xl mb-[4vh] mt-[8vh]"
-                  data-text={t("background")}
-                >
-                  {t("background")}
-                </h1>
+              <ProtectedRoute>
+                <div className="fixed inset-0 bg-black/80 z-30 flex flex-col items-center p-8">
+                  <h1
+                    className="neon-glitch neon-glitch--always text-5xl mb-[4vh] mt-[8vh]"
+                    data-text={t("background")}
+                  >
+                    {t("background")}
+                  </h1>
 
-                <div className="grid grid-cols-6 gap-6 mt-[8vh]">
-                  {BACKGROUNDS.map((bg) => (
-                    <button
-                      key={bg}
-                      onClick={() => updateBackground(bg)}
-                      className={`relative w-[110px] h-[60px] rounded-lg overflow-hidden neon-border
+                  <div className="grid grid-cols-7 gap-6 mt-[8vh]">
+                    {BACKGROUNDS.map((bg) => (
+                      <button
+                        key={bg}
+                        onClick={() => updateBackground(bg)}
+                        className={`relative w-[110px] h-[60px] rounded-lg overflow-hidden neon-border
                     ${bgSrc === bg ? "ring-2 ring-cyan-400" : ""}`}
-                    >
-                      <img
-                        src={bg}
-                        className="w-full h-full object-cover"
-                        alt=""
-                      />
-                    </button>
-                  ))}
-                </div>
+                      >
+                        <img
+                          src={bg}
+                          className="w-full h-full object-cover"
+                          alt=""
+                        />
+                      </button>
+                    ))}
+                  </div>
 
-                <button
-                  className="mt-10 px-2 py-1 neon-border bg-gray-900/60 text-cyan-300"
-                  onClick={() => navigate(-1)}
-                >
-                  {t("back")}
-                </button>
-              </div>
+                  <button
+                    className="mt-10 px-2 py-1 neon-border bg-gray-900/60 text-cyan-300"
+                    onClick={() => navigate(-1)}
+                  >
+                    {t("back")}
+                  </button>
+                </div>
+              </ProtectedRoute>
             }
           />
 
@@ -1859,17 +2387,11 @@ export default function App() {
   ======================================================================================*/}
 
           <Route
-            path="/game/pong"
+            path="/game"
             element={
-              <div className="w-full h-full relative">
-                <div className="w-full h-full flex items-center justify-center">
-                  {setupPlayers ? (
-                    <GameCanvas setupPlayers={setupPlayers} />
-                  ) : (
-                    <div className="text-white">Loading game setup...</div>
-                  )}
-                </div>
-              </div>
+              <ProtectedRoute>
+                <GameRoute setupPlayers={setupPlayers} />
+              </ProtectedRoute>
             }
           />
 
@@ -1882,126 +2404,173 @@ export default function App() {
           <Route
             path="/profile/:id"
             element={
-              <div className="relative w-full h-full z-30">
-                <PublicProfile />
-              </div>
+              <ProtectedRoute>
+                <div className="relative w-full h-full z-30">
+                  <PublicProfile />
+                </div>
+              </ProtectedRoute>
             }
           />
 
           <Route
             path="/profile"
             element={
-              <div className="w-full h-full relative overflow-hidden">
-                <div className="mt-[2vh] w-full h-full flex flex-col items-center">
-                  <h1
-                    className="neon-glitch neon-glitch--always relative inline-block text-7xl"
-                    data-text={t("profile")}
-                  >
-                    {t("profile")}
-                  </h1>
+              <ProtectedRoute>
+                <div className="w-full h-screen relative overflow-y-auto overflow-x-hidden">
+                  <div className="mt-[2vh] w-full min-h-full flex flex-col items-center pb-10">
+                    <h1
+                      className="neon-glitch neon-glitch--always relative inline-block text-7xl"
+                      data-text={t("profile")}
+                    >
+                      {t("profile")}
+                    </h1>
 
-                  <button
-                    className="neon-glitch neon-glitch--hover mt-6 px-3 py-0 neon-border bg-gray-900/60"
-                    onClick={() => navigate(-1)}
-                    data-text={t("back")}
-                  >
-                    {t("back")}
-                  </button>
+                    <button
+                      className="neon-glitch neon-glitch--hover mt-6 px-3 py-0 neon-border bg-gray-900/60"
+                      onClick={() => navigate("/dashboard")}
+                      data-text={t("back")}
+                    >
+                      {t("back")}
+                    </button>
 
-                  {/* MAIN PROFILE LAYOUT */}
-                  <div className="mt-14 w-full max-w-5xl px-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      {/* LEFT — ACHIEVEMENTS */}
-                      <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
-                        <h2
-                          className="text-2xl mb-4 neon-glitch neon-glitch--always"
-                          data-text={t("achievements")}
-                        >
-                          {t("achievements")}
-                        </h2>
-
-                        <div className="flex flex-col gap-3 text-lg">
-                          <p>
-                            {t("played_ai_game")}:{" "}
-                            {currentUserSuccess1 ? (
-                              <span className="text-green-400">✓</span>
-                            ) : (
-                              <span className="text-red-400">✗</span>
-                            )}
-                          </p>
-
-                          <p>
-                            {t("won_ai_game")}:{" "}
-                            {currentUserSuccess2 ? (
-                              <span className="text-green-400">✓</span>
-                            ) : (
-                              <span className="text-red-400">✗</span>
-                            )}
-                          </p>
-
-                          <p>
-                            {t("lost_ai_game")}:{" "}
-                            {currentUserSuccess3 ? (
-                              <span className="text-green-400">✓</span>
-                            ) : (
-                              <span className="text-red-400">✗</span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* RIGHT — AVATAR + XP */}
-                      <div className="flex flex-col gap-6">
-                        {/* AVATAR / IDENTITY */}
+                    {/* MAIN PROFILE LAYOUT */}
+                    <div className="mt-14 w-full max-w-5xl px-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+                        {/* LEFT — ACHIEVEMENTS */}
                         <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
-                          <div className="flex items-center gap-6">
-                            <img
-                              src={avatar || "/images/default-avatar.png"}
-                              className="w-28 h-28 rounded-full object-cover neon-border"
-                            />
+                          <h2
+                            className="text-2xl mb-4 neon-glitch neon-glitch--always"
+                            data-text={t("achievements")}
+                          >
+                            {t("achievements")}
+                          </h2>
 
-                            <div className="flex flex-col">
-                              <div
-                                className="neon-glitch neon-glitch--always text-2xl"
-                                data-text={login}
-                              >
-                                {login}
+                          <div className="flex flex-col gap-3 text-lg">
+                            <p>
+                              {t("played_ai_game")}:{" "}
+                              {currentUserSuccess1 ? (
+                                <span className="text-green-400">✓</span>
+                              ) : (
+                                <span className="text-red-400">✗</span>
+                              )}
+                            </p>
+
+                            <p>
+                              {t("won_ai_game")}:{" "}
+                              {currentUserSuccess2 ? (
+                                <span className="text-green-400">✓</span>
+                              ) : (
+                                <span className="text-red-400">✗</span>
+                              )}
+                            </p>
+
+                            <p>
+                              {t("lost_ai_game")}:{" "}
+                              {currentUserSuccess3 ? (
+                                <span className="text-green-400">✓</span>
+                              ) : (
+                                <span className="text-red-400">✗</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* RIGHT — AVATAR + XP */}
+                        <div className="flex flex-col gap-6">
+                          {/* AVATAR / IDENTITY */}
+                          <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
+                            <div className="flex items-center gap-6">
+                              <img
+                                src={avatar || DEFAULT_AVATAR}
+                                className="w-28 h-28 rounded-full object-cover neon-border"
+                              />
+
+                              <div className="flex flex-col">
+                                {isEditingLogin ? (
+                                  <div className="flex flex-col gap-2">
+                                    <input
+                                      value={editLogin}
+                                      onChange={(e) =>
+                                        setEditLogin(e.target.value)
+                                      }
+                                      className="px-2 py-1 rounded bg-black/60 neon-border text-cyan-300"
+                                    />
+
+                                    <div className="flex gap-2 text-sm">
+                                      <button
+                                        onClick={handleLoginChange}
+                                        className="px-2 py-1 neon-border text-green-400"
+                                      >
+                                        Save
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setEditLogin(login);
+                                          setIsEditingLogin(false);
+                                        }}
+                                        className="px-2 py-1 neon-border text-red-400"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2">
+                                    {/* LOGIN DISPLAY */}
+                                    <div
+                                      className="neon-glitch neon-glitch--always text-2xl"
+                                      data-text={login}
+                                    >
+                                      {login}
+                                    </div>
+
+                                    {/* EDIT BUTTON */}
+                                    <button
+                                      onClick={() => setIsEditingLogin(true)}
+                                      title="Edit nickname"
+                                      className="ml-1 cursor-pointer neon-border px-1 py-0.5"
+                                    >
+                                      ✎
+                                    </button>
+                                  </div>
+                                )}
+
+                                <label className="mt-2 inline-block cursor-pointer neon-border px-2 py-1 text-sm hover:underline">
+                                  {t("changeavatar")}
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleAvatarChange}
+                                    className="hidden"
+                                  />
+                                </label>
                               </div>
-
-                              <label className="mt-2 inline-block cursor-pointer neon-border px-2 py-1 text-sm hover:underline">
-                                {t("changeavatar")}
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={handleAvatarChange}
-                                  className="hidden"
-                                />
-                              </label>
                             </div>
                           </div>
-                        </div>
 
-                        {/* XP / LEVEL */}
-                        <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
-                          <p className="text-xl">
-                            {t("level")}: {Math.floor(currentUserXp / 100)}
-                          </p>
-                          <p className="text-sm opacity-80">
-                            {t("xp")}: {currentUserXp % 100} / 100
-                          </p>
+                          {/* XP / LEVEL */}
+                          <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
+                            <p className="text-xl">
+                              {t("level")}: {Math.floor(currentUserXp / 100)}
+                            </p>
+                            <p className="text-sm opacity-80">
+                              {t("xp")}: {currentUserXp % 100} / 100
+                            </p>
 
-                          <div className="mt-3 w-full h-3 bg-gray-700 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-cyan-400"
-                              style={{ width: `${currentUserXp % 100}%` }}
-                            />
+                            <div className="mt-3 w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-cyan-400"
+                                style={{ width: `${currentUserXp % 100}%` }}
+                              />
+                            </div>
                           </div>
+                          <GameHistory matches={myMatches} />
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              </ProtectedRoute>
             }
           />
 
@@ -2011,126 +2580,41 @@ export default function App() {
   ======================================================================================
   ======================================================================================*/}
 
-          <Route path="/leaderboard" element={<LeaderboardPage />} />
-
-          {/*=====================================================================================
-  ======================================================================================
-  ==================================== PRIVACY POLICY ==================================
-  ======================================================================================
-  ======================================================================================*/}
-
           <Route
-            path="/privacy"
+            path="/leaderboard"
             element={
-              <div
-                className="fixed inset-0 flex flex-col items-center bg-black/80 p-8 pt-[200px]
-            text-cyan-300 z-30"
-              >
-                <h1 className="text-3xl mb-4 neon-glitch neon-glitch--always">
-                  {t("privacy")}
-                </h1>
-                <p className="max-w-3xl text-sm leading-relaxed text-center">
-                  {t("p1")}
-                  <br />
-                  <br />
-                  {t("p2")}
-                  <br />
-                  <br />
-                  {t("p3")}
-                  <br />
-                  <br />
-                  {t("p4")}
-                  <br />
-                  <br />
-                  {t("p5")}
-                  <br />
-                  <br />
-                  {t("p6")}
-                  <br />
-                  <br />
-                  {t("p7")}
-                  <br />
-                  <br />
-                  {t("p8")}
-                </p>
-                <button
-                  className="mt-6 neon-border px-4 py-1"
-                  onClick={() => navigate(-1)}
-                >
-                  {t("back")}
-                </button>
-              </div>
-            }
-          />
-
-          {/*=====================================================================================
-  ======================================================================================
-  =================================== TERMS OF SERVICE =================================
-  ======================================================================================
-  ======================================================================================*/}
-
-          <Route
-            path="/terms"
-            element={
-              <div
-                className="fixed inset-0 flex flex-col items-center bg-black/80 p-8 pt-[200px]
-            text-cyan-300 z-30"
-              >
-                <h1 className="text-3xl mb-4 neon-glitch neon-glitch--always">
-                  {t("terms")}
-                </h1>
-                <p className="max-w-3xl text-sm leading-relaxed text-center">
-                  {t("t1")}
-                  <br />
-                  <br />
-                  {t("t2")}
-                  <br />
-                  <br />
-                  {t("t3")}
-                  <br />
-                  <br />
-                  {t("t4")}
-                  <br />
-                  <br />
-                  {t("t5")}
-                  <br />
-                  <br />
-                  {t("t6")}
-                  <br />
-                  <br />
-                  {t("t7")}
-                  <br />
-                  <br />
-                  {t("t8")}
-                </p>
-                <button
-                  className="mt-6 neon-border px-4 py-1 relative z-[1001]"
-                  onClick={() => navigate(-1)}
-                >
-                  {t("back")}
-                </button>
-              </div>
+              <ProtectedRoute>
+                <LeaderboardPage />
+              </ProtectedRoute>
             }
           />
         </Routes>
       </main>
       <footer className="mt-auto w-full py-4 flex justify-center text-xs sm:text-sm text-cyan-300">
         <div className="flex gap-2 neon-glitch text-center">
-          <Link to="/privacy">{t("privacy")}</Link>
-          <span>|</span>
-          <Link to="/terms">{t("terms")}</Link>
+          <button onClick={() => setShowPrivacy(true)}>{t("privacy")}</button>
+
+          <span> | </span>
+
+          <button onClick={() => setShowTerms(true)}>{t("terms")}</button>
         </div>
       </footer>
+
       {showGameSetup && (
         <GameSetup
           onStart={(playersConfig) => {
             setSetupPlayers(playersConfig);
             setShowGameSetup(false);
-            navigate("/game/pong");
+            navigate("/game");
+            startGameCountdown();
           }}
           onClose={() => setShowGameSetup(false)}
         />
       )}
+
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
+
+      {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
     </div>
   );
 }

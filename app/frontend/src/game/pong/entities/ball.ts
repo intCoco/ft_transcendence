@@ -1,7 +1,7 @@
 import { game } from "../core/state.js";
-import { GAME_HEIGHT, GAME_WIDTH, GameState } from "../core/constants.js";
-import { leftPaddle, rightPaddle } from "./paddle.js";
-import { leftController, rightController } from "../game.js";
+import { GameState, MAX_POINTS } from "../core/constants.js";
+import { bottomPaddle, leftPaddle, rightPaddle, topPaddle } from "./paddle.js";
+import { bottomController, endGame, leftController, rightController, topController } from "../game.js";
 import { AIController } from "../controllers/aiController.js";
 import { gameConfig } from "../modifiers/modifiers.js";
 import { applySpin } from "../modifiers/spin.js";
@@ -20,8 +20,8 @@ export interface Ball {
 }
 
 export const ball: Ball = {
-    x: GAME_WIDTH / 2,
-    y: GAME_HEIGHT / 2,
+    x: game.width / 2,
+    y: game.height / 2,
     prevX: 0,
     prevY: 0,
     radius: 8,
@@ -47,8 +47,32 @@ export function updateBall(now: number, delta: number) {
     handleLeftRightCollision(gameConfig.modifiers);
 }
 
-export function resetBall(scorer: "left" | "right") {
-    ball.x = scorer === "left" ? rightPaddle.x - 4 * rightPaddle.width : leftPaddle.x + leftPaddle.width + 4 * leftPaddle.width;
+export function resetBall(side: "left" | "right" | "top" | "bottom") {
+    for (const controller of [leftController, rightController, topController, bottomController]) {
+        if (controller.score >= MAX_POINTS || game.gameTimer <= 0) {
+            endGame();
+            if (game.isGameOver) return;
+        }
+    }
+    if (side === "top") {
+        ball.y = topPaddle.y + topPaddle.height + 4 * topPaddle.height;
+        game.lastHitPaddle = topPaddle;
+    }
+    else if (side === "bottom") {
+        ball.y = bottomPaddle.y - 4 * bottomPaddle.height;
+        game.lastHitPaddle = bottomPaddle;
+    }
+    else if (side === "right") {
+        ball.x = rightPaddle.x - 4 * rightPaddle.width;
+        game.lastHitPaddle = rightPaddle;
+    }
+    else if (side === "left") { 
+        ball.x = leftPaddle.x + leftPaddle.width + 4 * leftPaddle.width;
+        game.lastHitPaddle = leftPaddle;
+    }
+
+    if (side === "left" || side === "right") ball.y = game.height / 2;
+    else ball.x = game.width / 2;
 
     if (leftController instanceof AIController) {
         leftController.state.wantsSpin = false;
@@ -59,18 +83,22 @@ export function resetBall(scorer: "left" | "right") {
         rightController.state.spinDir = false;
     }
 
-    ball.y = GAME_HEIGHT / 2;
+    if (game.mode === "2P" || side === "left" || side === "right") {
+        ball.velX = (game.mode === "2P" ? 300 : 255) * (side === "left" ? 1 : -1);
+        ball.velY = (Math.random() < 0.5 ? -1 : 1) * (game.mode === "2P" ? 210 : 255);
+    } else {
+        ball.velY = 300 * (side === "top" ? 1 : -1);
+        ball.velX = (Math.random() < 0.5 ? -1 : 1) * 300;
+    }
 
-    const direction = scorer === "left" ? -1 : 1;
-
-    ball.velX = 300 * direction;
-    ball.velY = (Math.random() < 0.5 ? -1 : 1) * 210;
     ball.speedCoef = 1;
     ball.spin = 0;
+    game.penultimateHitPaddle = undefined;
+
+    game.ctx!.fillStyle = "#0a0214";
+    game.ctx!.fillRect(0, 0, game.canvasWidth, game.canvasHeight);
 
     game.serveTimer = 3;
     game.state = GameState.SERVE;
 }
 
-
-// export let ball: Ball;
