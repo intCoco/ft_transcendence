@@ -2,8 +2,8 @@
   "connection": "𝕊𝔼 ℂ𝕆ℕℕ𝔼ℂ𝕋𝔼ℝ ➣",
   "subscribe": "𝕊'𝕀ℕ𝕊ℂℝ𝕀ℝ𝔼 ➢",
   "badcreditentials": "Identifiants incorrects",
-  "welcomeback": "𝔹𝕀𝔼ℕ𝕍𝔼ℕ𝕌𝔼 ⫸",
-  "welcome": "𝔹𝕀𝔼ℕ𝕍𝔼ℕ𝕌𝔼 ⫸",
+  "welcomeback": "𝔹𝕀𝔼ℕ𝕍𝔼ℕ𝕌𝔼",
+  "welcome": "𝔹𝕀𝔼ℕ𝕍𝔼ℕ𝕌𝔼",
   "logout": "𝔻𝔼ℂ𝕆ℕℕ𝔼𝕏𝕀𝕆ℕ",
   "play": "𝕁𝕆𝕌𝔼ℝ",
   "profile": "ℙℝ𝕆𝔽𝕀𝕃",
@@ -104,5 +104,7 @@
   "created_account": "Compte créé !",
   "serv_error": "Erreur serveur",
   "customAvatar": "🔒 Avatar personnalisable au niveau 5",
-  "invalid_nickname": "Pseudo invalide"
+  "invalid_nickname": "Pseudo invalide",
+  "invalid_pswd": "Mot de passe invalide",
+  "invalid_email": "Email invalide"
 }

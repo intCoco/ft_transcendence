@@ -18,8 +18,8 @@ services:
     build: ./backend
     image: back
     restart: always
-    environment:
-      DATABASE_URL: file:/app/backend/prisma/dev.db
+    env_file:
+      - "./backend/.env"
     volumes:
       - backend_db:/app/backend/prisma
       - ./certs:/certs:ro

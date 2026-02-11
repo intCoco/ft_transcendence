@@ -20,8 +20,8 @@ module.exports = async function (fastify) {
     }
 
     try {
-      const XP_FOR_WIN = 60;
-      const XP_FOR_LOSS = 40;
+      const XP_FOR_WIN = 500;
+      const XP_FOR_LOSS = 500;
 
       const currentUser = await prisma.user.findUnique({
         where: { id: userId },

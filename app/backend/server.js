@@ -1,6 +1,7 @@
 const Fastify = require("fastify");
 const cors = require("@fastify/cors");
 const websocketPlugin = require("@fastify/websocket");
+require('dotenv').config()
 
 /* ===========================
    BOOTSTRAP SERVER
@@ -15,7 +16,7 @@ async function start() {
   // allow frontend requests from the browser (CORS)
   // "origin: true" allows requests from any origin (browser only)
   await fastify.register(cors, {
-    origin: true,
+    origin: process.env.FRONT_URL,
     allowedHeaders: ["Content-Type", "Authorization"],
   });
 
