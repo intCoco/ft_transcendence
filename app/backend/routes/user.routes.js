@@ -190,7 +190,7 @@ module.exports = async function (fastify) {
 
     if (
       typeof nickname !== "string" ||
-      nickname.trim().length < 3 ||
+      nickname.trim().length < 1 ||
       nickname.trim().length > 15
     ) {
       return reply.code(400).send({ message: "INVALID_NICKNAME" });

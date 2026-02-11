@@ -856,7 +856,7 @@ export default function App() {
     });
 
     if (!res.ok) {
-      notify("Nickname update failed");
+      notify(t("invalid_nickname"));
       return;
     }
 

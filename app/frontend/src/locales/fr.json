@@ -103,5 +103,6 @@
   "already_used_email": "Email déjà utilisé",
   "created_account": "Compte créé !",
   "serv_error": "Erreur serveur",
-  "customAvatar": "🔒 Avatar personnalisable au niveau 5"
+  "customAvatar": "🔒 Avatar personnalisable au niveau 5",
+  "invalid_nickname": "Pseudo invalide"
 }
