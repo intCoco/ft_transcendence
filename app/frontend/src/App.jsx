@@ -7,8 +7,8 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Routes,
   Route,
+  Navigate,
   useNavigate,
-  Link,
   useLocation,
   useParams,
 } from "react-router-dom";
@@ -35,15 +35,8 @@ import { t } from "i18next";
 import LeaderboardPage from "./LeaderboardPage";
 
 
-
-
-const hasToken = () => {
-  return Boolean(localStorage.getItem(AUTH_KEY));
-};
-
 function ProtectedRoute({ children }) {
   const location = useLocation();
-
   const token = localStorage.getItem(AUTH_KEY);
 
   if (!token) {
@@ -502,7 +495,16 @@ export default function App() {
   // Fonction pour changer de langue
   const changeLanguage = (lng) => {
     i18n.changeLanguage(lng);
+    localStorage.setItem("lang", lng);
   };
+
+  // restore language saved (anti refresh)
+  useEffect(() => {
+    const savedLang = localStorage.getItem("lang");
+    if (savedLang) {
+      i18n.changeLanguage(savedLang);
+    }
+  }, []);
 
   /* UI states / interaction :
         context menu management, side chat, tabs, notifications*/
@@ -592,6 +594,9 @@ export default function App() {
   const [currentUserSuccess2, setCurrentUserSuccess2] = useState(false);
   const [currentUserSuccess3, setCurrentUserSuccess3] = useState(false);
 
+  //handle avatar for level
+  const level = Math.floor(currentUserXp / 100);
+
   /* Check if this is you */
   const meId = Number(localStorage.getItem(USER_ID_KEY));
   const isMe = selectedUser?.id === meId;
@@ -667,29 +672,35 @@ export default function App() {
   const BACKGROUNDS = [
     "/images/enter.jpg",
     "/images/sun.png",
-    "/images/japan2.jpg",
     "/images/abstract.png",
     "/images/manwork.png",
     "/images/pacman.png",
     "/images/womanwork.png",
     "/images/roundenter.png",
     "/images/neonbh.png",
-    "/images/worldtech.png",
     "/images/abstract2.png",
     "/images/womanview.png",
-    "/images/enterdisk.png",
     "/images/manwork2.png",
     "/images/womanwork2.png",
     "/images/enter2.png",
     "/images/entertriangle.png",
     "/images/datacenter.png",
-    "/images/abstract3.png",
     "/images/manwork3.png",
-    "/images/datacenter2.png",
     "/images/miner.png",
-    "/images/arcade.png",
     "/images/purpleplanet.png",
     "/images/vaisseau.png",
+    "/images/neon1.png",
+    "/images/neon2.png",
+    "/images/neon3.png",
+    "/images/neon4.png",
+    "/images/neon5.png",
+    "/images/neon6.png",
+    "/images/neon7.png",
+    "/images/neon8.png",
+    "/images/neon9.png",
+    "/images/neon10.png",
+    "/images/neon11.png",
+    "/images/neon12.png"
   ];
 
   /* ================================================================================= */
@@ -787,7 +798,7 @@ export default function App() {
     reader.onload = async () => {
       const avatarBase64 = reader.result;
 
-      await fetch("/api/user/me/avatar", {
+      const res = await fetch("/api/user/me/avatar", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -795,6 +806,11 @@ export default function App() {
         },
         body: JSON.stringify({ avatar: avatarBase64 }),
       });
+
+      if (!res.ok) {
+        notify(t("avatar_locked"));
+        return;
+      }
 
       setAvatar(avatarBase64);
     };
@@ -840,7 +856,7 @@ export default function App() {
     });
 
     if (!res.ok) {
-      notify("Nickname update failed");
+      notify(t("invalid_nickname"));
       return;
     }
 
@@ -921,8 +937,12 @@ export default function App() {
     }, 800);
   };
 
-  //
-  //
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ============================== CLEAN IF NOT AUTHED ============================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   useEffect(() => {
     if (!isAuthed) {
       setShowChat(false);
@@ -935,8 +955,7 @@ export default function App() {
       setMessages({});
     }
   }, [isAuthed]);
-  //
-  //
+
   /* ================================================================================= */
   /* ================================================================================= */
   /* ================================ GAME COUNTDOWN ================================= */
@@ -960,37 +979,38 @@ export default function App() {
     }, 1000);
   };
 
-  //
-  //
-  //
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== CLOSE WEBSOCKET ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
+  //when they leave with the cross, avoid zombie connections
   useEffect(() => {
-    const handleUnload = () => {
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
-    };
+    const handleUnload = () => wsRef.current?.close();
 
-    window.addEventListener("beforeunload", handleUnload);
+    //"unload" is a window event
     window.addEventListener("unload", handleUnload);
-
-    return () => {
-      window.removeEventListener("beforeunload", handleUnload);
-      window.removeEventListener("unload", handleUnload);
-    };
+    return () => window.removeEventListener("unload", handleUnload);
   }, []);
-//
-//
-  //
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== HANDLE SHOWCHAT ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   useEffect(() => {
     if (!showChat || userTab !== "friends") return;
 
+    //retrieve the friends list
     fetch("/api/friends", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
       },
     })
       .then((res) => res.json())
+      //protect react state against invalid data
       .then((data) => {
         setFriends(Array.isArray(data) ? data : []);
       })
@@ -1012,8 +1032,10 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => {
         const meId = Number(localStorage.getItem(USER_ID_KEY));
+        //copy data in userswithme (with ...)
         const usersWithMe = [...data];
 
+        //sometimes /api/users doesn't include you yet
         if (!usersWithMe.some((u) => u.id === meId)) {
           usersWithMe.push({
             id: meId,
@@ -1022,6 +1044,7 @@ export default function App() {
           });
         }
 
+        //retains the real-time information already received
         setUsers((prev) => {
           const prevMap = new Map(prev.map((u) => [u.id, u]));
 
@@ -1033,13 +1056,15 @@ export default function App() {
       })
       .catch(() => setUsers([]));
 
+    //wss if https, ws if http, just a guard, always https
     const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-
+    //keep the same socket between renders thanks to useRef
     const ws = new WebSocket(
       `${protocol}://${window.location.host}/api/ws?token=${token}`,
     );
     wsRef.current = ws;
 
+    //sends the current state
     ws.onopen = () => {
       ws.send(JSON.stringify({ type: "WHO_IS_ONLINE" }));
 
@@ -1053,6 +1078,7 @@ export default function App() {
       .catch(() => setUsers([]));
     };
 
+    //each box corresponds to an event
     ws.onmessage = (event) => {
       const msg = JSON.parse(event.data);
 
@@ -1156,23 +1182,24 @@ export default function App() {
       if (wsRef.current === ws) wsRef.current = null;
     };
 
+    //if isAuthed became false
     return () => {
       ws.close();
     };
   }, [isAuthed]);
 
-  //
-  //
-  //
+
+  //user options visible is show chat is true
   useEffect(() => {
     isChatVisibleRef.current = Boolean(showChat && activeChatUser);
   }, [showChat, activeChatUser]);
 
-  //
-  //
+
+  //chat panel open and “Requests” tab selected
   useEffect(() => {
     if (!showChat || userTab !== "requests") return;
 
+    //retrieve pending friend requests
     fetch("/api/friends/requests", {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
@@ -1181,9 +1208,12 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => {
         setFriendRequests((prev) => {
+          //fetched = request from server
           const fetched = Array.isArray(data) ? data : [];
+          //prev = requests already known (WS)
           const merged = [...prev];
 
+          //only add the new ones
           fetched.forEach((u) => {
             if (!merged.some((p) => p.id === u.id)) {
               merged.push(u);
@@ -1194,10 +1224,13 @@ export default function App() {
         });
       });
   }, [showChat, userTab]);
-  //
-  //
-  //
-  //BLACKLIST
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== CATCH BLACKLIST ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   useEffect(() => {
     if (!showChat) return;
 
@@ -1212,9 +1245,8 @@ export default function App() {
       })
       .catch(() => setBlockedUsers([]));
   }, [showChat]);
-  //
-  //
-  //
+
+  //scroll until the very last message
   useEffect(() => {
     if (!activeChatUser) return;
 
@@ -1222,9 +1254,12 @@ export default function App() {
       behavior: "smooth",
     });
   }, [messages, activeChatUser]);
-  //
-  //
-  //
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== HANDLE SUCCESS ================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   useEffect(() => {
     if (!isAuthed || !authUserId) return;
@@ -1252,7 +1287,11 @@ export default function App() {
     fetchCurrentUserProfile();
   }, [isAuthed, authUserId, location.pathname]); // Added location.pathname to dependencies
 
+
+  //some = return boleean
+  //isFriend(id) → Is this user already your friend?
   const isFriend = (id) => friends.some((f) => f.id === id);
+  //isPending(id) → Is a request pending?
   const isPending = (id) => friendRequests.some((r) => r.id === id);
 
   const openUserMenu = (e, user) => {
@@ -1263,9 +1302,16 @@ export default function App() {
 
   const closeUserMenu = () => setSelectedUser(null);
 
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== PRIVATE MESSAGE ================================= */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   const handleDM = async () => {
     const token = localStorage.getItem(AUTH_KEY);
 
+    //fetch historical
     const res = await fetch(`/api/messages/${selectedUser.id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -1289,6 +1335,12 @@ export default function App() {
     closeUserMenu();
   };
 
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== INVITE TO PLAY ================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   const handleInvite = () => {
     if (!wsRef.current || !selectedUser) return;
 
@@ -1300,10 +1352,16 @@ export default function App() {
       })
     );
 
-    // startGameCountdown();
+    // startGameCountdown(); optionnal
     notify(t("inviteSent", { user: selectedUser.nickname }));
     closeUserMenu();
   };
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== REQUEST FRIEND ================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   const handleSendFriendRequest = async () => {
     await fetch(`/api/friends/request/${selectedUser.id}`, {
@@ -1313,9 +1371,14 @@ export default function App() {
       },
     });
 
-    //notify("Friend request sent");
     closeUserMenu();
   };
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== ACCEPT FRIEND =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   const handleAcceptFriend = async (userId) => {
     await fetch(`/api/friends/accept/${userId}`, {
@@ -1325,9 +1388,15 @@ export default function App() {
       },
     });
 
-    // enlève la notif localement
+    //clean UI
     setFriendRequests((prev) => prev.filter((req) => req.id !== userId));
   };
+
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== REFUSE FRIEND =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   const handleRefuseFriend = async (userId) => {
     await fetch(`/api/friends/refuse/${userId}`, {
@@ -1340,6 +1409,12 @@ export default function App() {
     setFriendRequests((prev) => prev.filter((u) => u.id !== userId));
   };
 
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* =============================== REMOVE FRIEND =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
+
   const handleRemoveFriend = async () => {
     await fetch(`/api/friends/${selectedUser.id}`, {
       method: "DELETE",
@@ -1351,15 +1426,11 @@ export default function App() {
     closeUserMenu();
   };
 
-  const handleBlock = async () => {
-    await fetch(`/api/user/${selectedUser.id}/block`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-      },
-    });
-    closeUserMenu();
-  };
+  /* ================================================================================= */
+  /* ================================================================================= */
+  /* ===============================  HANDLE BADGE =================================== */
+  /* ================================================================================= */
+  /* ================================================================================= */
 
   const handleBackFromChat = () => {
     setUnread((prev) => {
@@ -1387,7 +1458,7 @@ export default function App() {
       return null;
     }
 
-    // FETCH PROFIL UNIQUEMENT SI PAS MOI
+    // FETCH only when is not me
     useEffect(() => {
       fetch(`/api/users/${id}/profile`, {
         headers: {
@@ -1545,7 +1616,7 @@ export default function App() {
         <button
           className="neon-glitch neon-glitch--hover text-2xl px-2 py-0 bg-transparent rounded neon-border"
           data-text="🇮🇹"
-          onClick={() => i18n.changeLanguage("it")}
+          onClick={() => changeLanguage("it")}
         >
           🇮🇹
         </button>
@@ -1553,7 +1624,7 @@ export default function App() {
         <button
           className="neon-glitch neon-glitch--hover text-2xl px-2 py-0 bg-transparent rounded neon-border"
           data-text="🇬🇧"
-          onClick={() => i18n.changeLanguage("en")}
+          onClick={() => changeLanguage("en")}
         >
           🇬🇧
         </button>
@@ -1562,11 +1633,12 @@ export default function App() {
           className="neon-glitch neon-glitch--hover text-2xl px-2 py-0 bg-transparent rounded neon-border"
           data-text="🇫🇷"
           onClick={() => {
-            i18n.changeLanguage("fr");
+            changeLanguage("fr");
           }}
         >
           🇫🇷
         </button>
+
         {showConnectedUI && (
           <button
             className="neon-glitch neon-glitch--hover text-2xl px-2 py-0 bg-transparent rounded neon-border"
@@ -1751,7 +1823,7 @@ export default function App() {
               <form
                 //"form" to take advantage of native submit functionality
                 className="p-3 border-t border-cyan-500/30 flex gap-2"
-                //e = l’événement de soumission du formulaire
+                //e = the form submission event
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!chatInput.trim()) return;
@@ -1919,6 +1991,7 @@ export default function App() {
                 setBlockedUsers((prev) =>
                   prev.filter((u) => u.id !== selectedUser.id),
                 );
+                wsRef.current?.send(JSON.stringify({ type: "WHO_IS_ONLINE" }));
                 closeUserMenu();
               }}
               className="block w-full px-2 py-1 hover:bg-green-600/30 text-left text-green-400"
@@ -1935,7 +2008,8 @@ export default function App() {
   ======================================================================================
   ======================================================================================*/}
 
-      <main className="flex-1 flex flex-col">
+      <main className={`flex-1 flex flex-col transition-all duration-200
+                  ${showChat ? "ml-[300px]" : ""}`}>
         <Routes>
           <Route
             path="/"
@@ -2164,7 +2238,7 @@ export default function App() {
                   {t("background")}
                 </h1>
 
-                <div className="grid grid-cols-6 gap-6 mt-[8vh]">
+                <div className="grid grid-cols-7 gap-6 mt-[8vh]">
                   {BACKGROUNDS.map((bg) => (
                     <button
                       key={bg}
@@ -2342,16 +2416,21 @@ export default function App() {
                                   </button>
                                 </div>
                               )}
-
-                              <label className="mt-2 inline-block cursor-pointer neon-border px-2 py-1 text-sm hover:underline">
-                                {t("changeavatar")}
-                                <input
-                                  type="file"
-                                  accept="image/*"
-                                  onChange={handleAvatarChange}
-                                  className="hidden"
-                                />
-                              </label>
+                              {level >= 5 ? (
+                                <label className="mt-2 inline-block cursor-pointer neon-border px-2 py-1 text-sm hover:underline">
+                                  {t("changeavatar")}
+                                  <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleAvatarChange}
+                                    className="hidden"
+                                  />
+                                </label>
+                                ) : (
+                                <p className="mt-2 text-xs text-red-400">
+                                  {t("customAvatar")}
+                                </p>
+                                )}
                             </div>
                           </div>
                         </div>
@@ -2388,9 +2467,8 @@ export default function App() {
 
           <Route path="/leaderboard" element={
             <ProtectedRoute>
-            <LeaderboardPage />
+              <LeaderboardPage />
             </ProtectedRoute>} />
-
 
         </Routes>
       </main>

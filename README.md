@@ -1,113 +1,194 @@
-This project has been created as part of the 42 curriculum by bboussad, chuchard, nihamdan and aldalmas.
+*This project has been created as part of the 42 curriculum by bboussad, chuchard, nihamdan, aldalmas.*
 
 
 # Team Information:
-    chuchard (Tech Game Designer)
-        Responsible for the game logic, gameplay mechanics, level design and Pong implementation (1v1 and 1v1v1v1 versions). Added an AI Opponent and some game settings for more fun and difficulty.
+    chuchard - Game Director & Solo Game Developer, Gameplay Programmer, QA Tester
+        Responsible for designing and developing the entire Pong game, including gameplay mechanics, rules, AI opponent, 1v1 and 1v1v1v1 multiplayer modes, and defining the visual design and overall player experience.
 
-    bboussad (Project Manager, Fullstack developer, Q & A tester)
-        Responsible for the UI, UX, client-side interactions and handle some connection with the back. Set deadlines, meetings and somes quality tests.
+    bboussad - Project Manager, Fullstack developer, QA Tester
+        Responsible for the UI, UX, client-side interactions and handle some connection with the back. Set deadlines, meetings and some quality tests.
 
-    aldalmas (Project Owner, Backend and Infrastructure Developer, Q & A tester)
+    aldalmas - Project Owner, Backend and Infrastructure Developer, QA Tester
         Responsible for authentication, database, WebSockets, Docker infrastructure and Readme update. Realized design proposition and a lot of quality tests.
 
-    nihamdan (Fullstack Developer)
-        Reponsive of the user experience outside the game, achievement, xp, leaderboard and handled the app traduction in italian, english and french.
+    nihamdan - Fullstack Developer
+        Responsible for the user experience outside the game, achievements, XP, leaderboard and handled the app translation in Italian, English and French.
     
 
 # Description of ft_transcendence project
-    Transcendence is a group project (4-5 people), which is intended to boost your creativity, self-confidence, adaptability to new technologies, and teamwork skills. You’ll create a real-world web application as a team that can move in many directions, depending on the modules you choose and the choices you make. Make sure to think things through together as a team before you start.
-    The project is divided into two parts:
-    • The mandatory part, which is the fixed core of the project to which every team member must contribute.
-    • A set of modules, which you can choose and which count toward the final grade.
+    ft_transcendence is a real-time web application centered around a multiplayer Pong game.
+    Users can register, manage their profile, add friends, and interact through a live chat system.
+    The platform supports local matches in 1v1 and multiplayer modes (up to 4 players), as well as games against an AI opponent.
+    The application includes matchmaking through chat invitations, game customization options,
+    a progression system with XP, achievements, and leaderboards, and real-time synchronization
+    using WebSockets.
+    The project is designed to run locally using Docker containers and is not deployed online.
+    All services are accessible through localhost and secured with HTTPS.
+     
+
 
 
 # Resources
-    
+    - HTML doc: https://developer.mozilla.org/fr/docs/Web/HTML
+    - CSS doc: https://developer.mozilla.org/fr/docs/Web/CSS
+    - JavaScript doc: https://devdocs.io/javascript/ and https://developer.mozilla.org/fr/docs/Web/JavaScript
+    - Fastify doc: https://fastify.dev/
+    - React doc: https://react.dev/learn
+    - Prisma doc: https://www.prisma.io/docs
+    - Tailwind CSS doc: https://tailwindcss.com/docs
+    - bcrypt doc: https://www.npmjs.com/package/bcryptjs
+    - Websocket doc: https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API
+    - Previous 42 project "Inception" for Docker, Nginx, and containerization concepts
+    - Stack Overflow (for specific technical issues)
+    - YouTube tutorials (for general understanding of some technologies)
+
+    - AI usage:
+        - documentation
+        - clarification of the project requirements
+        - structuring the README
+        - translation
+        - help understand and debug certain code-related issues
 
 
-# Instructions for run this project
-1. Past the .env in app/backend/
-2. Past certs/ in app/backend/
+# Instructions to run this project
+1. Paste the .env in app/backend/
+2. Paste certs/ in app/backend/
 3. make
+4. Go to https://127.0.0.1:8443/ on any browser
 
-If it dosent work, you may need to try this:
+If it doesn't work, you may need to try this:
 
-4. Past keys: sudo cp cert.pem /usr/local/share/ca-certificates/localhost.crt
-5. Install node_modules/: cd /app/backend/ && npm install 
-6. Same here: cd /app/frontend/ && npm install
-7. Allow certs: sudo update-ca-certificates
-
-# General requirements
-    - The project must be a web application, and requires a frontend, backend, and a database.
-    - Git must be used with clear and meaningful commit messages. The repository must show:
-        ◦ Commits from all team members.
-        ◦ Clear commit messages describing the changes.
-        ◦ Proper work distribution across the team.
-    - Deployment must use a containerization solution (Docker, Podman, or equivalent) and run with a single command.
-    - Your website must be compatible with the latest stable version of Google Chrome.
-    - No warnings or errors should appear in the browser console.
-    - The project must include accessible Privacy Policy and Terms of Service pages with relevant content.
-    - Privacy policy and Terms of Service: easily accessible, contain relevent and appropriate content for your project, not be placeholder or empty page.
-    - Multi-user Support: must support multiple users simultaneously. They should be able to interact with the application at the same time without conflicts or performances issues, that includes:
-        • Multiple users can be logged in and active at the same time.
-        • Concurrent actions by different users are handled properly.
-        • Real-time updates are reflected across all connected users when applicable.
-        • No data corruption or race conditions occur with simultaneous user actions.
+5. Paste keys: sudo cp cert.pem /usr/local/share/ca-certificates/localhost.crt
+6. Install node_modules/: cd /app/backend/ && npm install 
+7. Same here: cd /app/frontend/ && npm install
+8. Allow certs: sudo update-ca-certificates
     
-# Technical requirement
-    This section, like the previous one, is mandatory. You will then be able to choose the modules you want to use in the next chapter.
-        • A frontend that is clear, responsive, and accessible across all devices.
-        • Use a CSS framework or styling solution of your choice (e.g., Tailwind CSS, Bootstrap, Material-UI, Styled Components, etc.).
-        • Store credentials (API keys, environment variables, etc.) in a local .env file that is ignored by Git, and provide an .env.example file.
-        • The database must have a clear schema and well-defined relations.
-        • Your application must have a basic user management system. Users must be able to sign up and log in securely:
-            ◦ At minimum: email and password authentication with proper security (hashed passwords, salted, etc.).
-            ◦ Additional authentication methods (OAuth, 2FA, etc.) can be implemented via modules.
-        • All forms and user inputs must be properly validated in both the frontend and backend.
-        • For the backend, HTTPS must be used everywhere.
 
 # Project Management
 Each member indicated which module they were interested in and then began working semi-independently, providing regular updates and sharing current issues that we resolved together. We all used GitHub, Trello and Discord for communication.
 
 
-# Technical stack (WIP)
+# Technical Stack
     Frontend
-        -> Tailwind CSS:
-        -> React: 
+    - React: builds a component-based user interface and manages application state.
+    - React Router DOM: handles client-side routing, navigation, and protected routes.
+    - Tailwind CSS: utility-first CSS framework used for responsive and consistent styling.
+    - i18next / react-i18next: manages internationalization and dynamic language switching.
+    - HTML5 Canvas API: renders the Pong game directly in the browser.
+    - WebSocket API: enables real-time communication with the backend.
+    - Fetch API: performs HTTP requests to the backend REST API.
+    - LocalStorage API: stores authentication tokens and user session data on the client.
+    
     Backend
-        -> bcrypt: for hash and salt the password for maximum security.
-        -> fastify:  
-    Database system
-        -> Prisma (ORM): clear errors, good with SQlite and easy to use because it's a simulated POO database. 
+    - Node.js: JavaScript runtime environment used to run the backend server.
+    - Fastify: web framework used to handle HTTP requests, routing, and middleware.
+    - @fastify/websocket: adds WebSocket support to Fastify for real-time features.
+    - @fastify/cors: manages Cross-Origin Resource Sharing configuration.
+    - Prisma ORM: defines the database schema and provides structured database access.
+    - bcrypt: hashes and verifies user passwords securely.
+    - REST API (JSON): exposes backend endpoints for authentication, users, game results, and social features.
+    - WebSockets: handles real-time events such as chat, user presence, and game interactions.
+    
+    Database
+    - SQLite: lightweight relational database used for data persistence during development.
+    - Prisma Client: generates type-safe database queries based on the Prisma schema.
+    
+    Infrastructure
+    - Docker & Docker Compose: containerizes frontend, backend, and services to run the project with a single command.
+    - Nginx: acts as a reverse proxy and HTTPS entry point.
+    - HTTPS: ensures secure communication between client and server.
 
 
-# Database Schema (WIP)
--> -> schema.prisma : used for create the database structure. 'prisma migrate dev' cmd read the 'schema.prisma' file, generate 'migration.sql' file and apply it in a real base (dev.db file).
+# Database Schema
+    The database is managed using Prisma ORM with an SQLite backend.
+    
+    Main entities:
+        - User: authentication, profile and game statistics.
+        - Friendship: friend requests and relationships between users.
+        - Block: blocked user relationships.
+        - Message: private messages exchanged between users.
+        - UserSettings: user interface preferences.
+    
+    Relations:
+        - Users can have multiple friends, blocks and private messages.
+        - Each user has at most one settings entry.
 
-if need to change something in the db (in app/backend/prisma/schema.prisma), you must do this to update changes in app/backend/:
-    > rm prisma/dev.db (if present)
-    > rm -rf prisma/migrations
-    > npx prisma@6 migrate dev --name choose_a_migration_name
-
-if pb with db after that (e.g. impossible to register or login), reboot and update the db in container:
-    > make re
-    > docker exec -it back sh
-    > npx prisma@6 migrate dev
+    Note:
+        After add a model or modifying existing model, use "npx prisma@6 migrate dev"
 
 
-# Features list / Modules (total of 19 points, Major = 2 points, Minor = 1 point)
+# Features list
+    Core
+        User registration and authentication
+        User profile pages
+        Friends system (add / remove / online status)
+
+    Real-time & social
+        Real-time chat between users (direct message)
+        Game invitations in chat
+        User blocking
+    
+    Game
+        Web-based Pong game
+        1v1 and multiplayer (1v1v1v1)
+        AI opponent
+        Game customization before match
+    
+    Progression
+        Leaderboard and ranking
+        Achievements / XP system
+    
+    Accessibility
+        Multi-language support (EN / FR / IT)
+
+
+# Modules (total of 19 points, Major = 2 points, Minor = 1 point)
     - WEB 
-        Major = Framework front (React, Tailwind) + back (Fastify) (bbousaad, chuchard, nihamdan, aldalmas) 
+        Major = Framework front (React, Tailwind) + back (Fastify) (bbousaad, chuchard, nihamdan, aldalmas)
+            
+            - React: Using "state" is useful in this context with information that often changes.
+                        Information can be stored directly in the component, and as soon as it changes,
+                        React automatically updates the interface without reloading the page.
+                     "UseEffect" is also essential for the proper functioning of the site.
+                        It manages what happens around the component (opening/closing WebSockets,
+                        listening for events, synchronizing the front and back end).
+                     On the WebSocket side, we use "useRef" and not "useState" because changing a socket shouldn't
+                        re-render the entire UI, just like with the canvas running at 60 FPS.
+                        React shouldn't re-render every frame.
+                     We also have "React Router" which allows for smooth navigation,
+                        automatic redirects, and protected routes.
+
+            - Tailwind css:
+                    Tailwind allows you to write the style directly where the component is defined
+                    (<div className="">).
+                    Readable immediately
+                    Local to the component
+                    No dependency on a global CSS file
+                    Avoids class conflicts
+                    No CSS breaking elsewhere for no reason
+                    Easier to maintain in a large project
+
         Major = Websocket (bbousaad, aldalmas)
-        Major = Allow users to interact with others users (bbousaad, aldalmas)
+            - Websocket: REAL TIME
+                    The client sends events
+                    The server pushes events
+                    A user sends a message → the server broadcasts it instantly
+                    A player connects → friends are notified
+                    A game invitation is accepted → the game starts immediately
+                    To send player input
+                    To synchronize the game state
+                    To manage latency
+                    To prevent desynchronization
+                    
+        Major = Allow users to interact with other users (bbousaad, aldalmas)
         Minor = Use an ORM (object-relational mapping) (Prisma) (aldalmas)
+            - Prisma: 
 
     - Accessibility and Internationalization
         Minor = Support for multiple language: italian, french and english (nihamdan)
 
     - User management
-        Major = Standard user management and authentication (bbousaad, aldamas)
+        Major = Standard user management and authentication (bbousaad, aldalmas)
         Minor = Game statistics and match history (chuchard, nihamdan)
 
     - Artificial Intelligence
@@ -118,7 +199,6 @@ if pb with db after that (e.g. impossible to register or login), reboot and upda
         Major = Multiplayer game: Pong can be playing up to 4 players (chuchard)
         Minor = Advanced chat features: invite to play, block, view profile (bbousaad, aldalmas)
         Minor = Game customization: choose some settings before launching the game (chuchard)
-        
 
 
 # SEE THE DATABASE (2 ways):

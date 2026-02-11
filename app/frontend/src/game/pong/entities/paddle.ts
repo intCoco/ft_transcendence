@@ -9,13 +9,15 @@ export class Paddle {
     width: number;
     height: number;
     speed: number;
+    front: "left" | "right" | "top" | "bottom";
     orientation: "vertical" | "horizontal";
     controller: AIController | PlayerController | null = null;
 
-    constructor(x: number, y: number, orientation: "vertical" | "horizontal") {
+    constructor(x: number, y: number, orientation: "vertical" | "horizontal", front: "left" | "right" | "top" | "bottom") {
         this.x = x;
         this.y = y;
         this.orientation = orientation;
+        this.front = front;
         if (orientation === "horizontal") {
             this.width = 80;
             this.height = 15;
@@ -53,9 +55,9 @@ export class Paddle {
     }
 }
 
-export const leftPaddle = new Paddle(20, 600 / 2 - 40, "vertical");
-export const rightPaddle = new Paddle(800 - 35, 600 / 2 - 40, "vertical");
-export const topPaddle = new Paddle(800 / 2 - 40, 20, "horizontal");
-export const bottomPaddle = new Paddle(800 / 2 - 40, 800 - 20, "horizontal");
+export const leftPaddle = new Paddle(20, 600 / 2 - 40, "vertical", "right");
+export const rightPaddle = new Paddle(800 - 35, 600 / 2 - 40, "vertical", "left");
+export const topPaddle = new Paddle(800 / 2 - 40, 20, "horizontal", "bottom");
+export const bottomPaddle = new Paddle(800 / 2 - 40, 800 - 20, "horizontal", "top");
 
 

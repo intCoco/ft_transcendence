@@ -1,9 +1,9 @@
 {
-  "connection":"ℂ𝕆ℕℕ𝔼ℂ𝕋𝕀𝕆ℕ ➣",
-  "subscribe":"𝕊𝕌𝔹𝕊ℂℝ𝕀𝔹𝔼 ➢",
+  "connection":"𝕃𝕆𝔾 𝕀ℕ ➣",
+  "subscribe":"𝕊𝕀𝔾ℕ 𝕌ℙ ➢",
   "badcreditentials": "Bad credentials",
-  "welcomeback": "𝕎𝔼𝕃ℂ𝕆𝕄𝔼 𝔹𝔸ℂ𝕂 ⫸",
-  "welcome":"𝕎𝔼𝕃ℂ𝕆𝕄𝔼 ⫸",
+  "welcomeback": "𝕎𝔼𝕃ℂ𝕆𝕄𝔼 𝔹𝔸ℂ𝕂",
+  "welcome":"𝕎𝔼𝕃ℂ𝕆𝕄𝔼",
   "logout":"𝕃𝕆𝔾𝕆𝕌𝕋",
   "play":"ℙ𝕃𝔸𝕐",
   "profile":"ℙℝ𝕆𝔽𝕀𝕃𝔼",
@@ -70,6 +70,10 @@
   "top": "TOP",
   "bottom": "BOTTOM",
   "servesFirst": "SERVES FIRST",
+  "moveup": "Move up",
+  "movedown": "Move down",
+  "moveleft": "Move left",
+  "moveright": "Move right",
   "achievements": "𝔸ℂℍ𝕀𝔼𝕍𝔼𝕄𝔼ℕ𝕋𝕊",
   "played_ai_game": "Played an AI game",
   "won_ai_game": "Won an AI game",
@@ -98,5 +102,9 @@
   "too_short_id": "Username: maximum 15 characters",
   "already_used_email": "Email already used",
   "created_account": "Account created!",
-  "serv_error": "Server error"
+  "serv_error": "Server error",
+  "customAvatar": "🔒 Customizable avatar at level 5",
+  "invalid_nickname": "Invalid nickname",
+  "invalid_pswd": "Invalid password",
+  "invalid_email": "Invalid email"
 }
