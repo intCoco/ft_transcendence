@@ -92,9 +92,6 @@ module.exports = async function (fastify) {
     return settings;
   });
 
-
-
-
     /* ===========================
     USER DATA
     =========================== */
@@ -102,6 +99,10 @@ module.exports = async function (fastify) {
     const auth = req.headers.authorization;
     if (!auth?.startsWith("Bearer DEV_TOKEN_")) {
       return reply.status(401).send();
+    }
+
+    if (!req.body.avatar || req.body.avatar.length > 2_800_000) {
+      return reply.code(400).send({ message: "AVATAR_TOO_LARGE" });
     }
 
     const userId = Number(auth.replace("Bearer DEV_TOKEN_", ""));

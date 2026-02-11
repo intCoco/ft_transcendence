@@ -794,29 +794,53 @@ export default function App() {
     const file = e.target.files[0];
     if (!file || !authUserId) return;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const avatarBase64 = reader.result;
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
 
-      const res = await fetch("/api/user/me/avatar", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-        },
-        body: JSON.stringify({ avatar: avatarBase64 }),
-      });
+    if (!file.type.startsWith("image/")) {
+      notify("Only images allowed");
+      return;
+    }
 
-      if (!res.ok) {
-        notify(t("avatar_locked"));
+    if (file.size > MAX_SIZE) {
+      notify("Image too large (max 2MB)");
+      return;
+    }
+
+    const img = new Image();
+    img.onload = async () => {
+      if (img.width > 512 || img.height > 512) {
+        notify("Image too big (max 512x512)");
         return;
       }
 
-      setAvatar(avatarBase64);
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const avatarBase64 = reader.result;
+
+        const res = await fetch("/api/user/me/avatar", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+          },
+          body: JSON.stringify({ avatar: avatarBase64 }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          notify(t(data.error || "avatar_error"));
+          return;
+        }
+
+        setAvatar(avatarBase64);
+      };
+
+      reader.readAsDataURL(file);
     };
 
-    reader.readAsDataURL(file);
+    img.src = URL.createObjectURL(file);
   };
+
   useEffect(() => {
     const token = localStorage.getItem(AUTH_KEY);
     if (!token) return;
