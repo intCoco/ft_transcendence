@@ -180,7 +180,7 @@ export function updateAIMovement(controller: AIController, delta: number) {
     const isRightPaddle = controller.paddle.x > game.width / 2;
     const isBallComing = (isRightPaddle && ball.velX > 0) || (!isRightPaddle && ball.velX < 0);
 
-    if (!isBallComing && controller.profile.anticipation) 
+    if (!isBallComing && controller.profile.anticipation)
 		controller.state.aimY = game.height / 2;
 
     const paddleCenter = controller.paddle.y + controller.paddle.height / 2;

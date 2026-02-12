@@ -47,12 +47,12 @@ export function startGame(playersConfig?: any)  {
 
     for (const controller of [leftController, rightController, topController, bottomController])
         controller.score = 0;
-    
+
     leftPaddle.x = 20;
     leftPaddle.y = game.height / 2 - 40;
     rightPaddle.x = game.width - 35;
     rightPaddle.y = game.height / 2 - 40;
-    
+
     if (playersConfig) {
         if (playersConfig.left.type === "Player")
             leftController = new PlayerController(leftPaddle, playersConfig.left.up, playersConfig.left.down);
@@ -122,7 +122,7 @@ export function endGame() {
 export function startPongGame(canvas: HTMLCanvasElement, playersConfig?: any) {
     const ctx = canvas.getContext("2d")!;
     if (!ctx) return () => {};
-    
+
     let running = true;
     let lastTime = performance.now();
 

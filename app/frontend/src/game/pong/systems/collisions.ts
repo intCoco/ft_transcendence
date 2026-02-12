@@ -260,7 +260,7 @@ export function handlePaddleCollision(now: number, modifiers: GameModifiers) {
     else controller = rightController;
 
     console.log(collision.side);
-    
+
 
     if (collision.side === "left" || collision.side === "right") {
         if (collision.side === "left" && ball.velX > 0 || collision.side === "right" && ball.velX < 0)
@@ -294,8 +294,8 @@ export function handlePaddleCollision(now: number, modifiers: GameModifiers) {
                 else bounce(ball, 0.785398, controller.paddle.orientation);
             }
             else ball.spin = 0;
-            
-            
+
+
             // AI decision making
             const opponent = controller.paddle === leftPaddle ? rightController : leftController;
             if (opponent instanceof AIController) {

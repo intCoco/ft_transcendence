@@ -35,7 +35,7 @@ export class Paddle {
     moveDown(delta: number) {
         this.y += this.speed * delta;
     }
-    
+
     moveLeft(delta: number) {
         this.x -= this.speed * delta;
     }

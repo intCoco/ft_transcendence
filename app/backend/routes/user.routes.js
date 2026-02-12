@@ -45,25 +45,17 @@ module.exports = async function (fastify) {
     }
 
     const ALLOWED_BACKGROUNDS = new Set([
-      "/images/enter.jpg",
-      "/images/sun.png",
       "/images/abstract.png",
-      "/images/manwork.png",
-      "/images/pacman.png",
-      "/images/womanwork.png",
-      "/images/roundenter.png",
-      "/images/neonbh.png",
       "/images/abstract2.png",
-      "/images/womanview.png",
-      "/images/manwork2.png",
-      "/images/womanwork2.png",
+      "/images/arcade.png",
+      "/images/datacenter.png",
+      "/images/enter.jpg",
       "/images/enter2.png",
       "/images/entertriangle.png",
-      "/images/datacenter.png",
+      "/images/manwork.png",
+      "/images/manwork2.png",
       "/images/manwork3.png",
       "/images/miner.png",
-      "/images/purpleplanet.png",
-      "/images/vaisseau.png",
       "/images/neon1.png",
       "/images/neon2.png",
       "/images/neon3.png",
@@ -75,7 +67,17 @@ module.exports = async function (fastify) {
       "/images/neon9.png",
       "/images/neon10.png",
       "/images/neon11.png",
-      "/images/neon12.png"
+      "/images/neon12.png",
+      "/images/neonbh.png",
+      "/images/pacman.png",
+      "/images/purpleplanet.png",
+      "/images/roundenter.png",
+      "/images/sun.png",
+      "/images/vaisseau.png",
+      "/images/viewpurple.png",
+      "/images/womanview.png",
+      "/images/womanwork.png",
+      "/images/womanwork2.png"
     ]);
 
     if (!ALLOWED_BACKGROUNDS.has(background)) {
@@ -257,5 +259,19 @@ module.exports = async function (fastify) {
       success2: user.success2,
       success3: user.success3,
     };
+  });
+
+  fastify.get("/users/:id/matches", async (req, reply) => {
+    const userId = Number(req.params.id);
+    if (Number.isNaN(userId)) {
+      return reply.code(400).send({ message: "INVALID_USER_ID" });
+    }
+
+    const matches = await prisma.match.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return matches;
   });
 };

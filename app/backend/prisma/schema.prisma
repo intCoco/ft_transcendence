@@ -38,6 +38,9 @@ model User {
   	losses			Int     @default(0) // same
 	xp				Int     @default(0) // same
 
+	// --- History ---
+	matches     Match[]   @relation("UserMatches")
+
 	// --- success ---
 	success1		Boolean @default(false)
 	success2		Boolean @default(false)
@@ -107,4 +110,21 @@ model Message {
   toUser   User @relation("MessageToUser", fields: [toUserId], references: [id])
 
   @@index([fromUserId, toUserId])
+}
+
+model Match {
+  id          Int      @id @default(autoincrement())
+
+  // Relation avec l'utilisateur
+  userId      Int
+  user        User     @relation("UserMatches", fields: [userId], references: [id], onDelete: Cascade)
+
+  // Statistiques du match
+  playerScore Int      @default(0)
+  iaScore     Int      @default(0)
+
+  // Résultat : 0 = en cours/défaut, 1 = Victoire Joueur, 2 = Défaite Joueur
+  result      Int      @default(0)
+
+  createdAt   DateTime @default(now())
 }

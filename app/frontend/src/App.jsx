@@ -34,7 +34,6 @@ import GameSetup from "./GameSetup";
 import { t } from "i18next";
 import LeaderboardPage from "./LeaderboardPage";
 
-
 function ProtectedRoute({ children }) {
   const location = useLocation();
   const token = localStorage.getItem(AUTH_KEY);
@@ -127,8 +126,6 @@ function GameCanvas({ setupPlayers }) {
     return () => window.removeEventListener("resize", handleResize);
   }, [is4Players]);
 
-
-
   const [, forceUpdate] = useState(0);
   const navigate = useNavigate();
 
@@ -171,14 +168,27 @@ function GameCanvas({ setupPlayers }) {
             if (game.winner === "right" && isRightPlayerHuman) return true;
 
             // fallback to controller scores (in case winner isn't set)
-            if (isLeftPlayerHuman && leftController.score > rightController.score)
+            if (
+              isLeftPlayerHuman &&
+              leftController.score > rightController.score
+            )
               return true;
-          
-            if (isRightPlayerHuman && rightController.score > leftController.score)
+
+            if (
+              isRightPlayerHuman &&
+              rightController.score > leftController.score
+            )
               return true;
 
             return false;
           })();
+
+          const playerScore = isLeftPlayerHuman
+            ? leftController.score
+            : rightController.score;
+          const iaScore = isLeftPlayerAI
+            ? leftController.score
+            : rightController.score;
 
           try {
             await fetch("/api/game/result", {
@@ -190,6 +200,8 @@ function GameCanvas({ setupPlayers }) {
               body: JSON.stringify({
                 didWin: humanWon,
                 isPlayerVsAi: true,
+                playerScore,
+                iaScore,
               }),
             });
           } catch (error) {
@@ -397,7 +409,6 @@ function PrivacyModal({ onClose }) {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-50">
       <div className="bg-[#0a0446]/60 neon-border rounded-xl px-8 py-6 w-[600px] max-h-[80vh] overflow-y-auto text-white">
-
         <h1
           className="text-4xl mb-8 neon-glitch neon-glitch--always text-center tracking-widest"
           data-text={t("privacy")}
@@ -444,7 +455,6 @@ function TermsModal({ onClose }) {
   return (
     <div className="absolute inset-0 flex items-center justify-center bg-black/60 z-50">
       <div className="bg-[#0a0446]/60 neon-border rounded-xl px-8 py-6 w-[600px] max-h-[80vh] overflow-y-auto text-white">
-
         <h1
           className="text-4xl mb-8 neon-glitch neon-glitch--always text-center tracking-widest"
           data-text={t("terms")}
@@ -480,8 +490,6 @@ function TermsModal({ onClose }) {
     </div>
   );
 }
-
-
 
 /* ================================================================================= */
 /* ================================================================================= */
@@ -581,7 +589,6 @@ export default function App() {
   const [showPrivacy, setShowPrivacy] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
 
-
   /* For message unread */
   const [unread, setUnread] = useState({});
   const isChatVisibleRef = useRef(false);
@@ -590,6 +597,7 @@ export default function App() {
 
   /* Current user XP */
   const [currentUserXp, setCurrentUserXp] = useState(0);
+  const [myMatches, setMyMatches] = useState([]);
   const [currentUserSuccess1, setCurrentUserSuccess1] = useState(false);
   const [currentUserSuccess2, setCurrentUserSuccess2] = useState(false);
   const [currentUserSuccess3, setCurrentUserSuccess3] = useState(false);
@@ -670,25 +678,17 @@ export default function App() {
   }, [isAuthed, location.pathname]);
 
   const BACKGROUNDS = [
-    "/images/enter.jpg",
-    "/images/sun.png",
     "/images/abstract.png",
-    "/images/manwork.png",
-    "/images/pacman.png",
-    "/images/womanwork.png",
-    "/images/roundenter.png",
-    "/images/neonbh.png",
     "/images/abstract2.png",
-    "/images/womanview.png",
-    "/images/manwork2.png",
-    "/images/womanwork2.png",
+    "/images/arcade.png",
+    "/images/datacenter.png",
+    "/images/enter.jpg",
     "/images/enter2.png",
     "/images/entertriangle.png",
-    "/images/datacenter.png",
+    "/images/manwork.png",
+    "/images/manwork2.png",
     "/images/manwork3.png",
     "/images/miner.png",
-    "/images/purpleplanet.png",
-    "/images/vaisseau.png",
     "/images/neon1.png",
     "/images/neon2.png",
     "/images/neon3.png",
@@ -700,7 +700,17 @@ export default function App() {
     "/images/neon9.png",
     "/images/neon10.png",
     "/images/neon11.png",
-    "/images/neon12.png"
+    "/images/neon12.png",
+    "/images/neonbh.png",
+    "/images/pacman.png",
+    "/images/purpleplanet.png",
+    "/images/roundenter.png",
+    "/images/sun.png",
+    "/images/vaisseau.png",
+    "/images/viewpurple.png",
+    "/images/womanview.png",
+    "/images/womanwork.png",
+    "/images/womanwork2.png"
   ];
 
   /* ================================================================================= */
@@ -946,7 +956,7 @@ export default function App() {
       JSON.stringify({
         type: "TYPING",
         toUserId: activeChatUser.id,
-      })
+      }),
     );
 
     clearTimeout(typingTimeoutRef.current);
@@ -956,7 +966,7 @@ export default function App() {
         JSON.stringify({
           type: "STOP_TYPING",
           toUserId: activeChatUser.id,
-        })
+        }),
       );
     }, 800);
   };
@@ -1097,9 +1107,9 @@ export default function App() {
           Authorization: `Bearer ${localStorage.getItem(AUTH_KEY)}`,
         },
       })
-      .then((res) => res.json())
-      .then((data) => setUsers(data))
-      .catch(() => setUsers([]));
+        .then((res) => res.json())
+        .then((data) => setUsers(data))
+        .catch(() => setUsers([]));
     };
 
     //each box corresponds to an event
@@ -1212,12 +1222,10 @@ export default function App() {
     };
   }, [isAuthed]);
 
-
   //user options visible is show chat is true
   useEffect(() => {
     isChatVisibleRef.current = Boolean(showChat && activeChatUser);
   }, [showChat, activeChatUser]);
-
 
   //chat panel open and “Requests” tab selected
   useEffect(() => {
@@ -1311,6 +1319,29 @@ export default function App() {
     fetchCurrentUserProfile();
   }, [isAuthed, authUserId, location.pathname]); // Added location.pathname to dependencies
 
+  useEffect(() => {
+    if (!isAuthed) {
+      setMyMatches([]);
+      return;
+    }
+
+    const token = localStorage.getItem(AUTH_KEY);
+    const myId = localStorage.getItem(USER_ID_KEY);
+
+    if (!token || !myId) {
+      setMyMatches([]);
+      return;
+    }
+
+    fetch(`/api/users/${myId}/matches`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+      .then((res) => res.json())
+      .then((data) => setMyMatches(Array.isArray(data) ? data : []))
+      .catch(() => setMyMatches([]));
+  }, [isAuthed, location.pathname]);
 
   //some = return boleean
   //isFriend(id) → Is this user already your friend?
@@ -1373,7 +1404,7 @@ export default function App() {
         type: "DM_SEND",
         toUserId: selectedUser.id,
         text: t("gameInvite", { user: login }),
-      })
+      }),
     );
 
     // startGameCountdown(); optionnal
@@ -1465,13 +1496,76 @@ export default function App() {
     setActiveChatUser(null);
   };
 
+  function GameHistory({ matches })
+  {
+    if (!matches || !matches.length)
+    {
+      return <p className="mt-6 text-white">{t("no_matches_played")}</p>;
+    }
+
+    return (
+      <div className="mt-8 w-full max-w-4xl">
+        <div className="bg-[#0a0446]/70 neon-border rounded-xl p-6 shadow-xl min-h-0">
+          <h2
+            className="text-2xl mb-4 neon-glitch neon-glitch--always"
+            data-text={t("match_history")}
+          >
+            {t("match_history")}
+          </h2>
+
+          {/* pour scroll */}
+          <div className="overflow-x-auto overflow-y-auto max-h-64 min-h-0 pr-2">
+            <table className="w-full text-left border-collapse text-white">
+              <thead className="sticky top-0 bg-[#0a0446]">
+                <tr>
+                  <th className="p-3 border-b border-cyan-400">{t("opponent")}</th>
+                  <th className="p-3 border-b border-cyan-400">{t("result")}</th>
+                  <th className="p-3 border-b border-cyan-400">{t("score")}</th>
+                  <th className="p-3 border-b border-cyan-400">{t("date")}</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {matches.map((match, i) => (
+                  <tr
+                    key={match.id ?? `${match.createdAt}-${i}`}
+                    className="hover:bg-cyan-900/40"
+                  >
+                    <td className="p-3 border-b border-cyan-700">IA</td>
+                    <td
+                      className={`p-3 border-b border-cyan-700 ${
+                        match.result === 1 ? "text-green-400" : "text-red-400"
+                      }`}
+                    >
+                      {match.result === 1 ? t("victory") : t("defeat")}
+                    </td>
+                    <td className="p-3 border-b border-cyan-700">
+                      {match.playerScore} - {match.iaScore}
+                    </td>
+                    <td className="p-3 border-b border-cyan-700">
+                      {new Date(match.createdAt).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+
+
   function PublicProfile() {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation();
     const from = location.state?.from || "/dashboard";
 
     const [user, setUser] = useState(undefined);
+    const [matches, setMatches] = useState([]);
     const isMe = String(id) === String(localStorage.getItem(USER_ID_KEY));
 
     const liveUser = users.find((u) => String(u.id) === String(id));
@@ -1484,9 +1578,10 @@ export default function App() {
 
     // FETCH only when is not me
     useEffect(() => {
+      const token = localStorage.getItem("auth_token");
       fetch(`/api/users/${id}/profile`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+          Authorization: `Bearer ${token}`,
         },
       })
         .then((res) => {
@@ -1495,6 +1590,15 @@ export default function App() {
         })
         .then(setUser)
         .catch(() => setUser(null));
+
+      fetch(`/api/users/${id}/matches`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((res) => res.json())
+        .then((data) => setMatches(Array.isArray(data) ? data : []))
+        .catch(() => setMatches([]));
     }, [id, location.pathname]); // Added location.pathname to dependencies
 
     // ===== RENDER =====
@@ -1508,88 +1612,103 @@ export default function App() {
     }
 
     return (
-      <div className="w-full h-full flex flex-col items-center text-white">
+      <div className="w-full h-screen relative overflow-y-auto overflow-x-hidden text-white">
         <button
-          className="absolute top-5 left-1/2 -translate-x-1/2 neon-border px-2 py-1"
+          className="absolute top-5 left-1/2 -translate-x-1/2 neon-border px-2 py-1 z-10"
           onClick={() => navigate(from)}
         >
           {t("back")}
         </button>
 
-        <img
-          src={user.avatar || DEFAULT_AVATAR}
-          className="w-32 h-32 rounded-full neon-border mt-[15vh]"
-        />
+        <div className="w-full flex flex-col items-center pt-[12vh] pb-10 px-6 gap-6">
+          {/* Profil (avatar + pseudo + online) */}
+          <div className="w-full max-w-4xl bg-[#0a0446]/70 neon-border rounded-xl p-6 shadow-xl flex flex-col items-center">
+            <img
+              src={user.avatar || DEFAULT_AVATAR}
+              className="w-32 h-32 rounded-full neon-border"
+              alt=""
+            />
 
-        <h1 className="neon-glitch neon-glitch--always text-3xl mt-6">
-          {user.nickname}
-        </h1>
+            <h1 className="neon-glitch neon-glitch--always text-3xl mt-4">
+              {user.nickname}
+            </h1>
 
-        <p className="text-cyan-300 mt-2 flex items-center gap-2">
-          {user.online ? (
-            <>
-              <span className="w-2 h-2 rounded-full bg-green-400" />
-              Online
-            </>
-          ) : (
-            <>
-              <span className="w-2 h-2 rounded-full bg-gray-400" />
-              Offline
-            </>
+            <p className="text-cyan-300 mt-2 flex items-center gap-2">
+              {online ? (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-green-400" />
+                  {t("online")}
+                </>
+              ) : (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-gray-400" />
+                  {t("offline")}
+                </>
+              )}
+            </p>
+          </div>
+
+          {/* XP / Level */}
+          {user.xp !== undefined && (
+            <div className="w-full max-w-4xl bg-[#0a0446]/70 neon-border rounded-xl p-6 shadow-xl">
+              <p className="text-xl">
+                {t("level")}: {Math.floor(user.xp / 100)}
+              </p>
+              <p className="text-sm">
+                {t("xp")}: {user.xp % 100} / 100
+              </p>
+
+              <div className="w-full h-3 bg-black/40 rounded-full mt-3">
+                <div
+                  className="h-full bg-cyan-400 rounded-full"
+                  style={{ width: `${user.xp % 100}%` }}
+                />
+              </div>
+            </div>
           )}
-        </p>
 
-        {/* XP and Level Display for Public Profile */}
-        {user.xp !== undefined && (
-          <div className="mt-4 text-white flex flex-col items-center">
-            <p className="text-xl">
-              {t("level")}: {Math.floor(user.xp / 100)}
-            </p>
-            <p className="text-sm">
-              {t("xp")}: {user.xp % 100} / 100
-            </p>
-            <div className="w-40 h-3 bg-gray-700 rounded-full mt-2">
-              <div
-                className="h-full bg-cyan-400 rounded-full"
-                style={{ width: `${user.xp % 100}%` }}
-              ></div>
+          {/* Achievements */}
+          <div className="w-full max-w-4xl bg-[#0a0446]/70 neon-border rounded-xl p-6 shadow-xl">
+            <h2
+              className="text-2xl mb-4 neon-glitch neon-glitch--always"
+              data-text={t("achievements")}
+            >
+              {t("achievements")}
+            </h2>
+
+            <div className="flex flex-col gap-2">
+              <p className="text-lg">
+                {t("played_ai_game")}:{" "}
+                {user.success1 ? (
+                  <span className="text-green-400">✓</span>
+                ) : (
+                  <span className="text-red-400">✗</span>
+                )}
+              </p>
+
+              <p className="text-lg">
+                {t("won_ai_game")}:{" "}
+                {user.success2 ? (
+                  <span className="text-green-400">✓</span>
+                ) : (
+                  <span className="text-red-400">✗</span>
+                )}
+              </p>
+
+              <p className="text-lg">
+                {t("lost_ai_game")}:{" "}
+                {user.success3 ? (
+                  <span className="text-green-400">✓</span>
+                ) : (
+                  <span className="text-red-400">✗</span>
+                )}
+              </p>
             </div>
           </div>
-        )}
 
-        {/* Achievements Display for Public Profile */}
-        <div className="mt-6 text-white flex flex-col items-center">
-          <h2
-            className="text-2xl mb-4 neon-glitch neon-glitch--always"
-            data-text={t("achievements")}
-          >
-            {t("achievements")}
-          </h2>
-          <div className="flex flex-col gap-2">
-            <p className="text-lg">
-              {t("played_ai_game")}:{" "}
-              {user.success1 ? (
-                <span className="text-green-400">✓</span>
-              ) : (
-                <span className="text-red-400">✗</span>
-              )}
-            </p>
-            <p className="text-lg">
-              {t("won_ai_game")}:{" "}
-              {user.success2 ? (
-                <span className="text-green-400">✓</span>
-              ) : (
-                <span className="text-red-400">✗</span>
-              )}
-            </p>
-            <p className="text-lg">
-              {t("lost_ai_game")}:{" "}
-              {user.success3 ? (
-                <span className="text-green-400">✓</span>
-              ) : (
-                <span className="text-red-400">✗</span>
-              )}
-            </p>
+          {/* Match History */}
+          <div className="w-full max-w-4xl">
+            <GameHistory matches={matches} />
           </div>
         </div>
       </div>
@@ -1873,8 +1992,8 @@ export default function App() {
                     JSON.stringify({
                       type: "STOP_TYPING",
                       toUserId: activeChatUser.id,
-                    })
-                  ); 
+                    }),
+                  );
                   setChatInput("");
                 }}
               >
@@ -1908,7 +2027,6 @@ export default function App() {
               </div>
             </div>
           )}
-
         </div>
       )}
 
@@ -2184,65 +2302,65 @@ export default function App() {
                   <h1
                     className="neon-glitch neon-glitch--always absolute left-1/2 -translate-x-1/2 bg-transparent
                   border-0 text-7xl"
-                    data-text="𝕋ℝ𝔸ℕ𝕊ℂ𝔼ℕ𝔻𝔼ℕℂ𝔼"
-                  >
-                    𝕋ℝ𝔸ℕ𝕊ℂ𝔼ℕ𝔻𝔼ℕℂ𝔼
-                  </h1>
-                </div>
+                      data-text="𝕋ℝ𝔸ℕ𝕊ℂ𝔼ℕ𝔻𝔼ℕℂ𝔼"
+                    >
+                      𝕋ℝ𝔸ℕ𝕊ℂ𝔼ℕ𝔻𝔼ℕℂ𝔼
+                    </h1>
+                  </div>
 
-                <div className="text-3xl mt-[10vh] text-white z-30">
-                  <span className="font-mono tracking-[-0.035em] text-cyan-300">
-                    {login}
-                  </span>
-                </div>
+                  <div className="text-3xl mt-[10vh] text-white z-30">
+                    <span className="font-mono tracking-[-0.035em] text-cyan-300">
+                      {login}
+                    </span>
+                  </div>
 
-                <div className="text-white mt-[2vh]">
-                  <button
-                    className="neon-glitch neon-glitch--hover ml-1 px-3 py-0 neon-border bg-gray-900/60"
-                    onClick={() => {
-                      handleLogout();
-                    }}
-                    data-text={t("logout")}
-                  >
-                    {t("logout")}
-                  </button>
-                </div>
+                  <div className="text-white mt-[2vh]">
+                    <button
+                      className="neon-glitch neon-glitch--hover ml-1 px-3 py-0 neon-border bg-gray-900/60"
+                      onClick={() => {
+                        handleLogout();
+                      }}
+                      data-text={t("logout")}
+                    >
+                      {t("logout")}
+                    </button>
+                  </div>
 
-                <div className="mt-[5vh] flex flex-col gap-6 items-center">
-                  <button
-                    className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
-                    data-text={t("play")}
-                    onClick={() => setShowGameSetup(true)}
-                  >
-                    {t("play")}
-                  </button>
-                  <button
-                    className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
-                    data-text={t("profile")}
-                    onClick={() => navigate("/profile")}
-                  >
-                    {t("profile")}
-                  </button>
-                  <button
-                    className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
-                    data-text={t("customize")}
-                    onClick={() => navigate("/customize")}
-                  >
-                    {t("customize")}
-                  </button>
-                  {/* New Leaderboard Button */}
-                  <button
-                    className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
-                    data-text={t("leaderboard")}
-                    onClick={() => navigate("/leaderboard")}
-                  >
-                    {t("leaderboard")}
-                  </button>
+                  <div className="mt-[5vh] flex flex-col gap-6 items-center">
+                    <button
+                      className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
+                      data-text={t("play")}
+                      onClick={() => setShowGameSetup(true)}
+                    >
+                      {t("play")}
+                    </button>
+                    <button
+                      className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
+                      data-text={t("profile")}
+                      onClick={() => navigate("/profile")}
+                    >
+                      {t("profile")}
+                    </button>
+                    <button
+                      className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
+                      data-text={t("customize")}
+                      onClick={() => navigate("/customize")}
+                    >
+                      {t("customize")}
+                    </button>
+                    {/* New Leaderboard Button */}
+                    <button
+                      className="neon-glitch neon-glitch--hover text-5xl bg-transparent border-0"
+                      data-text={t("leaderboard")}
+                      onClick={() => navigate("/leaderboard")}
+                    >
+                      {t("leaderboard")}
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </ProtectedRoute>}
+              </ProtectedRoute>
+            }
           />
-
 
           {/*=====================================================================================
   ======================================================================================
@@ -2269,15 +2387,15 @@ export default function App() {
                       onClick={() => updateBackground(bg)}
                       className={`relative w-[110px] h-[60px] rounded-lg overflow-hidden neon-border
                     ${bgSrc === bg ? "ring-2 ring-cyan-400" : ""}`}
-                    >
-                      <img
-                        src={bg}
-                        className="w-full h-full object-cover"
-                        alt=""
-                      />
-                    </button>
-                  ))}
-                </div>
+                      >
+                        <img
+                          src={bg}
+                          className="w-full h-full object-cover"
+                          alt=""
+                        />
+                      </button>
+                    ))}
+                  </div>
 
                 <button
                   className="mt-10 px-2 py-1 neon-border bg-gray-900/60 text-cyan-300"
@@ -2298,9 +2416,10 @@ export default function App() {
           <Route
             path="/game"
             element={
-            <ProtectedRoute>
-              <GameRoute setupPlayers={setupPlayers} />
-            </ProtectedRoute>}
+              <ProtectedRoute>
+                <GameRoute setupPlayers={setupPlayers} />
+              </ProtectedRoute>
+            }
           />
 
           {/*=====================================================================================
@@ -2313,134 +2432,136 @@ export default function App() {
             path="/profile/:id"
             element={
               <ProtectedRoute>
-              <div className="relative w-full h-full z-30">
-                <PublicProfile />
-              </div>
-            </ProtectedRoute>}
+                <div className="relative w-full h-full z-30">
+                  <PublicProfile />
+                </div>
+              </ProtectedRoute>
+            }
           />
 
           <Route
             path="/profile"
             element={
               <ProtectedRoute>
-              <div className="w-full h-full relative overflow-hidden">
-                <div className="mt-[2vh] w-full h-full flex flex-col items-center">
-                  <h1
-                    className="neon-glitch neon-glitch--always relative inline-block text-7xl"
-                    data-text={t("profile")}
-                  >
-                    {t("profile")}
-                  </h1>
+                <div className="w-full h-screen relative overflow-y-auto overflow-x-hidden">
+                  <div className="mt-[2vh] w-full min-h-full flex flex-col items-center pb-10">
+                    <h1
+                      className="neon-glitch neon-glitch--always relative inline-block text-7xl"
+                      data-text={t("profile")}
+                    >
+                      {t("profile")}
+                    </h1>
 
-                  <button
-                    className="neon-glitch neon-glitch--hover mt-6 px-3 py-0 neon-border bg-gray-900/60"
-                    onClick={() => navigate("/dashboard")}
-                    data-text={t("back")}
-                  >
-                    {t("back")}
-                  </button>
+                    <button
+                      className="neon-glitch neon-glitch--hover mt-6 px-3 py-0 neon-border bg-gray-900/60"
+                      onClick={() => navigate("/dashboard")}
+                      data-text={t("back")}
+                    >
+                      {t("back")}
+                    </button>
 
-                  {/* MAIN PROFILE LAYOUT */}
-                  <div className="mt-14 w-full max-w-5xl px-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                      {/* LEFT — ACHIEVEMENTS */}
-                      <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
-                        <h2
-                          className="text-2xl mb-4 neon-glitch neon-glitch--always"
-                          data-text={t("achievements")}
-                        >
-                          {t("achievements")}
-                        </h2>
-
-                        <div className="flex flex-col gap-3 text-lg">
-                          <p>
-                            {t("played_ai_game")}:{" "}
-                            {currentUserSuccess1 ? (
-                              <span className="text-green-400">✓</span>
-                            ) : (
-                              <span className="text-red-400">✗</span>
-                            )}
-                          </p>
-
-                          <p>
-                            {t("won_ai_game")}:{" "}
-                            {currentUserSuccess2 ? (
-                              <span className="text-green-400">✓</span>
-                            ) : (
-                              <span className="text-red-400">✗</span>
-                            )}
-                          </p>
-
-                          <p>
-                            {t("lost_ai_game")}:{" "}
-                            {currentUserSuccess3 ? (
-                              <span className="text-green-400">✓</span>
-                            ) : (
-                              <span className="text-red-400">✗</span>
-                            )}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* RIGHT — AVATAR + XP */}
-                      <div className="flex flex-col gap-6">
-                        {/* AVATAR / IDENTITY */}
+                    {/* MAIN PROFILE LAYOUT */}
+                    <div className="mt-14 w-full max-w-5xl px-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+                        {/* LEFT — ACHIEVEMENTS */}
                         <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
-                          <div className="flex items-center gap-6">
-                            <img
-                              src={avatar || DEFAULT_AVATAR}
-                              className="w-28 h-28 rounded-full object-cover neon-border"
-                            />
+                          <h2
+                            className="text-2xl mb-4 neon-glitch neon-glitch--always"
+                            data-text={t("achievements")}
+                          >
+                            {t("achievements")}
+                          </h2>
 
-                            <div className="flex flex-col">
-
-                              {isEditingLogin ? (
-                                <div className="flex flex-col gap-2">
-                                  <input
-                                    value={editLogin}
-                                    onChange={(e) => setEditLogin(e.target.value)}
-                                    className="px-2 py-1 rounded bg-black/60 neon-border text-cyan-300"
-                                  />
-
-                                  <div className="flex gap-2 text-sm">
-                                    <button
-                                      onClick={handleLoginChange}
-                                      className="px-2 py-1 neon-border text-green-400"
-                                    >
-                                      Save
-                                    </button>
-                                    <button
-                                      onClick={() => {
-                                        setEditLogin(login);
-                                        setIsEditingLogin(false);
-                                      }}
-                                      className="px-2 py-1 neon-border text-red-400"
-                                    >
-                                      Cancel
-                                    </button>
-                                  </div>
-                                </div>
+                          <div className="flex flex-col gap-3 text-lg">
+                            <p>
+                              {t("played_ai_game")}:{" "}
+                              {currentUserSuccess1 ? (
+                                <span className="text-green-400">✓</span>
                               ) : (
-                                <div className="flex items-center gap-2">
-                                  {/* LOGIN DISPLAY */}
-                                  <div
-                                    className="neon-glitch neon-glitch--always text-2xl"
-                                    data-text={login}
-                                  >
-                                    {login}
-                                  </div>
-
-                                  {/* EDIT BUTTON */}
-                                  <button
-                                    onClick={() => setIsEditingLogin(true)}
-                                    title="Edit nickname"
-                                    className="ml-1 cursor-pointer neon-border px-1 py-0.5"
-                                  >
-                                    ✎
-                                  </button>
-                                </div>
+                                <span className="text-red-400">✗</span>
                               )}
-                              {level >= 5 ? (
+                            </p>
+
+                            <p>
+                              {t("won_ai_game")}:{" "}
+                              {currentUserSuccess2 ? (
+                                <span className="text-green-400">✓</span>
+                              ) : (
+                                <span className="text-red-400">✗</span>
+                              )}
+                            </p>
+
+                            <p>
+                              {t("lost_ai_game")}:{" "}
+                              {currentUserSuccess3 ? (
+                                <span className="text-green-400">✓</span>
+                              ) : (
+                                <span className="text-red-400">✗</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* RIGHT — AVATAR + XP */}
+                        <div className="flex flex-col gap-6">
+                          {/* AVATAR / IDENTITY */}
+                          <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
+                            <div className="flex items-center gap-6">
+                              <img
+                                src={avatar || DEFAULT_AVATAR}
+                                className="w-28 h-28 rounded-full object-cover neon-border"
+                              />
+
+                              <div className="flex flex-col">
+                                {isEditingLogin ? (
+                                  <div className="flex flex-col gap-2">
+                                    <input
+                                      value={editLogin}
+                                      onChange={(e) =>
+                                        setEditLogin(e.target.value)
+                                      }
+                                      className="px-2 py-1 rounded bg-black/60 neon-border text-cyan-300"
+                                    />
+
+                                    <div className="flex gap-2 text-sm">
+                                      <button
+                                        onClick={handleLoginChange}
+                                        className="px-2 py-1 neon-border text-green-400"
+                                      >
+                                        Save
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          setEditLogin(login);
+                                          setIsEditingLogin(false);
+                                        }}
+                                        className="px-2 py-1 neon-border text-red-400"
+                                      >
+                                        Cancel
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2">
+                                    {/* LOGIN DISPLAY */}
+                                    <div
+                                      className="neon-glitch neon-glitch--always text-2xl"
+                                      data-text={login}
+                                    >
+                                      {login}
+                                    </div>
+
+                                    {/* EDIT BUTTON */}
+                                    <button
+                                      onClick={() => setIsEditingLogin(true)}
+                                      title="Edit nickname"
+                                      className="ml-1 cursor-pointer neon-border px-1 py-0.5"
+                                    >
+                                      ✎
+                                    </button>
+                                  </div>
+                                )}
+
                                 <label className="mt-2 inline-block cursor-pointer neon-border px-2 py-1 text-sm hover:underline">
                                   {t("changeavatar")}
                                   <input
@@ -2450,37 +2571,34 @@ export default function App() {
                                     className="hidden"
                                   />
                                 </label>
-                                ) : (
-                                <p className="mt-2 text-xs text-red-400">
-                                  {t("customAvatar")}
-                                </p>
-                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
 
-                        {/* XP / LEVEL */}
-                        <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
-                          <p className="text-xl">
-                            {t("level")}: {Math.floor(currentUserXp / 100)}
-                          </p>
-                          <p className="text-sm opacity-80">
-                            {t("xp")}: {currentUserXp % 100} / 100
-                          </p>
+                          {/* XP / LEVEL */}
+                          <div className="bg-black/50 neon-border rounded-xl p-6 text-white">
+                            <p className="text-xl">
+                              {t("level")}: {Math.floor(currentUserXp / 100)}
+                            </p>
+                            <p className="text-sm opacity-80">
+                              {t("xp")}: {currentUserXp % 100} / 100
+                            </p>
 
-                          <div className="mt-3 w-full h-3 bg-gray-700 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-cyan-400"
-                              style={{ width: `${currentUserXp % 100}%` }}
-                            />
+                            <div className="mt-3 w-full h-3 bg-gray-700 rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-cyan-400"
+                                style={{ width: `${currentUserXp % 100}%` }}
+                              />
+                            </div>
                           </div>
+                          <GameHistory matches={myMatches} />
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            </ProtectedRoute>}
+              </ProtectedRoute>
+            }
           />
 
           {/*=====================================================================================
@@ -2489,27 +2607,25 @@ export default function App() {
   ======================================================================================
   ======================================================================================*/}
 
-          <Route path="/leaderboard" element={
-            <ProtectedRoute>
-              <LeaderboardPage />
-            </ProtectedRoute>} />
-
+          <Route
+            path="/leaderboard"
+            element={
+              <ProtectedRoute>
+                <LeaderboardPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
       <footer className="mt-auto w-full py-4 flex justify-center text-xs sm:text-sm text-cyan-300">
         <div className="flex gap-2 neon-glitch text-center">
-          <button onClick={() => setShowPrivacy(true)}>
-            {t("privacy")}
-          </button>
+          <button onClick={() => setShowPrivacy(true)}>{t("privacy")}</button>
 
           <span> | </span>
 
-          <button onClick={() => setShowTerms(true)}>
-            {t("terms")}
-          </button>
+          <button onClick={() => setShowTerms(true)}>{t("terms")}</button>
         </div>
       </footer>
-
 
       {showGameSetup && (
         <GameSetup
@@ -2523,15 +2639,9 @@ export default function App() {
         />
       )}
 
+      {showPrivacy && <PrivacyModal onClose={() => setShowPrivacy(false)} />}
 
-      {showPrivacy && (
-        <PrivacyModal onClose={() => setShowPrivacy(false)} />
-      )}
-
-      {showTerms && (
-        <TermsModal onClose={() => setShowTerms(false)} />
-      )}
-
+      {showTerms && <TermsModal onClose={() => setShowTerms(false)} />}
     </div>
   );
 }

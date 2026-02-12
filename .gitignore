@@ -1,9 +1,30 @@
-# app/backend/
+# =============================
+# ENV FILES
+# =============================
 .env
-certs/
+**/.env
 
-# database in app/backend/prisma/
-prisma/prisma/
-
-# in app/backend/ and app/frontend/
+# =============================
+# NODE MODULES
+# =============================
 node_modules/
+**/node_modules/
+
+# =============================
+# CERTIFICATES
+# =============================
+app/certs/
+*.pem
+*.key
+
+# =============================
+# DATABASE (Prisma SQLite)
+# =============================
+app/backend/prisma/prisma/
+*.db
+
+# =============================
+# BUILD FILES
+# =============================
+dist/
+build/

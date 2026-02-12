@@ -8,7 +8,7 @@ import { updateParticles } from "../entities/particles.js";
 import { updateControlsHint } from "./controlsHint.js";
 import { handleServe } from "./serve.js";
 
-// actual game : function that runs every frame 
+// actual game : function that runs every frame
 // handles movements, maths, behaviors
 export function update(delta: number) {
 	const now = performance.now() / 1000;
@@ -27,7 +27,7 @@ export function update(delta: number) {
 		updateCoinToss(now, delta);
 		return;
 	}
-	
+
 	// paddle controls: updates paddles positions based on player inputs or AI
 	leftController.update(leftPaddle, delta);
 	rightController.update(rightPaddle, delta);

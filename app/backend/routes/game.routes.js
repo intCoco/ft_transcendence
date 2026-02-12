@@ -9,9 +9,14 @@ module.exports = async function (fastify) {
     const userId = getUserIdFromAuth(req, reply);
     if (!userId) return;
 
-    const { didWin, isPlayerVsAi } = req.body;
+    const { didWin, isPlayerVsAi, playerScore, iaScore } = req.body;
 
-    if (typeof didWin !== "boolean" || typeof isPlayerVsAi !== "boolean") {
+    if (
+      typeof didWin !== "boolean" ||
+      typeof isPlayerVsAi !== "boolean" ||
+      typeof playerScore !== "number" ||
+      typeof iaScore !== "number"
+    ) {
       return reply.code(400).send({ message: "INVALID_INPUT" });
     }
 
@@ -20,8 +25,8 @@ module.exports = async function (fastify) {
     }
 
     try {
-      const XP_FOR_WIN = 500;
-      const XP_FOR_LOSS = 500;
+      const XP_FOR_WIN = 60;
+      const XP_FOR_LOSS = 40;
 
       const currentUser = await prisma.user.findUnique({
         where: { id: userId },
@@ -42,6 +47,16 @@ module.exports = async function (fastify) {
         where: { id: userId },
         data: updateData,
       });
+
+      await prisma.match.create({
+        data: {
+          userId,
+          playerScore,
+          iaScore,
+          result: didWin ? 1 : 2,
+        },
+      });
+
       return reply.code(200).send({ message: "GAME_RESULT_RECORDED" });
     } catch (error) {
       fastify.log.error(
