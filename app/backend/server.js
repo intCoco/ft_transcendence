@@ -11,6 +11,7 @@ async function start() {
   // log incoming requests and backend errors
   const fastify = Fastify({
     logger: true,
+    bodyLimit: 10 * 1024 * 1024, // 10MB
   });
 
   // allow frontend requests from the browser (CORS)

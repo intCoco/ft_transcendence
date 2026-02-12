@@ -804,7 +804,7 @@ export default function App() {
     const file = e.target.files[0];
     if (!file || !authUserId) return;
 
-    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    const MAX_SIZE = 3 * 1024 * 1024; // 3MB
 
     if (!file.type.startsWith("image/")) {
       notify("Only images allowed");
@@ -812,43 +812,33 @@ export default function App() {
     }
 
     if (file.size > MAX_SIZE) {
-      notify("Image too large (max 2MB)");
+      notify("Image too large (max 3MB)");
       return;
     }
 
-    const img = new Image();
-    img.onload = async () => {
-      if (img.width > 512 || img.height > 512) {
-        notify("Image too big (max 512x512)");
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const avatarBase64 = reader.result;
+
+      const res = await fetch("/api/user/me/avatar", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+        },
+        body: JSON.stringify({ avatar: avatarBase64 }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        notify(t(data.error || "avatar_error"));
         return;
       }
 
-      const reader = new FileReader();
-      reader.onload = async () => {
-        const avatarBase64 = reader.result;
-
-        const res = await fetch("/api/user/me/avatar", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-          },
-          body: JSON.stringify({ avatar: avatarBase64 }),
-        });
-
-        if (!res.ok) {
-          const data = await res.json().catch(() => ({}));
-          notify(t(data.error || "avatar_error"));
-          return;
-        }
-
-        setAvatar(avatarBase64);
-      };
-
-      reader.readAsDataURL(file);
+      setAvatar(avatarBase64);
     };
 
-    img.src = URL.createObjectURL(file);
+    reader.readAsDataURL(file);
   };
 
   useEffect(() => {
@@ -2562,15 +2552,24 @@ export default function App() {
                                   </div>
                                 )}
 
-                                <label className="mt-2 inline-block cursor-pointer neon-border px-2 py-1 text-sm hover:underline">
-                                  {t("changeavatar")}
-                                  <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleAvatarChange}
-                                    className="hidden"
-                                  />
-                                </label>
+                                {level >= 5 ? (
+                                  <label className="mt-2 inline-block cursor-pointer neon-border px-2 py-1 text-sm hover:underline">
+                                    {t("changeavatar")}
+                                    <input
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={handleAvatarChange}
+                                      className="hidden"
+                                    />
+                                  </label>
+                                ) : (
+                                  <div className="mt-2 text-sm text-gray-400 neon-border px-2 py-1 opacity-70 cursor-not-allowed">
+                                    {t("changeavatar")}  
+                                    <div className="text-xs text-cyan-400">
+                                      {t("available_level5")}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>

@@ -116,5 +116,6 @@
   "customAvatar": "🔒 Avatar personnalisable au niveau 5",
   "invalid_nickname": "Pseudo invalide",
   "invalid_pswd": "Mot de passe invalide",
-  "invalid_email": "Email invalide"
+  "invalid_email": "Email invalide",
+  "available_level5": "Disponible à partir du niveau 5"
 }

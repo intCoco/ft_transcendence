@@ -103,7 +103,7 @@ module.exports = async function (fastify) {
       return reply.status(401).send();
     }
 
-    if (!req.body.avatar || req.body.avatar.length > 2_800_000) {
+    if (!req.body.avatar || req.body.avatar.length > 4_500_000) {
       return reply.code(400).send({ message: "AVATAR_TOO_LARGE" });
     }
 
