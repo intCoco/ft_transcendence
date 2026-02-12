@@ -37,6 +37,10 @@ function formatKey(key) {
   return key.length > 4 ? key.slice(0, 4) + "…" : key.toUpperCase();
 }
 
+function isLetter(c) {
+  return c.length === 1 && (c.toLowerCase() != c.toUpperCase());
+}
+
 export default function GameSetup({ onStart, onClose }) {
   const { t } = useTranslation();
   const [mode, setMode] = useState("2p");
@@ -61,7 +65,7 @@ export default function GameSetup({ onStart, onClose }) {
       if (!listeningKey) return;
       if (FORBIDDEN_KEYS.has(e.key)) return;
 
-      const key = e.key.toLowerCase();
+      const key = isLetter(e.key) ? e.key.toLowerCase() : e.key;
 
       if (isKeyAlreadyBound(players, key, listeningKey)) {
         setKeyError(t("keyAlreadyUsed"));
