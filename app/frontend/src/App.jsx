@@ -222,7 +222,6 @@ function GameCanvas({ setupPlayers }) {
     const handleKeyDown = (e) => {
       const key = isLetter(e.key) ? e.key.toLowerCase() : e.key;
       setKey(key, true);
-      console.log(key);
       
 
       if (key === "Escape" && !game.isGameOver) {

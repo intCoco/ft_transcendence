@@ -23,10 +23,8 @@ export class AIController implements Controller {
     score: number = 0;
 
     constructor(paddle: Paddle, profile: AIProfile) {
-        console.log("AI profile received:", profile);
         this.paddle = paddle;
         this.profile = profile;
-        console.log("AI profile set:", this.profile);
         this.state = {
             zoneCenter: game.height / 2,
             zoneRadius: 200,

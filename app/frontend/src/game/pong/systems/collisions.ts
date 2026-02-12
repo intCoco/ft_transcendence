@@ -259,9 +259,6 @@ export function handlePaddleCollision(now: number, modifiers: GameModifiers) {
     else if (game.mode === "4P" && paddle === bottomPaddle) controller = bottomController;
     else controller = rightController;
 
-    console.log(collision.side);
-
-
     if (collision.side === "left" || collision.side === "right") {
         if (collision.side === "left" && ball.velX > 0 || collision.side === "right" && ball.velX < 0)
             ball.x = ball.prevX;
