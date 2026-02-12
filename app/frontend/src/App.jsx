@@ -1790,7 +1790,7 @@ export default function App() {
   ======================================================================================*/}
       {showChat && (
         <div
-          className="fixed top-0 left-0 h-full w-[300px]
+          className="fixed top-0 left-0 h-full w-[400px]
                           bg-black/80 z-[10] neon-border flex flex-col"
         >
           {/* =============================================
