@@ -12,7 +12,7 @@
         Responsible for authentication, database, WebSockets, Docker infrastructure and Readme update. Realized design proposition and a lot of quality tests.
 
     nihamdan - Fullstack Developer
-        Responsible for the user experience outside the game, achievements, XP, leaderboard and handled the app translation in Italian, English and French.
+        Responsible for the user experience outside the game, achievements, XP, match history, leaderboard and handled the app translation in Italian, English and French.
     
 
 # Description of ft_transcendence project
@@ -108,6 +108,7 @@ Each member indicated which module they were interested in and then began workin
         - Block: blocked user relationships.
         - Message: private messages exchanged between users.
         - UserSettings: user interface preferences.
+        - Match: save data from game vs AI.
     
     Relations:
         - Users can have multiple friends, blocks and private messages.
@@ -133,6 +134,7 @@ Each member indicated which module they were interested in and then began workin
         1v1 and multiplayer (1v1v1v1)
         AI opponent
         Game customization before match
+        Match history
     
     Progression
         Leaderboard and ranking
