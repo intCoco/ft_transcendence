@@ -95,6 +95,9 @@ function useAuth(setAuthUserId) {
 /* =================================== GAME CANVAS ================================= */
 /* ================================================================================= */
 /* ================================================================================= */
+function isLetter(c) {
+  return c.length === 1 && (c.toLowerCase() != c.toUpperCase());
+}
 
 function GameCanvas({ setupPlayers }) {
   const canvasRef = useRef(null);
@@ -217,15 +220,21 @@ function GameCanvas({ setupPlayers }) {
     if (!ctx) return;
 
     const handleKeyDown = (e) => {
-      setKey(e.key, true);
+      const key = isLetter(e.key) ? e.key.toLowerCase() : e.key;
+      setKey(key, true);
+      console.log(key);
+      
 
-      if (e.key === "Escape" && !game.isGameOver) {
+      if (key === "Escape" && !game.isGameOver) {
         game.isPaused = !game.isPaused;
         forceUpdate((v) => v + 1);
       }
     };
 
-    const handleKeyUp = (e) => setKey(e.key, false);
+    const handleKeyUp = (e) => {
+      const key = isLetter(e.key) ? e.key.toLowerCase() : e.key;
+      setKey(key, false);
+    }
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
