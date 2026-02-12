@@ -5,6 +5,13 @@ const { getUserIdFromAuth } = require("../utils/auth");
 const prisma = new PrismaClient();
 
 
+function getDefaultAvatarByLevel(level) {
+  if (level >= 3) return "/images/avatar3.png";
+  if (level >= 2) return "/images/avatar2.png";
+  return "/images/defaultavatar.png";
+}
+
+
 module.exports = async function (fastify) {
 
   /* ===========================
@@ -38,31 +45,17 @@ module.exports = async function (fastify) {
     }
 
     const ALLOWED_BACKGROUNDS = new Set([
-      "/images/enter.jpg",
-      "/images/sun.png",
-      "/images/japan2.jpg",
       "/images/abstract.png",
-      "/images/manwork.png",
-      "/images/pacman.png",
-      "/images/womanwork.png",
-      "/images/roundenter.png",
-      "/images/neonbh.png",
-      "/images/worldtech.png",
       "/images/abstract2.png",
-      "/images/womanview.png",
-      "/images/enterdisk.png",
-      "/images/manwork2.png",
-      "/images/womanwork2.png",
+      "/images/arcade.png",
+      "/images/datacenter.png",
+      "/images/enter.jpg",
       "/images/enter2.png",
       "/images/entertriangle.png",
-      "/images/datacenter.png",
-      "/images/abstract3.png",
+      "/images/manwork.png",
+      "/images/manwork2.png",
       "/images/manwork3.png",
-      "/images/datacenter2.png",
       "/images/miner.png",
-      "/images/arcade.png",
-      "/images/purpleplanet.png",
-      "/images/vaisseau.png",
       "/images/neon1.png",
       "/images/neon2.png",
       "/images/neon3.png",
@@ -74,7 +67,17 @@ module.exports = async function (fastify) {
       "/images/neon9.png",
       "/images/neon10.png",
       "/images/neon11.png",
-      "/images/neon12.png"
+      "/images/neon12.png",
+      "/images/neonbh.png",
+      "/images/pacman.png",
+      "/images/purpleplanet.png",
+      "/images/roundenter.png",
+      "/images/sun.png",
+      "/images/vaisseau.png",
+      "/images/viewpurple.png",
+      "/images/womanview.png",
+      "/images/womanwork.png",
+      "/images/womanwork2.png"
     ]);
 
     if (!ALLOWED_BACKGROUNDS.has(background)) {
@@ -91,8 +94,6 @@ module.exports = async function (fastify) {
     return settings;
   });
 
-
-
     /* ===========================
     USER DATA
     =========================== */
@@ -102,14 +103,36 @@ module.exports = async function (fastify) {
       return reply.status(401).send();
     }
 
-  const userId = Number(auth.replace("Bearer DEV_TOKEN_", ""));
+    if (!req.body.avatar || req.body.avatar.length > 2_800_000) {
+      return reply.code(400).send({ message: "AVATAR_TOO_LARGE" });
+    }
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { avatarUrl: req.body.avatar },
-  });
+    const userId = Number(auth.replace("Bearer DEV_TOKEN_", ""));
 
-  return { ok: true };
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { xp: true },
+    });
+
+    if (!user) {
+      return reply.code(404).send({ message: "USER_NOT_FOUND" });
+    }
+
+    const level = Math.floor(user.xp / 100);
+
+    if (level < 5) {
+      return reply.code(403).send({
+        error: "AVATAR_LOCKED",
+        requiredLevel: 5,
+      });
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { avatarUrl: req.body.avatar },
+    });
+
+    return { ok: true };
   });
 
   fastify.get("/user/me/avatar", async (req, reply) => {
@@ -122,10 +145,29 @@ module.exports = async function (fastify) {
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { avatarUrl: true },
+      select: {
+        avatarUrl: true,
+        xp: true,
+      },
     });
 
-    return { avatar: user?.avatarUrl ?? null };
+    if (!user) {
+      return reply.code(404).send({ message: "USER_NOT_FOUND" });
+    }
+
+    const level = Math.floor(user.xp / 100);
+
+    let avatar;
+    if (level >= 5 && user.avatarUrl) {
+      avatar = user.avatarUrl;
+    } else {
+      avatar = getDefaultAvatarByLevel(level);
+    }
+
+    return {
+      avatar,
+      level,
+    };
   });
 
   fastify.get("/users", async () => {
@@ -151,7 +193,7 @@ module.exports = async function (fastify) {
 
     if (
       typeof nickname !== "string" ||
-      nickname.trim().length < 3 ||
+      nickname.trim().length < 1 ||
       nickname.trim().length > 15
     ) {
       return reply.code(400).send({ message: "INVALID_NICKNAME" });
@@ -199,10 +241,18 @@ module.exports = async function (fastify) {
 
     const online = [...onlineSockets.values()].includes(userId);
 
+    const level = Math.floor(user.xp / 100);
+
+    const avatar =
+      level >= 5 && user.avatarUrl
+        ? user.avatarUrl
+        : getDefaultAvatarByLevel(level);
+
     return {
       id: user.id,
       nickname: user.nickname,
       avatar: user.avatarUrl || "/images/defaultavatar.png",
+      avatar,
       online,
       xp: user.xp,
       success1: user.success1,

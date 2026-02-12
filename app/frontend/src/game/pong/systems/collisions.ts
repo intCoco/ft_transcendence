@@ -16,11 +16,11 @@ import { ARENA_MARGIN_LEFT, ARENA_MARGIN_RIGHT, ARENA_MARGIN_TOP } from "../core
 
 export interface CollisionResult {
     hit: boolean;
-    side: "vertical" | "horizontal";
+    side?: "left" | "right" | "top" | "bottom";
     paddle?: Paddle;
 }
 
-function testPaddleCollision(paddle: Paddle, prevX: number, prevY: number, currX: number, currY: number): { hit: boolean; side: "vertical" | "horizontal" } {
+function testPaddleCollision(paddle: Paddle, prevX: number, prevY: number, currX: number, currY: number): { hit: boolean; side?: "left" | "right" | "top" | "bottom" } {
     const left = paddle.x;
     const right = paddle.x + paddle.width;
     const top = paddle.y;
@@ -28,22 +28,25 @@ function testPaddleCollision(paddle: Paddle, prevX: number, prevY: number, currX
 
     if (currX + ball.radius < left || currX - ball.radius > right
         || currY + ball.radius < top || currY - ball.radius > bottom) {
-        return { hit: false, side: "horizontal" };
+        return { hit: false, side: undefined };
     }
 
     if (prevX + ball.radius <= left && currX + ball.radius >= left)
-        return { hit: true, side: "vertical" };
+        return { hit: true, side: "left" };
 
     if (prevX - ball.radius >= right && currX - ball.radius <= right)
-        return { hit: true, side: "vertical" };
+        return { hit: true, side: "right" };
 
     if (prevY + ball.radius <= top && currY + ball.radius >= top)
-        return { hit: true, side: "horizontal" };
+        return { hit: true, side: "top" };
 
     if (prevY - ball.radius >= bottom && currY - ball.radius <= bottom)
-        return { hit: true, side: "horizontal" };
+        return { hit: true, side: "bottom" };
 
-    return { hit: true, side: "horizontal" };
+    if (paddle.orientation === "vertical")
+        return { hit: true, side: currY < top ? "top" : "bottom" };
+    else
+        return { hit: true, side: currX < left ? "left" : "right" };
 }
 
 export function checkPaddleCollision(paddles: Paddle[], prevX: number, prevY: number, currX: number, currY: number): CollisionResult {
@@ -66,11 +69,11 @@ export function checkPaddleCollision(paddles: Paddle[], prevX: number, prevY: nu
     }
 
 
-    if (!nearest) return { hit: false, side: "horizontal" };
+    if (!nearest) return { hit: false, side: undefined };
 
     const res = testPaddleCollision(nearest, prevX, prevY, currX, currY);
 
-    if (!res.hit) return { hit: false, side: "horizontal" };
+    if (!res.hit) return { hit: false, side: undefined };
 
     return { hit: true, side: res.side, paddle: nearest };
 }
@@ -242,7 +245,7 @@ export function handlePaddleCollision(now: number, modifiers: GameModifiers) {
     const paddles = game.mode === "4P" ? [leftPaddle, rightPaddle, topPaddle, bottomPaddle] : [leftPaddle, rightPaddle];
     let collision = checkPaddleCollision(paddles, ball.prevX, ball.prevY, ball.x, ball.y);
 
-    if (!collision.hit) return;
+    if (!collision.hit || !collision.paddle) return;
 
     const paddle = collision.paddle;
     if (game.lastHitPaddle !== paddle) {
@@ -256,14 +259,19 @@ export function handlePaddleCollision(now: number, modifiers: GameModifiers) {
     else if (game.mode === "4P" && paddle === bottomPaddle) controller = bottomController;
     else controller = rightController;
 
-    if (collision.side === "vertical") {
-      ball.velX *= -1;
-      ball.x = ball.prevX;
-      spawnParticles("vertical");
+    console.log(collision.side);
+
+
+    if (collision.side === "left" || collision.side === "right") {
+        if (collision.side === "left" && ball.velX > 0 || collision.side === "right" && ball.velX < 0)
+            ball.x = ball.prevX;
+        ball.velX *= (collision.side === "left" ? (ball.velX > 0 ? -1 : 1) : (ball.velX > 0 ? 1 : -1));
+        spawnParticles("vertical");
     } else {
-      ball.velY *= -1;
-      ball.y = ball.prevY;
-      spawnParticles("horizontal");
+        if (collision.side === "top" && ball.velY > 0 || collision.side === "bottom" && ball.velY < 0)
+            ball.y = ball.prevY;
+        ball.velY *= (collision.side === "top" ? (ball.velY > 0 ? -1 : 1) : (ball.velY > 0 ? 1 : -1));
+        spawnParticles("horizontal");
     }
 
     if (modifiers.paddleBounceAngle && paddle)
@@ -273,7 +281,7 @@ export function handlePaddleCollision(now: number, modifiers: GameModifiers) {
         applySpeedIncrease();
 
     // spin management
-    if (modifiers.spin && collision.side === paddle!.orientation) {
+    if (modifiers.spin && collision.side === paddle.front) {
         if (controller instanceof PlayerController) {
             if (controller.isUpPressed()) {
                 ball.spin = (controller.paddle === leftPaddle || (game.mode === "4P" && controller.paddle === bottomPaddle)) ? 0.7 : -0.7;
@@ -286,8 +294,8 @@ export function handlePaddleCollision(now: number, modifiers: GameModifiers) {
                 else bounce(ball, 0.785398, controller.paddle.orientation);
             }
             else ball.spin = 0;
-            
-            
+
+
             // AI decision making
             const opponent = controller.paddle === leftPaddle ? rightController : leftController;
             if (opponent instanceof AIController) {
@@ -296,18 +304,17 @@ export function handlePaddleCollision(now: number, modifiers: GameModifiers) {
                     opponent.state.wantsSpin = Math.random() < opponent.profile.spinChance;
                 if (opponent.state.wantsSpin)
                     opponent.state.spinDir = (opponent.state.zoneCenter > game.height / 2) ? (Math.random() < 0.66 ? "up" : "down") : (Math.random() < 0.66 ? "down" : "up");
-                opponent.state.nextReactionTime = now + opponent.profile.reactionTime;
             }
         } else if (controller instanceof AIController && controller.state.wantsSpin) {
-                const dir = controller.state.spinDir === "up" ? 1 : -1;
+            const dir = controller.state.spinDir === "up" ? 1 : -1;
 
-                ball.spin = dir * 0.7;
-                const angle = dir * 0.6747;
-                bounce(ball, angle, "vertical");
+            ball.spin = dir * 0.7;
+            const angle = dir * 0.6747;
+            bounce(ball, angle, "vertical");
 
-                controller.state.wantsSpin = false;
-                controller.state.spinDir = false;
+            controller.state.wantsSpin = false;
+            controller.state.spinDir = false;
         } else
-                ball.spin = 0;
+            ball.spin = 0;
     }
 }

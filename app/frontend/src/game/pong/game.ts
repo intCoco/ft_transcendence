@@ -5,9 +5,10 @@ import { PlayerController } from "./controllers/playerController.js";
 import { AIController } from "./controllers/aiController.js";
 import { AI_EASY, AI_HARD, AI_NORMAL } from "./ai/ai.js";
 import { startCoinToss } from "./systems/coinToss.js";
-import { render } from "./systems/render.js";
+import { render } from "./systems/rendering/render.js";
 import { update } from "./systems/update.js";
 import { goal } from "./modifiers/arena.js";
+import { showControlsHint } from "./systems/controlsHint.js";
 
 
 export let leftController: PlayerController | AIController =
@@ -46,12 +47,12 @@ export function startGame(playersConfig?: any)  {
 
     for (const controller of [leftController, rightController, topController, bottomController])
         controller.score = 0;
-    
+
     leftPaddle.x = 20;
     leftPaddle.y = game.height / 2 - 40;
     rightPaddle.x = game.width - 35;
     rightPaddle.y = game.height / 2 - 40;
-    
+
     if (playersConfig) {
         if (playersConfig.left.type === "Player")
             leftController = new PlayerController(leftPaddle, playersConfig.left.up, playersConfig.left.down);
@@ -95,6 +96,7 @@ export function startGame(playersConfig?: any)  {
     goal.left = (game.width - goal.width) / 2;
     goal.right = goal.left + goal.width;
 
+    showControlsHint();
     startCoinToss(performance.now() / 1000);
 }
 
@@ -120,7 +122,7 @@ export function endGame() {
 export function startPongGame(canvas: HTMLCanvasElement, playersConfig?: any) {
     const ctx = canvas.getContext("2d")!;
     if (!ctx) return () => {};
-    
+
     let running = true;
     let lastTime = performance.now();
 

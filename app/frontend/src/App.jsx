@@ -7,6 +7,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   Routes,
   Route,
+  Navigate,
   useNavigate,
   useLocation,
   useParams,
@@ -601,6 +602,9 @@ export default function App() {
   const [currentUserSuccess2, setCurrentUserSuccess2] = useState(false);
   const [currentUserSuccess3, setCurrentUserSuccess3] = useState(false);
 
+  //handle avatar for level
+  const level = Math.floor(currentUserXp / 100);
+
   /* Check if this is you */
   const meId = Number(localStorage.getItem(USER_ID_KEY));
   const isMe = selectedUser?.id === meId;
@@ -674,31 +678,17 @@ export default function App() {
   }, [isAuthed, location.pathname]);
 
   const BACKGROUNDS = [
-    "/images/enter.jpg",
-    "/images/sun.png",
-    "/images/japan2.jpg",
     "/images/abstract.png",
-    "/images/manwork.png",
-    "/images/pacman.png",
-    "/images/womanwork.png",
-    "/images/roundenter.png",
-    "/images/neonbh.png",
-    "/images/worldtech.png",
     "/images/abstract2.png",
-    "/images/womanview.png",
-    "/images/enterdisk.png",
-    "/images/manwork2.png",
-    "/images/womanwork2.png",
+    "/images/arcade.png",
+    "/images/datacenter.png",
+    "/images/enter.jpg",
     "/images/enter2.png",
     "/images/entertriangle.png",
-    "/images/datacenter.png",
-    "/images/abstract3.png",
+    "/images/manwork.png",
+    "/images/manwork2.png",
     "/images/manwork3.png",
-    "/images/datacenter2.png",
     "/images/miner.png",
-    "/images/arcade.png",
-    "/images/purpleplanet.png",
-    "/images/vaisseau.png",
     "/images/neon1.png",
     "/images/neon2.png",
     "/images/neon3.png",
@@ -711,6 +701,16 @@ export default function App() {
     "/images/neon10.png",
     "/images/neon11.png",
     "/images/neon12.png",
+    "/images/neonbh.png",
+    "/images/pacman.png",
+    "/images/purpleplanet.png",
+    "/images/roundenter.png",
+    "/images/sun.png",
+    "/images/vaisseau.png",
+    "/images/viewpurple.png",
+    "/images/womanview.png",
+    "/images/womanwork.png",
+    "/images/womanwork2.png"
   ];
 
   /* ================================================================================= */
@@ -804,24 +804,53 @@ export default function App() {
     const file = e.target.files[0];
     if (!file || !authUserId) return;
 
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const avatarBase64 = reader.result;
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
 
-      await fetch("/api/user/me/avatar", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
-        },
-        body: JSON.stringify({ avatar: avatarBase64 }),
-      });
+    if (!file.type.startsWith("image/")) {
+      notify("Only images allowed");
+      return;
+    }
 
-      setAvatar(avatarBase64);
+    if (file.size > MAX_SIZE) {
+      notify("Image too large (max 2MB)");
+      return;
+    }
+
+    const img = new Image();
+    img.onload = async () => {
+      if (img.width > 512 || img.height > 512) {
+        notify("Image too big (max 512x512)");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const avatarBase64 = reader.result;
+
+        const res = await fetch("/api/user/me/avatar", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("auth_token")}`,
+          },
+          body: JSON.stringify({ avatar: avatarBase64 }),
+        });
+
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          notify(t(data.error || "avatar_error"));
+          return;
+        }
+
+        setAvatar(avatarBase64);
+      };
+
+      reader.readAsDataURL(file);
     };
 
-    reader.readAsDataURL(file);
+    img.src = URL.createObjectURL(file);
   };
+
   useEffect(() => {
     const token = localStorage.getItem(AUTH_KEY);
     if (!token) return;
@@ -861,7 +890,7 @@ export default function App() {
     });
 
     if (!res.ok) {
-      notify("Nickname update failed");
+      notify(t("invalid_nickname"));
       return;
     }
 
@@ -1088,6 +1117,7 @@ export default function App() {
       const msg = JSON.parse(event.data);
 
       switch (msg.type) {
+
         case "TYPING":
           setTypingUsers((prev) => ({
             ...prev,
@@ -1103,26 +1133,26 @@ export default function App() {
           });
           break;
 
-        case "USERS_STATUS":
-          setUsers((prev) => {
-            const map = new Map(prev.map((u) => [u.id, u]));
+          case "USERS_STATUS":
+            setUsers((prev) => {
+              const map = new Map(prev.map((u) => [u.id, u]));
 
-            msg.onlineUsers.forEach((id) => {
-              if (!map.has(id)) {
-                map.set(id, {
-                  id,
-                  nickname: "Unknown",
-                  online: true,
-                });
-              }
+              msg.onlineUsers.forEach((id) => {
+                if (!map.has(id)) {
+                  map.set(id, {
+                    id,
+                    nickname: "Unknown",
+                    online: true,
+                  });
+                }
+              });
+
+              return [...map.values()].map((u) => ({
+                ...u,
+                online: msg.onlineUsers.includes(u.id),
+              }));
             });
-
-            return [...map.values()].map((u) => ({
-              ...u,
-              online: msg.onlineUsers.includes(u.id),
-            }));
-          });
-          break;
+            break;
 
         case "FRIEND_REQUEST":
           setFriendRequests((prev) => {
@@ -2120,10 +2150,8 @@ export default function App() {
   ======================================================================================
   ======================================================================================*/}
 
-      <main
-        className={`flex-1 flex flex-col transition-all duration-200
-                  ${showChat ? "ml-[300px]" : ""}`}
-      >
+      <main className={`flex-1 flex flex-col transition-all duration-200
+                  ${showChat ? "ml-[300px]" : ""}`}>
         <Routes>
           <Route
             path="/"
@@ -2256,7 +2284,7 @@ export default function App() {
                   </div>
                 )}
               </div>
-            }
+              }
           />
 
           {/*=====================================================================================
@@ -2269,10 +2297,10 @@ export default function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <div className="w-full h-full flex flex-col items-center">
-                  <div className="mt-[5vh]">
-                    <h1
-                      className="neon-glitch neon-glitch--always absolute left-1/2 -translate-x-1/2 bg-transparent
+              <div className="w-full h-full flex flex-col items-center">
+                <div className="mt-[5vh]">
+                  <h1
+                    className="neon-glitch neon-glitch--always absolute left-1/2 -translate-x-1/2 bg-transparent
                   border-0 text-7xl"
                       data-text="𝕋ℝ𝔸ℕ𝕊ℂ𝔼ℕ𝔻𝔼ℕℂ𝔼"
                     >
@@ -2344,20 +2372,20 @@ export default function App() {
             path="/customize"
             element={
               <ProtectedRoute>
-                <div className="fixed inset-0 bg-black/80 z-30 flex flex-col items-center p-8">
-                  <h1
-                    className="neon-glitch neon-glitch--always text-5xl mb-[4vh] mt-[8vh]"
-                    data-text={t("background")}
-                  >
-                    {t("background")}
-                  </h1>
+              <div className="fixed inset-0 bg-black/80 z-30 flex flex-col items-center p-8">
+                <h1
+                  className="neon-glitch neon-glitch--always text-5xl mb-[4vh] mt-[8vh]"
+                  data-text={t("background")}
+                >
+                  {t("background")}
+                </h1>
 
-                  <div className="grid grid-cols-7 gap-6 mt-[8vh]">
-                    {BACKGROUNDS.map((bg) => (
-                      <button
-                        key={bg}
-                        onClick={() => updateBackground(bg)}
-                        className={`relative w-[110px] h-[60px] rounded-lg overflow-hidden neon-border
+                <div className="grid grid-cols-7 gap-6 mt-[8vh]">
+                  {BACKGROUNDS.map((bg) => (
+                    <button
+                      key={bg}
+                      onClick={() => updateBackground(bg)}
+                      className={`relative w-[110px] h-[60px] rounded-lg overflow-hidden neon-border
                     ${bgSrc === bg ? "ring-2 ring-cyan-400" : ""}`}
                       >
                         <img
@@ -2369,15 +2397,14 @@ export default function App() {
                     ))}
                   </div>
 
-                  <button
-                    className="mt-10 px-2 py-1 neon-border bg-gray-900/60 text-cyan-300"
-                    onClick={() => navigate(-1)}
-                  >
-                    {t("back")}
-                  </button>
-                </div>
-              </ProtectedRoute>
-            }
+                <button
+                  className="mt-10 px-2 py-1 neon-border bg-gray-900/60 text-cyan-300"
+                  onClick={() => navigate(-1)}
+                >
+                  {t("back")}
+                </button>
+              </div>
+            </ProtectedRoute>}
           />
 
           {/*=====================================================================================
