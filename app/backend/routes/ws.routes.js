@@ -26,13 +26,6 @@ module.exports = async function (fastify) {
       return;
     }
 
-    for (const [socket, uid] of onlineSockets.entries()) {
-      if (uid === userId) {
-        socket.close();
-        onlineSockets.delete(socket);
-      }
-    }
-
     connection.socket.on("close", () => {
       onlineSockets.delete(connection.socket);
       broadcastUsers();
@@ -42,6 +35,16 @@ module.exports = async function (fastify) {
       onlineSockets.delete(connection.socket);
       broadcastUsers();
     });
+
+    for (const uid of onlineSockets.values()) {
+      if (uid === userId) {
+        connection.socket.send(JSON.stringify({
+          type: "ALREADY_CONNECTED"
+        }));
+        connection.socket.close();
+        return;
+      }
+    }
 
     onlineSockets.set(connection.socket, userId);
 

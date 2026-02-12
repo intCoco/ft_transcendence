@@ -1172,6 +1172,23 @@ export default function App() {
           );
           setActiveChatUser((prev) => (prev?.id === msg.userId ? null : prev));
           break;
+        
+        case "ALREADY_CONNECTED":
+           notify(t("already_connect"));
+
+          // Force logout
+          wsRef.current?.close();
+          wsRef.current = null;
+
+          localStorage.removeItem(AUTH_KEY);
+          localStorage.removeItem(LOGIN_KEY);
+          localStorage.removeItem(USER_ID_KEY);
+
+          setAuthUserId(null);
+          signOut();
+          navigate("/");
+
+          break;
 
         case "DM_MESSAGE": {
           const fromId = msg.fromUserId;

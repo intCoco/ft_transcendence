@@ -116,5 +116,6 @@
   "invalid_nickname": "Pseudo invalide",
   "invalid_pswd": "Mot de passe invalide",
   "invalid_email": "Email invalide",
-  "available_level5": "Disponible à partir du niveau 5"
+  "available_level5": "Disponible à partir du niveau 5",
+  "already_connect": "Compte déjà utilisé"
 }

@@ -116,5 +116,6 @@
   "invalid_nickname": "Invalid nickname",
   "invalid_pswd": "Invalid password",
   "invalid_email": "Invalid email",
-  "available_level5": "Available from level 5"
+  "available_level5": "Available from level 5",
+  "already_connect": "User already connected"
 }
