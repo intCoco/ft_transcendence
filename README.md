@@ -143,18 +143,12 @@ All services are accessible through localhost and secured with HTTPS.
     ./setup.sh
     ```
 
-2. Edit `app/backend/.env`:
-    ```bash
-    # Example:
-    vim app/backend/.env
-    ```
-
-3. Run the project:
+2. Run the project:
     ```bash
     make
     ```
-
-Then navigate to https://127.0.0.1:8443/ in your browser.
+    
+3. Then navigate to https://127.0.0.1:8443/ in your browser.
 
 > [!IMPORTANT]
 > If you prefer to set up manually or if the script doesn't work, run the [Manual Setup](#manual-setup).
@@ -164,7 +158,6 @@ Then navigate to https://127.0.0.1:8443/ in your browser.
 1. Configure Environment Variables:
     ```bash
     cp app/backend/.env.example app/backend/.env
-    # Edit app/backend/.env
     ```
 
 2. Generate SSL/TLS Certificates:
@@ -185,10 +178,10 @@ Then navigate to https://127.0.0.1:8443/ in your browser.
     make
     ```
 
-Then navigate to https://127.0.0.1:8443/ in your browser.
+5. Then navigate to https://127.0.0.1:8443/ in your browser.
 
 > [!IMPORTANT]
-> If it still doesn't work, you can:
+> If it still doesn't work, you can try:
 > ```bash
 > sudo cp app/certs/cert.pem /usr/local/share/ca-certificates/localhost.crt
 > sudo update-ca-certificates
