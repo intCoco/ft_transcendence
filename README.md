@@ -126,9 +126,11 @@ All services are accessible through localhost and secured with HTTPS.
 
 ### Requirements:
 
-1. Install and setup [Docker](https://docs.docker.com/desktop/).
+1. An Unix-based system (Linux / macOS)
 
-2. Clone the [repository](https://github.com/intCoco/ft_transcendence) from GitHub:
+2. Install and setup [Docker](https://docs.docker.com/desktop/).
+
+3. Clone the [repository](https://github.com/intCoco/ft_transcendence) from GitHub:
    ```bash
    git clone https://github.com/intCoco/ft_transcendence.git
    ```
