@@ -1,219 +1,279 @@
+<h1 align="center">ft_transcendence</h1>
+
+<p align="center">
+	<b>🏓 <i>The final boss of the 42 common core: a real-time multiplayer Pong with full-stack architecture.</i></b><br>
+</p>
+
+<p align="center">
+  <img alt="Frontend" src="https://img.shields.io/badge/Frontend-React-blue"/>
+  <img alt="Backend" src="https://img.shields.io/badge/Backend-Fastify-blue"/>
+  <img alt="Containerized" src="https://img.shields.io/badge/Infrastructure-Docker-blue"/>
+  <img alt="Game" src="https://img.shields.io/badge/Game-TypeScript-blue"/>
+</p>
+<p align="center">
+  <img alt="Status" src="https://img.shields.io/badge/Status-Completed-success"/>
+  <img src="https://img.shields.io/badge/Grade-125%2F100-success"/>
+  <img alt="42" src="https://img.shields.io/badge/School-42-black"/>
+</p>
+
+---
+
+## 📑 Table of Contents
+
+* [📖 Description](#-description)
+* [🚀 Features](#-features)
+* [🛠 Technical Stack](#-technical-stack)
+* [🗄 Database Schema](#-database-schema)
+* [▶️ Usage & Installation](#-usage--installation)
+* [👥 Team](#-team)
+* [🧠 Modules & Points](#-modules--points)
+* [🏆 Conclusion](#-conclusion)
+* [📚 Resources](#-resources)
+* [👤 Authors](#-authors)
+
+---
+
+## 📖 Description
+
+**ft_transcendence** is a real-time web application centered around a multiplayer [Pong game](https://www.ponggame.org/).  
+
+Users can register, manage their profile, add friends and interact through a live chat system.  
+The platform supports local matches in 1v1 and multiplayer modes (up to 4 players), as well as games against an AI opponent.  
+The application includes matchmaking through chat invitations, game customization options, a progression system with XP, achievements, leaderboards and real-time synchronization using WebSockets.  
+
+The project is designed to run locally using Docker containers and is not deployed online.  
+All services are accessible through localhost and secured with HTTPS.
+
+---
+
+## 🚀 Features
+
+### Core
+
+* User registration & authentication
+* Profile management
+* Friends system (add/remove, online status)
+* Secure HTTPS communication
+
+### Real-Time & Social
+
+* Live chat system
+* Game invitations via chat
+* User blocking
+* WebSocket-based synchronization
+
+### Game
+
+* Browser-based Pong game
+* 1v1 and multiplayer (up to 4 players)
+* AI opponent
+* Game customization
+* Match history and statistics
+
+### Progression & UX
+
+* Leaderboards and ranking
+* Achievements & XP system
+* Multi-language support (EN/FR/IT)
+
+---
+
+## 🛠 Technical Stack
+
+### Frontend
+
+* React, React Router DOM
+* Tailwind CSS
+* HTML5 Canvas API
+* WebSocket API, Fetch API, LocalStorage API
+* i18next / react-i18next for internationalization
+
+### Backend
+
+* Node.js, Fastify
+* @fastify/websocket, @fastify/cors
+* Prisma ORM with SQLite
+* REST API endpoints
+* bcrypt authentication
+
+### Infrastructure
+
+* Docker & Docker Compose
+* Nginx as reverse proxy
+* HTTPS
+
+---
+
+## 🗄 Database Schema
+
+* Managed with Prisma ORM and SQLite
+* Main entities:
+
+  * User: authentication, profile, stats
+  * Friendship: friend requests and relationships
+  * Block: blocked user relationships
+  * Message: private messages
+  * UserSettings: interface preferences
+  * Match: game data
+* Relations:
+
+  * Users can have multiple friends, blocks, messages
+  * Each user has one settings entry
+
+---
+
+## ▶️ Usage & Installation
+
+### Requirements:
+
+1. Install and setup [Docker](https://docs.docker.com/desktop/).
+
+2. Clone the [repository](https://github.com/intCoco/ft_transcendence) from GitHub:
+   ```bash
+   git clone https://github.com/intCoco/ft_transcendence.git
+   ```
+
+### Quick Start (Automated Setup):
+
+1. Execute `setup.sh`:
+    ```bash
+    chmod +x setup.sh
+    ./setup.sh
+    ```
+
+2. Edit `app/backend/.env`:
+    ```bash
+    # Example:
+    vim app/backend/.env
+    ```
+
+3. Run the project:
+    ```bash
+    make
+    ```
+
+Then navigate to https://127.0.0.1:8443/ in your browser.
+
+> [!IMPORTANT]
+> If you prefer to set up manually or if the script doesn't work, run the [Manual Setup](#manual-setup).
+
+### <a name="manual-setup">Manual Setup</a>:
+
+1. Configure Environment Variables:
+    ```bash
+    cp app/backend/.env.example app/backend/.env
+    # Edit app/backend/.env
+    ```
+
+2. Generate SSL/TLS Certificates:
+    ```bash
+    mkdir -p app/certs
+    openssl req -x509 -newkey rsa:2048 -keyout app/certs/key.pem -out app/certs/cert.pem -days 365 -nodes -subj "/CN=localhost"
+    ```
+
+3. Install Dependencies:
+    ```bash
+    cd app/backend && npm install
+    cd ../frontend && npm install
+    cd ../..
+    ```
+
+4. Run the project:
+    ```bash
+    make
+    ```
+
+Then navigate to https://127.0.0.1:8443/ in your browser.
+
+> [!IMPORTANT]
+> If it still doesn't work, you can:
+> ```bash
+> sudo cp app/certs/cert.pem /usr/local/share/ca-certificates/localhost.crt
+> sudo update-ca-certificates
+> ```
+
+### Useful commands:
+
+- **Start the app**:
+  ```sh
+  make up
+  ```
+
+- **Stop the app**:
+  ```sh
+  make down
+  ```
+
+- **Clean the app**:
+  ```sh
+  make fclean
+  ```
+
+---
+
+## 👥 Team
+
+| Dev | Roles | Description |
+| --- | ----- | ----------- |
+| **chuchard** | Game Director & Solo Game Developer, QA Tester | Responsible for designing and developing the entire game (including menus, gameplay mechanics, rules, 2 & 4 players modes, AI opponent, etc...) and defining the visual design & overall player experience. |
+| **bboussad** | Fullstack Developer, QA Tester | Responsible for the UI, UX, client-side interactions and handle some connection with the back. Set deadlines, meetings and some quality tests. |
+| **aldalmas** | Backend & Infrastructure Developer, QA Tester | Responsible for authentication, database, WebSockets, Docker infrastructure and Readme update. Realized design proposition and a lot of quality tests. |
+| **nihamdan** | Fullstack Developer | Responsible for the user experience outside the game, achievements, XP, match history, leaderboard. |
+
+---
+
+## 🧠 Modules & Points
+
+### **🌐 WEB**
+* [Major] Use a framework for both the frontend and backend.
+* [Major] Implement real-time features using WebSockets or similar technology.
+* [Major] Allow users to interact with other users (chat, profiles, friends system).
+* [Major] Use an ORM for database management.
+
+### **🌍 ACCESSIBILITY & INTERNATIONALIZATION**
+* [Major] Support multiple languages (English, French, Italian).
+
+### **👤 USER MANAGEMENT**
+* [Major] Implement standard user management and authentication.
+* [Major] Provide game statistics and match history.
+
+### **🤖 ARTIFICIAL INTELLIGENCE**
+* [Major] Introduce an AI opponent for gameplay.
+
+### **🎮 GAMING & USER EXPERIENCE**
+* [Major] Implement a complete web-based multiplayer game.
+* [Major] Support multiplayer modes with more than two players.
+* [Major] Implement advanced chat features (invitations, blocking, interactions).
+* [Major] Provide game customization options.
+* [Major] Implement a gamification system (XP, achievements, leaderboard).
+
+> [!NOTE]
+> Major = 2 points.  
+> Minor = 1 point.  
+> **Total**: 20 points
+
+---
+
+## 🏆 Conclusion
+
+**ft_transcendence** represents the culmination of the [42 common core](https://42.fr/en/the-program/software-engineer-degree/), combining full-stack development, real-time systems, and containerized infrastructure into a single cohesive platform. It demonstrates collaborative development, technical mastery, and creative game design.
+
+---
+
+## 📚 Resources
+
+* [HTML](https://developer.mozilla.org/fr/docs/Web/HTML)
+* [CSS](https://developer.mozilla.org/fr/docs/Web/CSS)
+* [JavaScript](https://developer.mozilla.org/fr/docs/Web/JavaScript)
+* [React](https://react.dev/learn)
+* [Fastify](https://www.fastify.dev/)
+* [Prisma](https://www.prisma.io/docs)
+* [Tailwind CSS](https://tailwindcss.com/docs)
+* [WebSockets](https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API)
+* AI usage: structuring README, translations, debugging assistance
+
+---
+
+## 👤 Authors
+
 *This project has been created as part of the 42 curriculum by bboussad, chuchard, nihamdan, aldalmas.*
-
-
-# Team Information:
-    chuchard - Game Director & Solo Game Developer, Gameplay Programmer, QA Tester
-        Responsible for designing and developing the entire Pong game, including gameplay mechanics, rules, AI opponent, 1v1 and 1v1v1v1 multiplayer modes, and defining the visual design and overall player experience.
-
-    bboussad - Project Manager, Fullstack developer, QA Tester
-        Responsible for the UI, UX, client-side interactions and handle some connection with the back. Set deadlines, meetings and some quality tests.
-
-    aldalmas - Project Owner, Backend and Infrastructure Developer, QA Tester
-        Responsible for authentication, database, WebSockets, Docker infrastructure and Readme update. Realized design proposition and a lot of quality tests.
-
-    nihamdan - Fullstack Developer
-        Responsible for the user experience outside the game, achievements, XP, match history, leaderboard and handled the app translation in Italian, English and French.
-    
-
-# Description of ft_transcendence project
-    ft_transcendence is a real-time web application centered around a multiplayer Pong game.
-    Users can register, manage their profile, add friends, and interact through a live chat system.
-    The platform supports local matches in 1v1 and multiplayer modes (up to 4 players), as well as games against an AI opponent.
-    The application includes matchmaking through chat invitations, game customization options,
-    a progression system with XP, achievements, and leaderboards, and real-time synchronization
-    using WebSockets.
-    The project is designed to run locally using Docker containers and is not deployed online.
-    All services are accessible through localhost and secured with HTTPS.
-     
-
-
-
-# Resources
-    - HTML doc: https://developer.mozilla.org/fr/docs/Web/HTML
-    - CSS doc: https://developer.mozilla.org/fr/docs/Web/CSS
-    - JavaScript doc: https://devdocs.io/javascript/ and https://developer.mozilla.org/fr/docs/Web/JavaScript
-    - Fastify doc: https://fastify.dev/
-    - React doc: https://react.dev/learn
-    - Prisma doc: https://www.prisma.io/docs
-    - Tailwind CSS doc: https://tailwindcss.com/docs
-    - bcrypt doc: https://www.npmjs.com/package/bcryptjs
-    - Websocket doc: https://developer.mozilla.org/en-US/docs/Web/API/WebSockets_API
-    - Previous 42 project "Inception" for Docker, Nginx, and containerization concepts
-    - Stack Overflow (for specific technical issues)
-    - YouTube tutorials (for general understanding of some technologies)
-
-    - AI usage:
-        - documentation
-        - clarification of the project requirements
-        - structuring the README
-        - translation
-        - help understand and debug certain code-related issues
-
-
-# Instructions to run this project
-1. Paste the .env in app/backend/
-2. Paste certs/ in app/backend/
-3. make
-4. Go to https://127.0.0.1:8443/ on any browser
-
-If it doesn't work, you may need to try this:
-
-5. Paste keys: sudo cp cert.pem /usr/local/share/ca-certificates/localhost.crt
-6. Install node_modules/: cd /app/backend/ && npm install 
-7. Same here: cd /app/frontend/ && npm install
-8. Allow certs: sudo update-ca-certificates
-    
-
-# Project Management
-Each member indicated which module they were interested in and then began working semi-independently, providing regular updates and sharing current issues that we resolved together. We all used GitHub, Trello and Discord for communication.
-
-
-# Technical Stack
-    Frontend
-    - React: builds a component-based user interface and manages application state.
-    - React Router DOM: handles client-side routing, navigation, and protected routes.
-    - Tailwind CSS: utility-first CSS framework used for responsive and consistent styling.
-    - i18next / react-i18next: manages internationalization and dynamic language switching.
-    - HTML5 Canvas API: renders the Pong game directly in the browser.
-    - WebSocket API: enables real-time communication with the backend.
-    - Fetch API: performs HTTP requests to the backend REST API.
-    - LocalStorage API: stores authentication tokens and user session data on the client.
-    
-    Backend
-    - Node.js: JavaScript runtime environment used to run the backend server.
-    - Fastify: web framework used to handle HTTP requests, routing, and middleware.
-    - @fastify/websocket: adds WebSocket support to Fastify for real-time features.
-    - @fastify/cors: manages Cross-Origin Resource Sharing configuration.
-    - Prisma ORM: defines the database schema and provides structured database access.
-    - bcrypt: hashes and verifies user passwords securely.
-    - REST API (JSON): exposes backend endpoints for authentication, users, game results, and social features.
-    - WebSockets: handles real-time events such as chat, user presence, and game interactions.
-    
-    Database
-    - SQLite: lightweight relational database used for data persistence during development.
-    - Prisma Client: generates type-safe database queries based on the Prisma schema.
-    
-    Infrastructure
-    - Docker & Docker Compose: containerizes frontend, backend, and services to run the project with a single command.
-    - Nginx: acts as a reverse proxy and HTTPS entry point.
-    - HTTPS: ensures secure communication between client and server.
-
-
-# Database Schema
-    The database is managed using Prisma ORM with an SQLite backend.
-    
-    Main entities:
-        - User: authentication, profile and game statistics.
-        - Friendship: friend requests and relationships between users.
-        - Block: blocked user relationships.
-        - Message: private messages exchanged between users.
-        - UserSettings: user interface preferences.
-        - Match: save data from game vs AI.
-    
-    Relations:
-        - Users can have multiple friends, blocks and private messages.
-        - Each user has at most one settings entry.
-
-    Note:
-        After add a model or modifying existing model, use "npx prisma@6 migrate dev"
-
-
-# Features list
-    Core
-        User registration and authentication
-        User profile pages
-        Friends system (add / remove / online status)
-
-    Real-time & social
-        Real-time chat between users (direct message)
-        Game invitations in chat
-        User blocking
-    
-    Game
-        Web-based Pong game
-        1v1 and multiplayer (1v1v1v1)
-        AI opponent
-        Game customization before match
-        Match history
-    
-    Progression
-        Leaderboard and ranking
-        Achievements / XP system
-    
-    Accessibility
-        Multi-language support (EN / FR / IT)
-
-
-# Modules (total of 19 points, Major = 2 points, Minor = 1 point)
-    - WEB 
-        Major = Framework front (React, Tailwind) + back (Fastify) (bbousaad, chuchard, nihamdan, aldalmas)
-            
-            - React: Using "state" is useful in this context with information that often changes.
-                        Information can be stored directly in the component, and as soon as it changes,
-                        React automatically updates the interface without reloading the page.
-                     "UseEffect" is also essential for the proper functioning of the site.
-                        It manages what happens around the component (opening/closing WebSockets,
-                        listening for events, synchronizing the front and back end).
-                     On the WebSocket side, we use "useRef" and not "useState" because changing a socket shouldn't
-                        re-render the entire UI, just like with the canvas running at 60 FPS.
-                        React shouldn't re-render every frame.
-                     We also have "React Router" which allows for smooth navigation,
-                        automatic redirects, and protected routes.
-
-            - Tailwind css:
-                    Tailwind allows you to write the style directly where the component is defined
-                    (<div className="">).
-                    Readable immediately
-                    Local to the component
-                    No dependency on a global CSS file
-                    Avoids class conflicts
-                    No CSS breaking elsewhere for no reason
-                    Easier to maintain in a large project
-
-        Major = Websocket (bbousaad, aldalmas)
-            - Websocket: REAL TIME
-                    The client sends events
-                    The server pushes events
-                    A user sends a message → the server broadcasts it instantly
-                    A player connects → friends are notified
-                    A game invitation is accepted → the game starts immediately
-                    To send player input
-                    To synchronize the game state
-                    To manage latency
-                    To prevent desynchronization
-                    
-        Major = Allow users to interact with other users (bbousaad, aldalmas)
-        Minor = Use an ORM (object-relational mapping) (Prisma) (aldalmas)
-            - Prisma: 
-
-    - Accessibility and Internationalization
-        Minor = Support for multiple language: italian, french and english (nihamdan)
-
-    - User management
-        Major = Standard user management and authentication (bbousaad, aldalmas)
-        Minor = Game statistics and match history (chuchard, nihamdan)
-
-    - Artificial Intelligence
-        Major = Introduce an AI Opponent for games (chuchard)
-        
-    - Gaming and user experience
-        Major = Implement a complete web-based game where users can play against each other: Pong Game (chuchard)
-        Major = Multiplayer game: Pong can be playing up to 4 players (chuchard)
-        Minor = Advanced chat features: invite to play, block, view profile (bbousaad, aldalmas)
-        Minor = Game customization: choose some settings before launching the game (chuchard)
-
-
-# SEE THE DATABASE (2 ways):
-1. From inside the container: 
-    - "docker exec -it back sqlite3 /app/backend/prisma/dev.db".
-    - If it works, you'll see "sqlite>" prompt.
-    - ".quit" to get out of the container.
-
-2. With the prisma UI (Prisma Studio):
-    -  Into the back's service, in the docker compose: add "ports: "5555:5555".
-    -  Enter into the back container: "docker exec -it back sh".
-    -  In the container, start the prisma server: "cd /app/backend && HOST=0.0.0.0 ./node_modules/.bin/prisma studio".
-    -  Go to "http://localhost:5555".
-    -  You must see the database without error.
-    -  Ctrl^D to close the prisma server.
-
